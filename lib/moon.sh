@@ -64,7 +64,7 @@ _moonshell_reset (){
 _moonshell_setup (){
     echoerr "Running Moonshell setup"
     ${ENV_ROOT}/install
-    moonshell
+    _moonshell -r
 }
 
 _moonshell_test (){
