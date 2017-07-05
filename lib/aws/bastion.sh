@@ -38,11 +38,11 @@ bastion_target_host () {
     local stack_name=$1
 
     if $(type ssh_target_hostname &>/dev/null); then
-      echo "$(ssh_target_hostname ${stack_name})"
+        echo "$(ssh_target_hostname ${stack_name})"
     else
-      echoerr "INFO: Defaulting target hostname to 'localhost'."
-      echoerr "INFO: To override this define the function 'ssh_target_hostname' in ${ENV_LIB}/private"
-      echo "localhost"
+        echoerr "INFO: Defaulting target hostname to 'localhost'."
+        echoerr "INFO: To override this define the function 'ssh_target_hostname' in ${ENV_LIB}/private"
+        echo "localhost"
     fi
 }
 
