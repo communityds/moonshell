@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+#
+# This script associates a VPC of a named environment with another VPC. This is
+# designed to work from the root of a Moonshot repo.
+#
+# We find all VPCs and prompt the user. We then gather the variables of:
+#   * VPCId
+#   * RouteTableID
+#   * VPCNetwork
+#
+# A peering connection is created, if one isn't already in the pending, or
+# similar state, and then accepted. Route entries are then added to each VPCs
+# respective table so each VPC can properly route to the other.
+#
+
+source $(dirname $0)/../moon.sh
+
+usage () {
+  echoerr "Usage: $(basename $0) ENVIRONMENT"
+  exit
+}
+
+#
+# INPUT
+#
+if [[ $# -lt 1 ]]; then
+  usage
+else
+  export ENVIRONMENT=$1
+  export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+fi
+
+#
+# SANITY CHECKING
+#
+CORE_STACK_PREFIX="core"
+[[ ${APP_NAME} =~ ^${CORE_STACK_PREFIX} ]] \
+  && echoerr "ERROR: This script can not be run by ${CORE_STACK_PREFIX} stacks" \
+  && exit 1
+
+#
+# MAIN
+#
+echoerr "INFO: Finding non-${SELF_STACK_NAME} VPCs"
+TARGET_STACKS=($(stack_list_all ${SELF_STACK_NAME}))
+TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
+
+echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
+SELF_VPC_ID=$(stack_value_output ${SELF_STACK_NAME} VPCId)
+SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
+SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
+
+echoerr "INFO: Setting ${TARGET_STACK_NAME} variables"
+TARGET_VPC_ID=$(stack_value_output ${TARGET_STACK_NAME} VPCId)
+TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
+TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
+
+echoerr "INFO: Finding existing peering connections"
+
+EXISTING_PEERING_CONNECTIONS=($(vpc_peer_connection ${SELF_VPC_ID} ${TARGET_VPC_ID}))
+
+if [[ ${EXISTING_PEERING_CONNECTIONS[@]-} ]]; then
+  echoerr "INFO: A peering agreement is currently in place"
+  echoerr "INFO: Run 'vpc-list-associations' to view currently peered VPCs"
+  echoerr "FATAL: Refusing to create duplicate peering connections"
+  exit 255
+fi
+
+VPC_PEERING_ID=$(vpc_peer_associate ${SELF_VPC_ID} ${TARGET_VPC_ID})
+
+echoerr "INFO: Setting Peering Options"
+#    \"AllowEgressFromLocalClassicLinkToRemoteVpc\": true,
+#    \"AllowEgressFromLocalVpcToRemoteClassicLink\": true,
+#    \"AllowDnsResolutionFromRemoteVpc\": true
+retr=$(aws ec2 modify-vpc-peering-connection-options \
+  --vpc-peering-connection-id ${VPC_PEERING_ID} \
+  --requester-peering-connection-options "{
+    \"AllowDnsResolutionFromRemoteVpc\": true
+  }" \
+  --accepter-peering-connection-options "{\
+    \"AllowDnsResolutionFromRemoteVpc\": true
+  }" \
+  || true)
+
+echoerr "INFO: Tagging resource: ${VPC_PEERING_ID}"
+aws ec2 create-tags \
+  --resources ${VPC_PEERING_ID} \
+  --tags \
+    Key=source_stack,Value=${SELF_STACK_NAME} \
+    Key=destination_stack,Value=${TARGET_STACK_NAME}
+
+echoerr "INFO: Creating Route to ${TARGET_STACK_NAME}"
+echoerr "INFO: Failure to create route is not fatal"
+aws ec2 create-route \
+  --route-table-id ${SELF_VPC_ROUTE_TABLE}\
+  --destination-cidr-block ${TARGET_VPC_NETWORK}\
+  --vpc-peering-connection-id ${VPC_PEERING_ID} \
+  --query "Return" \
+  --output text \
+  >/dev/null \
+  || true
+
+echoerr "INFO: Creating Route from ${TARGET_STACK_NAME}"
+echoerr "INFO: Failure to create route is not fatal"
+aws ec2 create-route \
+  --route-table-id ${TARGET_VPC_ROUTE_TABLE}\
+  --destination-cidr-block ${SELF_VPC_NETWORK}\
+  --vpc-peering-connection-id ${VPC_PEERING_ID} \
+  --query "Return" \
+  --output text \
+  >/dev/null \
+  || true
+
+echoerr "INFO: Describing ${SELF_STACK_NAME} routes"
+aws ec2 describe-route-tables \
+  --query "RouteTables[?RouteTableId=='${SELF_VPC_ROUTE_TABLE}'].Routes" \
+  --output table
+
+echoerr "INFO: Describing ${TARGET_STACK_NAME} routes"
+aws ec2 describe-route-tables \
+  --query "RouteTables[?RouteTableId=='${TARGET_VPC_ROUTE_TABLE}'].Routes" \
+  --output table
+
+echoerr "INFO: Associating route53"
+route53_vpc_associate $(vpc_internal_hosted_zone_id ${TARGET_VPC_ID}) ${SELF_VPC_ID}
+route53_vpc_associate $(vpc_internal_hosted_zone_id ${SELF_VPC_ID}) ${TARGET_VPC_ID}
+

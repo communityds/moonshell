@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# This script is used by packer to download puppet modules locally. r10k is a
+# rubygem developed by Puppetlabs for the acquiring and management of puppet
+# modules. To modify what modules are checked out and to where, edit
+# Puppetfile in the puppet directory.
+#
+
+source $(dirname $0)/../moon.sh
+
+# We must be in the root of the repo else ../moon.sh would not have been sourced
+pushd "${PWD}/puppet" >/dev/null
+  r10k -c r10k.yml puppetfile install -v info
+popd >/dev/null

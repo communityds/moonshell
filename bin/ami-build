@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+#
+# This script automates the building of AMIs. It is effectively a wrapper for
+# Packer. When you create or update a JSON file in the packer/ dir, you simply
+# re-run this tool. If you are adding/creating a new JSON config file.
+#
+# Some packer templates have variables in them. For further information on how
+# to use packer variables, please go here:
+#   https://www.packer.io/docs/templates/user-variables.html
+#
+# If you wish to debug this script, execute the following prior to running the
+# script:
+#
+#   export DEBUG=true
+#
+
+source $(dirname $0)/../moon.sh
+
+PACKER_DIR="${ENV_VAR}/packer"
+PACKER_VER="0.12.2"
+PACKER_FILE="packer_${PACKER_VER}_linux_amd64.zip"
+PACKER_BASE="https://releases.hashicorp.com/packer/${PACKER_VER}"
+PACKER_URL="${PACKER_BASE}/${PACKER_FILE}"
+PACKER_LOG=1
+PACKER_DEBUG=
+VERBOSE=
+
+[[ ! -d packer ]] \
+  && echoerr "ERROR: Dir 'packer' does not exist." \
+  && echoerr "Are you in the correct repo?" \
+  && exit 1
+
+[[ ! -d ${PACKER_DIR} ]] && mkdir ${PACKER_DIR}
+
+# pipe delimited string of AMIs to build - CLASSES="foo|bar|baz"
+# foo.json, bar.json and baz.json must exist in the packer directory.
+CLASSES="$(find packer/ -name '*.json' -printf '%f\n' | sed 's/\.json//' | sort)"
+
+BUILD_ROOT="${PWD}"
+
+
+# Functions
+#
+usage () {
+    [[ ${1-} ]] \
+        && local retr=$1 \
+        || local retr=0
+    classes_with_pipes=$(echo ${CLASSES}| sed 's/ /\|/g')
+    echoerr "Usage: $(basename $0) [-d] [-v] [all|${classes_with_pipes}] [PACKER_ARGS]"
+    echoerr
+    echoerr "  -d  Debug. Make packer require input for each step."
+    echoerr "  -v  Verbose. Show packer 'ui' output."
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) varnish -var 's3_bucket=foo-artifacts'"
+    exit ${retr}
+}
+
+log () {
+    local message="$@"
+    echo "$(date --iso-8601=seconds) ${message}" >> ${LOG}
+    echoerr "${message}"
+}
+
+verify_class_file () {
+  local class classes=($@)
+  for class in ${classes[@]}; do
+    [[ ! -f "${BUILD_ROOT}/packer/${class}.json" ]] \
+      && log "ERROR: Class file '${class}.json' does not exist in ${PWD}/packer/" \
+      && exit 1
+  done
+  return 0
+}
+
+install_packer () {
+    pushd ${PACKER_DIR} >/dev/null
+    [[ ! -f "${PACKER_FILE}" ]] \
+        && wget -q -c ${PACKER_URL} \
+        && unzip -x ${PACKER_FILE}
+    [[ ! -x "./packer" ]] \
+        && log "ERROR: Packer failed to extract cleanly or is not executable" \
+        && exit 1
+    popd >/dev/null
+}
+
+pack () {
+    local class=$1
+    local log_file="${LOG}"
+
+    log "INFO: Building AMI from ${class}.json at $(date --iso-8601=seconds) . Outputting to '${log_file}'"
+    if [[ ${PACKER_DEBUG-} ]]; then
+        if [[ ${VERBOSE-} ]]; then
+            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json 2>&1 >${log_file}
+            local retr=$?
+        else
+            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json | tee -a ${log_file}
+            local retr=${PIPESTATUS[0]}
+        fi
+    elif [[ ${VERBOSE-} ]]; then
+        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 2>&1 | tee -a ${log_file}
+        local retr=${PIPESTATUS[0]}
+    else
+        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 1>/dev/null 2>${log_file}
+        local retr=$?
+    fi
+
+    if [[ ${retr} == 0 ]]; then
+        log "INFO: Finished building AMI from ${class}.json at $(date --iso-8601=seconds)"
+        local ami_id=$(grep -Po "ami-[0-9a-f]{8,17}" ${log_file} | tail -1)
+        log "INFO: ${class} AMI: ${ami_id}"
+    else
+        log "ERROR: Build failed with status '${retr}'"
+        exit ${retr}
+    fi
+}
+
+main () {
+    local class
+    local -a classes=($@)
+    verify_class_file ${classes[@]}
+    log "INFO: Starting image building"
+    pushd "${BUILD_ROOT}" > /dev/null
+        log "INFO: Verifying packer"
+        install_packer
+
+        for class in ${classes[@]}; do
+            pack ${class}
+        done
+    popd > /dev/null
+    log "INFO: Building finished"
+}
+
+
+# Begining
+#
+while getopts "dv" option; do
+    case ${option} in
+        d) PACKER_DEBUG=true ;;
+        v) VERBOSE=true ;;
+    esac
+done
+
+[[ ${PACKER_DEBUG} ]] && shift
+[[ ${VERBOSE} ]] && shift
+
+if [[ $# == 0 ]]; then
+    usage 0
+elif [[ $1 == "all" ]]; then
+    shift
+    PACKER_ARGS="$@"
+    LOG="${PACKER_DIR}/all-$(date +%s).log"
+    main ${CLASSES[@]}
+elif [[ $1 =~ [${CLASSES}] ]]; then
+    CLASS=$1
+    shift
+    PACKER_ARGS="$@"
+    LOG="${PACKER_DIR}/${CLASS}-$(date +%s).log"
+    main ${CLASS}
+else
+    usage 1
+fi
+

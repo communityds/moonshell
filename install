@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+#
+# This script installs moonshell to $PATH
+#
+
+set -eu
+# To set debug mode for this script `export DEBUG=true` prior to running
+# Use `unset DEBUG` to return to normal usage.
+[[ ${DEBUG-} ]] && set -x
+
+REPO="$(basename $0)"
+REPO_DIR="${PWD}/$(dirname $0)"
+BIN_DIR="${REPO_DIR}/bin"
+
+echoerr() {
+    echo "${@-}" >&2
+}
+
+not_installed() {
+    # a `grep -c` of zero == not present, so return true
+    local retr=$(grep -v '^#' ${HOME}/${BASH_FILE} | grep -c "${HOME}/.moonshell/moon.sh" 2>/dev/null)
+    return ${retr}
+}
+
+gem_not_installed() {
+    local gem=$1
+    [[ ! -f ${REPO_DIR}/Gemfile.lock ]] && return 0
+    local retr=$(grep -c ${gem} ${REPO_DIR}/Gemfile.lock)
+    return ${retr}
+}
+
+case $(uname) in
+    Linux) BASH_FILE=".bashrc";;
+    Darwin) BASH_FILE=".bash_profile";;
+    *)
+        echoerr "ERROR: Somehow \`uname\` returned something other than 'Linux' or 'Darwin'"
+        echoerr ""
+        echoerr "   o_0"
+        echoerr " ~\_|_/~"
+        echoerr "    |"
+        echoerr "  _/ \_"
+        exit 1
+    ;;
+esac
+
+#
+# Standard Symlink
+#
+[[ ! -L ${HOME}/.moonshell ]] && ln -s ${REPO_DIR} ${HOME}/.moonshell
+
+
+#
+# Bash Sourcing
+#
+if not_installed; then
+    echoerr "To install moonshell in to your \$PATH, press enter; else CTRL-C"
+    read
+    echo >> ${HOME}/${BASH_FILE}
+    echo "# Moonshell, because setting up Bash for managing space travel shouldn't be a moonshot" >> ${HOME}/${BASH_FILE}
+    echo "#export DEBUG=true" >> ${HOME}/${BASH_FILE}
+    echo "source ${HOME}/.moonshell/moon.sh" >> ${HOME}/${BASH_FILE}
+    echoerr "Installation complete.."
+    echoerr "To use the \$PATH ammendment, respawn your shell."
+else
+    echoerr "Installation not required"
+fi
+
+
+#
+# Ruby Gems
+#
+GEMS=($(grep ^gem "${REPO_DIR}/Gemfile" | tr -d "'" | awk '{print $2}'))
+for gem in ${GEMS[@]}; do
+    if gem_not_installed ${gem}; then
+        echoerr "Installing ruby gems"
+        pushd ${REPO_DIR} >/dev/null
+            bundle install
+        popd >/dev/null
+    fi
+done

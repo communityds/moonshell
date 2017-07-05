@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/../moon.sh
+
+kms_list_keys_detail

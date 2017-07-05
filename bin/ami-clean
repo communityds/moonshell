@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+AMIS=($(ami_list_all))
+
+if [[ ${AMIS[@]-} ]]; then
+    for ami in ${AMIS[@]}; do
+        instances=($(instances_running_ami ${ami}))
+        if [[ ${instances[@]-} ]]; then
+            echoerr "INFO: Instances running with ${ami}"
+            echoerr "instances=(${instances[@]})"
+        else
+            echoerr "INFO: No instances are running with ${ami}"
+            ami_deregister ${ami}
+        fi
+    done
+else
+    echoerr "INFO: No AMIs found"
+fi
