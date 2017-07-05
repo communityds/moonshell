@@ -61,7 +61,7 @@ done
 # parent script, not bash. If a person has made a script called "bash"... Well,
 # it would be irresponsible for us to make a work around for their gross and
 # negligent incompetence.
-if [[ ! $(basename $0) == "bash" ]]; then
+if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # Now that we are not running in a shell treat all undefined variables and
     # non-zero exit codes as serious and exit.
     set -eu
