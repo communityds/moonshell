@@ -11,6 +11,7 @@ set -eu
 REPO="$(basename $0)"
 REPO_DIR="${PWD}/$(dirname $0)"
 BIN_DIR="${REPO_DIR}/bin"
+MOON_HOME="${HOME}/.moonshell"
 
 echoerr() {
     echo "${@-}" >&2
@@ -18,14 +19,14 @@ echoerr() {
 
 not_installed() {
     # a `grep -c` of zero == not present, so return true
-    local retr=$(grep -v '^#' ${HOME}/${BASH_FILE} | grep -c "${HOME}/.moonshell/moon.sh" 2>/dev/null)
+    local retr=$(grep -v '^#' ${HOME}/${BASH_FILE} | grep -c "${MOON_HOME}/moon.sh" 2>/dev/null)
     return ${retr}
 }
 
 gem_not_installed() {
     local gem=$1
-    [[ ! -f ${REPO_DIR}/Gemfile.lock ]] && return 0
-    local retr=$(grep -c ${gem} ${REPO_DIR}/Gemfile.lock)
+    [[ ! -f ${MOON_HOME}/Gemfile.lock ]] && return 0
+    local retr=$(grep -c ${gem} ${MOON_HOME}/Gemfile.lock)
     return ${retr}
 }
 
@@ -46,7 +47,7 @@ esac
 #
 # Standard Symlink
 #
-[[ ! -L ${HOME}/.moonshell ]] && ln -s ${REPO_DIR} ${HOME}/.moonshell
+[[ ! -L ${HOME}/.moonshell ]] && ln -s ${REPO_DIR} ${MOON_HOME}
 
 
 #
@@ -58,7 +59,7 @@ if not_installed; then
     echo >> ${HOME}/${BASH_FILE}
     echo "# Moonshell: because setting up Bash for managing space travel shouldn't be a moonshot" >> ${HOME}/${BASH_FILE}
     echo "#export DEBUG=true" >> ${HOME}/${BASH_FILE}
-    echo "source ${HOME}/.moonshell/moon.sh" >> ${HOME}/${BASH_FILE}
+    echo "source ${MOON_HOME}/moon.sh" >> ${HOME}/${BASH_FILE}
     echoerr "Installation complete.."
     echoerr "To use the \$PATH ammendment, respawn your shell."
 else
@@ -67,13 +68,20 @@ fi
 
 
 #
+# Private Dirs
+#
+[[ ! -d ${MOON_HOME}/lib/private ]] && mkdir ${MOON_HOME}/lib/private
+[[ ! -d ${MOON_HOME}/profile.d/private ]] && mkdir ${MOON_HOME}/profile.d/private
+
+
+#
 # Ruby Gems
 #
-GEMS=($(grep ^gem "${REPO_DIR}/Gemfile" | tr -d "'" | awk '{print $2}'))
+GEMS=($(grep ^gem "${MOON_HOME}/Gemfile" | tr -d "'" | awk '{print $2}'))
 for gem in ${GEMS[@]}; do
     if gem_not_installed ${gem}; then
         echoerr "Installing ruby gems"
-        pushd ${REPO_DIR} >/dev/null
+        pushd ${MOON_HOME} >/dev/null
             bundle install
         popd >/dev/null
     fi
