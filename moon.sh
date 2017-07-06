@@ -40,11 +40,13 @@ export ENV_VAR="${ENV_ROOT}/var"
 # creating symlinks, updating .bashrc/.bash_profile and installing gems
 #
 # In Vagrant $0 is "-bash". basename doesn't like "-b"
+moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
 if [[ $(basename "x$0") =~ "bash"$ ]]; then
-    moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
     source "${moonshell_dir}/lib/common.sh"
     source "${moonshell_dir}/lib/moonshell.sh"
     _moonshell_self_check ${moonshell_dir}
+else
+    source ${ENV_LIB}/common.sh
 fi
 
 
@@ -56,22 +58,10 @@ fi
 [[ ! "${PATH}" =~ "${ENV_BIN}" ]] \
     && export PATH=${ENV_BIN}:${PATH}
 
+
 #
-# SOURCE ALL THE THINGS
+# SCRIPT INITIALISATION
 #
-for lib_file in $(find ${ENV_LIB}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-    source "${lib_file}"
-done
-
-for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-    source "${profile_file}"
-done
-
-for completion_file in $(find "${ENV_COMPLETION}/" ${ENV_FIND_OPTS} -name '*.sh'); do
-    source ${completion_file}
-done
-
-
 # When we have been sourced by a script $(basename $0) will be the name of the
 # parent script, not bash. If a person has made a script called "bash"... Well,
 # it would be irresponsible for us to make a work around for their gross and
@@ -81,11 +71,9 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # non-zero exit codes as serious and exit.
     set -eu
 
-    echoerr "INFO: Checking environment"
-
-    # If this is unset then aws-creds has most likely not been run. aws-creds
-    # sets up the credentials, and some other things, as env vars to be used by
-    # the aws-cli
+    # If AWS_DEFAULT_PROFILE is unset then aws-creds has most likely not been
+    # run and nothing AWS related will work; either in moonshot or moonshell.
+    # `aws-creds` sets up the credentials as ENV vars to be used by the aws-cli
     [[ -z ${AWS_DEFAULT_PROFILE-} ]] \
         && echoerr "ERROR: You do not have creds set up in your environment. Try 'aws-creds'" \
         && exit 1
@@ -95,17 +83,25 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
         && echoerr "ERROR: AWS_REGION is unset." \
         && exit 1
 
-    # The magic sauce
+    # APP_NAME is needed by the greater majority of scripts.
     if [[ ! -f ${PWD}/Moonfile.rb ]]; then
         echoerr "ERROR: Moonfile.rb is not present in CWD"
         exit 1
     else
-        # APP_NAME is the root to the greater majority of scripts herein working.
         export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
     fi
 
-    # Only output this info if we have been called from a script to keep the
-    # basic terminal clean
-    echoerr "INFO: Moonshell is loaded"
+    # Source all the things!!!
+    for lib_file in $(find ${ENV_LIB}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+        source "${lib_file}"
+    done
+
+    for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+        source "${profile_file}"
+    done
+
+    for completion_file in $(find "${ENV_COMPLETION}/" ${ENV_FIND_OPTS} -name '*.sh'); do
+        source ${completion_file}
+    done
 fi
 
