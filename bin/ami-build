@@ -148,13 +148,13 @@ if [[ $# == 0 ]]; then
 elif [[ $1 == "all" ]]; then
     shift
     PACKER_ARGS="$@"
-    LOG="${PACKER_DIR}/all-$(date +%s).log"
+    export LOG="${PACKER_DIR}/all-$(date +%s).log"
     main ${CLASSES[@]}
 elif [[ $1 =~ [${CLASSES}] ]]; then
     CLASS=$1
     shift
     PACKER_ARGS="$@"
-    LOG="${PACKER_DIR}/${CLASS}-$(date +%s).log"
+    export LOG="${PACKER_DIR}/${CLASS}-$(date +%s).log"
     main ${CLASS}
 else
     usage 1
