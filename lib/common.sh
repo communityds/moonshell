@@ -6,6 +6,18 @@ echoerr () {
     echo "${@-}" >&2
 }
 
+bash_rc_file () {
+    local uname=$(uname)
+    case ${uname} in
+        Linux) echo ".bashrc";;
+        Darwin) echo ".bash_profile";;
+        *)
+            echoerr "ERROR: Unsupported system '${uname}'"
+            exit 1
+        ;;
+    esac
+}
+
 contains () {
     [ $# -lt 2 ] \
         && echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}" \

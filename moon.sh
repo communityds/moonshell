@@ -25,12 +25,27 @@ export ENV_ROOT="${HOME}/.moonshell"
 
 export ENV_BIN="${ENV_ROOT}/bin"
 export ENV_COMPLETION="${ENV_ROOT}/completion.d"
-export ENV_FIND_OPTS="-maxdepth 1 -type f"
+export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1 -type f"
 export ENV_LIB="${ENV_ROOT}/lib"
 export ENV_PROFILE="${ENV_ROOT}/profile.d"
 export ENV_USR="${ENV_ROOT}/usr"
 export ENV_UPDATE_INTERVAL=5 # minutes
 export ENV_VAR="${ENV_ROOT}/var"
+
+
+#
+# SELF CHECK
+#
+# This enables moon.sh to be sourced, and if not 'installed' will work through
+# creating symlinks, updating .bashrc/.bash_profile and installing gems
+#
+# In Vagrant $0 is "-bash". basename doesn't like "-b"
+if [[ $(basename "x$0") =~ "bash"$ ]]; then
+    moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
+    source "${moonshell_dir}/lib/common.sh"
+    source "${moonshell_dir}/lib/moonshell.sh"
+    _moonshell_self_check ${moonshell_dir}
+fi
 
 
 #
