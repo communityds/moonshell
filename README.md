@@ -16,9 +16,17 @@ Influential axioms:
 
 ## Overview
 
-Everything starts with `./moon.sh`. When sourced it creates several variables
-then it sources all shell files in `lib`, `profile.d` and `completion.d`. At
-this point it expects to be located at `$HOME/.moonshell`.
+Everything starts with `./moon.sh`. When sourced it:
+
+1. Sets core `ENV_` variables.
+
+1. Checks itself for whether its installed and installs itself if not.
+
+1. Adds itself to `PATH`.
+
+1. Sources `*.sh` files from `lib`, `profile.d` and `completion.d`.
+
+1. Handles being sourced from Bash or a script.
 
 ## Usage
 
