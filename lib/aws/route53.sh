@@ -139,21 +139,21 @@ route53_list_internal () {
     local stack_name=$1
 
     local record
+    local record_type
     local -a records
-    local type
 
     local hosted_zone_id=$(route53_internal_hosted_zone_id ${stack_name})
     [[ -z ${hosted_zone_id-} ]] && return 1
 
-    for type in A CNAME; do
+    for record_type in A CNAME; do
         echoerr "INFO: Listing ${type} records"
-        records=($(route53_list_type_records ${hosted_zone_id} ${type}))
+        records=($(route53_list_type_records ${hosted_zone_id} ${record_type}))
         if [[ ${records[@]-} ]]; then
             for record in ${records[@]}; do
                 echoerr "  ${record}"
             done
         else
-            echoerr "INFO: No ${type} records found"
+            echoerr "INFO: No ${record_type} records found"
         fi
     done
 }
