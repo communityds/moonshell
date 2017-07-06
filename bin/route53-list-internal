@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# Route53 - List Internal A and CNAME records
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+  echoerr "Usage: $(basename $0) ENVIRONMENT"
+  exit 0
+else
+  ENVIRONMENT=$1
+  STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+fi
+
+route53_list_internal ${STACK_NAME}
+
+exit $?
+
