@@ -4,4 +4,4 @@ before_script: 'sudo pip install bashate'
 script:
   - 'mdl $(find -name "*.md")'
   - 'bundle exec rubocop -D'
-  - 'bashate -i E006,E042 moon.sh install $(find -name "*.sh")'
+  - 'bashate -i E006,E042 moon.sh $(find -name "*.sh")'

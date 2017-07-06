@@ -16,32 +16,27 @@ Influential axioms:
 
 ## Overview
 
-Everything starts with `./moon.sh`. When sourced it creates several variables
-then it sources all shell files in `lib`, `profile.d` and `completion.d`. At
-this point it expects to be located at `$HOME/.moonshell`.
+Everything starts with `./moon.sh`. When sourced it:
+
+1. Sets core `ENV_` variables.
+
+1. Checks itself for whether its installed and installs itself if not.
+
+1. Adds itself to `PATH`.
+
+1. Sources `*.sh` files from `lib`, `profile.d` and `completion.d`.
+
+1. Handles being sourced from Bash or a script.
 
 ## Usage
 
 ### Setup
 
-`install` can be run from anywhere in the filesystem; JustWorks™. It:
-
-1. Ensures that `$HOME/.moonshell` exists as a directory. If it doesn't exist it
-    creates a symlink to the folder it resides in; no matter where this is.
-
-1. Appends a line to `$HOME/.bashrc` to source `moon.sh`. `export DEBUG=true`
-    to debug issues in all scripts and functions.
-
-1. Checks for some basic packages and attempts installation. Currently it only
-    cares about Fedora.
-
-1. Installs some Ruby gems used for linting of `.rb` and `.md` files.
-
-To use, execute `install` from anywhere in your filesystem, it's smart enough
-to install itself from anywhere in the filesystem.
+To both setup and use Moonshell, simply source `moon.sh`, this library will
+take care of self installation.
 
 ```
-./install
+source moon.sh
 ```
 
 ### Admin
