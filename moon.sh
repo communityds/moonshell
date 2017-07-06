@@ -22,6 +22,7 @@
 # GLOBAL VARIABLES
 #
 export ENV_ROOT="${HOME}/.moonshell"
+export ENV_ROOT_REALPATH="$(realpath ${ENV_ROOT})"
 
 export ENV_BIN="${ENV_ROOT}/bin"
 export ENV_COMPLETION="${ENV_ROOT}/completion.d"
