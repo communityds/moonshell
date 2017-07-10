@@ -13,8 +13,22 @@ administrator to use from the CLI.
 Influential axioms:
 
 1. Clean code is good code
+
 1. Make peoples lives better and easier
+
 1. Do unto others as you would have done unto yourself
+
+Contents:
+
+1. [Overview](#overview)
+
+1. [Usage](#usage)
+
+1. [Structure](#structure)
+
+1. [Why](#why)
+
+1. [How](#how)
 
 ## Overview
 
@@ -90,4 +104,95 @@ by git.
 
 Everything ephemeral that is created by Moonshell goes in here. This directory
 is git ignored, so don't use it for anything important.
+
+## Why
+
+A lot of the functionality herein should ideally be ported to Moonshot, but, at
+the time of writing these tools, using Ruby to develop solutions to our needs
+is an expense we can't afford. We are working through the process of developing
+out several systems that all interract with each other on some level; the scope
+and functionality is being found out as development happens.
+
+Bash was the quickest and easiest way to create re-usable code that runs on all
+systems regardless of all external dependencies, with exception of `aws-cli`,
+and that can be easily extended. Only some rules need to be adhered to for
+stack creation, naming of resources and outputs.
+
+The last, and arguably most important, reason is that I am a systems
+administrator. I use the CLI for pretty much all important operations in my day
+to day work. I need the CLI to be quick, easy and extensible. Having a sorted
+admin environment even makes developing out new things easier because you have
+all the tools to introspect and do basic tasks at your fingertips.
+
+In the future scripts may be written in Python, or Ruby, but until then Bash
+is where it's at.
+
+### No, Really, Why Bash
+
+[Google Shell Style Guide](https://google.github.io/styleguide/shell.xml?showone=File_Extensions#File_Extensions)
+
+* Bash is on everything.
+* Bash doesn't require installation and updating of vendor modules.
+* Bash is really good at getting things from A to B with a bit of simple
+  manipulation in between.
+* Nothing in this repo requires associative arrays, so there is less of a need
+  for a higher level language.
+* Bash functions and scripts integrate really well with the Bash cli.
+* There are fewer bugs caused by edge cases found in higher level languages.
+* I <3 Bash :D
+
+## How
+
+When building out stacks thought must be given to the names of resources. It is
+advised to always use generic names for resources to enable future portability
+of templates and/or other code.
+
+It is highly recommended to create an internal Route53 hosted zone so that you
+can easily connect to your instances and reference resources by short easy to
+remember common hostnames; i.e. "ping app" or "mysql -h rds". Route53 is used
+heavily by Moonshell as a means to find information such as an instance to
+ssh to, or gather information from. It is also pivotal in creating VPC peering
+connections to grant access to resources in one VPC from another. DNS is a
+solved problem; use it!
+
+* NOTE: You must delete all but the base records in the hosted zone before
+  stack deletion. Failure to do so will result in a failure to delete the stack
+  because AWS doesn't provide a way to forcibly delete entries when a zone is
+  to be deleted, thanks AWS.. This is a similar problem to versioned S3
+  buckets; you must delete all versions of all files before you can delete the
+  bucket.
+
+We run a shared centralised `core` VPC that contains a jump host, logging and
+email services. All peered VPCs use the central logger and are accessed by the
+central jump host. Moonshell expects this vpc be named `core`
+
+### Stack Outputs
+
+These outputs are required to be set:
+
+* `ExternalRoute53HostedZoneName`: To keep track of stacks, and any sites that
+  point to stack, a CNAME is created for the stack's name.
+
+  i.e. `app_name-environment.dev.example.com` -> `my-varnish-elb-1g{...}elb.amazonaws.com.`
+
+  This enables you to CNAME other records more easily to your stack, which
+  makes administration more pleasant and easier for others to diagnose issues:
+
+  i.e. `foo.example.com` -> `app_name-environment.dev.example.com`
+
+  Plus, getting people to update DNS whenever the ELB address changes is work
+  that noone should do. USE DNS!!
+
+* `InternalRoute53HostedZoneId`: Due to the potential for name-space violations
+  we must have available the zone's ID to interrogate. The default for the
+  zone's name ***must*** be "${APP_NAME}-${ENVIRONMENT}.local".
+
+* `VPCNetwork`: This must be set to the network CIDR used for the entire VPC
+
+* `RouteTableId`: This is the route table used by all primatives insiide the VPC
+
+Moonshot Defaults:
+
+* `aws:cloudformation:stack-name`: Moonshot gives us the stack-name for free
+  and we use it to find the VPCId from the stack's name.
 
