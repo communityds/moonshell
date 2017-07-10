@@ -4,7 +4,7 @@
 # designed to work from the root of a Moonshot repo.
 #
 # We find all VPCs and prompt the user. We then gather the variables of:
-#   * VPCId
+#   * AWS::EC2::VPC
 #   * RouteTableID
 #   * VPCNetwork
 #
@@ -46,12 +46,12 @@ TARGET_STACKS=($(stack_list_all ${SELF_STACK_NAME}))
 TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
 
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
-SELF_VPC_ID=$(stack_value_output ${SELF_STACK_NAME} VPCId)
+SELF_VPC_ID=$(stack_resource_type ${SELF_STACK_NAME} "AWS::EC2::VPC")
 SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
 SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
 
 echoerr "INFO: Setting ${TARGET_STACK_NAME} variables"
-TARGET_VPC_ID=$(stack_value_output ${TARGET_STACK_NAME} VPCId)
+TARGET_VPC_ID=$(stack_resource_type ${TARGET_STACK_NAME} "AWS::EC2::VPC")
 TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
 TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
 
