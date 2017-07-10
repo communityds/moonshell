@@ -163,7 +163,7 @@ _moonshell_self_check_gems () {
 
     if [[ ${bundle_install-} ]]; then
         if _moonshell_self_fix "Bundle install missing gems?"; then
-            _moonshell_self_fix_gems ${moon_home}
+            _moonshell_self_fix_gems ${moonshell_home_link}
         else
             echoerr "INFO: Skipping bundle install"
         fi
@@ -199,6 +199,11 @@ _moonshell_self_fix_link () {
 
 _moonshell_self_fix_gems () {
     local moonshell_home_link=$1
+
+    bundle_bin=$(which bundle 2>/dev/null || true)
+    [[ -z ${bundle_bin-} ]] \
+        && echoerr "ERROR: 'bundle' command not found" \
+        && return 1
 
     echoerr "INFO: Installing ruby gems"
     pushd ${moonshell_home_link} >/dev/null
