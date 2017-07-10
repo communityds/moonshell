@@ -76,12 +76,12 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # run and nothing AWS related will work; either in moonshot or moonshell.
     # `aws-creds` sets up the credentials as ENV vars to be used by the aws-cli
     [[ -z ${AWS_DEFAULT_PROFILE-} ]] \
-        && echoerr "ERROR: You do not have creds set up in your environment. Try 'aws-creds'" \
+        && echoerr "ERROR: 'AWS_DEFAULT_PROFILE' is unset. Try 'aws-creds'" \
         && exit 1
 
     # aws-cli uses this and it enables a more dynamic environment
     [[ -z ${AWS_REGION-} ]] \
-        && echoerr "ERROR: AWS_REGION is unset." \
+        && echoerr "ERROR: 'AWS_REGION' is unset." \
         && exit 1
 
     # APP_NAME is needed by the greater majority of scripts.
