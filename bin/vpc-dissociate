@@ -4,7 +4,7 @@
 # is designed to work from the root of a Moonshot repo.
 #
 # We find all VPCs and prompt the user. We then gather the variables of:
-#   * VPCId
+#   * AWS::EC2::VPC
 #   * RouteTableID
 #   * VPCNetwork
 #
@@ -49,7 +49,7 @@ PEERING_STATUS_CODES=(\
 # MAIN
 #
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
-SELF_VPC_ID=$(stack_value_output ${SELF_STACK_NAME} VPCId)
+SELF_VPC_ID=$(stack_resource_type ${SELF_STACK_NAME} "AWS::EC2::VPC")
 SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
 SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
 
