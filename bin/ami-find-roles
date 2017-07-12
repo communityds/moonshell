@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#
+# Find and display the role tag of all AMIs that are available
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+ami_find_roles
