@@ -84,10 +84,15 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
         && echoerr "ERROR: 'AWS_REGION' is unset." \
         && exit 1
 
-    # APP_NAME is needed by the greater majority of scripts.
+    # Most scripts in bin/ build off of ${APP_NAME} which is programatically
+    # set from the Moonfile. For those that don't need APP_NAME, i.e. can be
+    # run from anywhere in the filesystem, they can set ${MOON_FILE} to false
+    # and bypass this failure mode.
     if [[ ! -f ${PWD}/Moonfile.rb ]]; then
-        echoerr "ERROR: Moonfile.rb is not present in CWD"
-        exit 1
+        if [[ ! ${MOON_FILE-} == false ]]; then
+            echoerr "ERROR: Moonfile.rb is not present in CWD"
+            exit 1
+        fi
     else
         export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
     fi

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Detail all KMS keys available
+#
+
+export MOON_FILE=false
 
 source $(dirname $0)/../moon.sh
 
