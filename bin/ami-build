@@ -87,26 +87,28 @@ pack () {
     local class=$1
     local log_file="${LOG}"
 
-    log "INFO: Building AMI from ${class}.json at $(date --iso-8601=seconds) . Outputting to '${log_file}'"
+    local ami_id retr
+
+    log "INFO: Building AMI from ${class}.json at $(date --iso-8601=seconds). Outputting to '${log_file}'"
     if [[ ${PACKER_DEBUG-} ]]; then
         if [[ ${VERBOSE-} ]]; then
             ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json 2>&1 >${log_file}
-            local retr=$?
+            retr=$?
         else
             ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json | tee -a ${log_file}
-            local retr=${PIPESTATUS[0]}
+            retr=${PIPESTATUS[0]}
         fi
     elif [[ ${VERBOSE-} ]]; then
         ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 2>&1 | tee -a ${log_file}
-        local retr=${PIPESTATUS[0]}
+        retr=${PIPESTATUS[0]}
     else
-        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 1>/dev/null 2>${log_file}
-        local retr=$?
+        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json &>${log_file}
+        retr=$?
     fi
 
     if [[ ${retr} == 0 ]]; then
         log "INFO: Finished building AMI from ${class}.json at $(date --iso-8601=seconds)"
-        local ami_id=$(grep -Po "ami-[0-9a-f]{8,17}" ${log_file} | tail -1)
+        ami_id=$(grep -Po "ami-[0-9a-f]{8,17}" ${log_file} | tail -1)
         log "INFO: ${class} AMI: ${ami_id}"
     else
         log "ERROR: Build failed with status '${retr}'"
