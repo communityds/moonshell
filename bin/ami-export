@@ -3,6 +3,8 @@
 # This script exports and AMI for usage by other CDS accounts
 #
 
+export MOON_FILE=false
+
 source $(dirname $0)/../moon.sh
 
 [[ $# == 0 ]] \
