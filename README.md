@@ -1,5 +1,7 @@
 # Moonshell
 
+[![Build Status](https://travis-ci.org/communityds/moonshell.svg?branch=master)](https://travis-ci.org/communityds/moonshell)
+
 This project is based upon [BashEnv](https://github.com/pingram3030/bashenv)
 which is a dynamic bash environment management solution. TL;DR; It's a
 framework you can use to create custom functions and modifications to Bash to
