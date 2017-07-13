@@ -8,13 +8,12 @@ export MOON_FILE=false
 source $(dirname $0)/../moon.sh
 
 usage () {
-    echoerr "Deregister AMIs in the currently set account."
+    echoerr "List AMIs of role."
     echoerr "Usage: $(basename $0) all|ROLE"
     echoerr
     echoerr "Notes:"
     echoerr " * ROLE is the value of the 'role' tag set on the AMI by Packer"
     echoerr " * ROLE must be quoted if it contains spaces"
-    echoerr " * This script is designed for automated operation, it must be cancelled manually"
 }
 
 [[ $# -lt 1 ]] \
@@ -27,16 +26,7 @@ usage () {
     || AMIS=($(ami_list_role "${ROLE}"))
 
 if [[ ${AMIS[@]-} ]]; then
-    for ami in ${AMIS[@]}; do
-        instances=($(instances_running_ami ${ami}))
-        if [[ ${instances[@]-} ]]; then
-            echoerr "INFO: Instances running from ${ami}"
-            echoerr "instances=(${instances[@]})"
-        else
-            echoerr "INFO: No instances are running from ${ami}"
-            ami_deregister ${ami}
-        fi
-    done
+    ami_describe ${AMIS[@]}
 else
-    echoerr "INFO: No AMIs found"
+    echoerr "INFO: No AMIs of role '${ROLE}' found"
 fi
