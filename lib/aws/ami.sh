@@ -1,7 +1,7 @@
 #
 # AMI FUNCTIONS
 #
-ami_describe () {
+ami_describe_launch_permissions () {
     local ami_id=$1
     echoerr "INFO: Echoing launch permissions for ami '${ami_id}'"
     # Table output looks purdy with this data
