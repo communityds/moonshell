@@ -17,5 +17,5 @@ source $(dirname $0)/../moon.sh
   && exit 1
 
 ami_export ${AMI}
-ami_describe ${AMI}
+ami_describe_launch_permissions ${AMI}
 

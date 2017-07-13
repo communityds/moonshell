@@ -9,21 +9,25 @@
 source $(dirname $0)/../moon.sh
 
 usage () {
-  echoerr "Usage $(basename $0)"
-  exit 0
+    echoerr "Usage $(basename $0)"
+    exit 0
 }
 
 STACKS=($(stack_list_app))
 
 for stack_name in ${STACKS[@]-}; do
-  echo "StackName: ${stack_name}"
-  hosted_zone_id=$(route53_external_hosted_zone_id ${stack_name})
-  host_records=($(route53_list_host_records ${stack_name} ${hosted_zone_id}))
-  if [[ ${host_records[@]-} ]]; then
-    for host in ${host_records[@]}; do
-      echo "  Site: ${host}"
-    done
-  fi
-  echo
+    echo "StackName: ${stack_name}"
+
+    hosted_zone_id=$(route53_external_hosted_zone_id ${stack_name} || true)
+    [[ -z ${hosted_zone_id-} ]] && continue
+
+    host_records=($(route53_list_host_records ${stack_name} ${hosted_zone_id}))
+    if [[ ${host_records[@]-} ]]; then
+        for host in ${host_records[@]}; do
+            echo "  Site: ${host}"
+        done
+    fi
+
+    echo
 done
 
