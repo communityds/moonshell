@@ -26,12 +26,26 @@ export ENV_ROOT_REALPATH="$(realpath ${ENV_ROOT})"
 
 export ENV_BIN="${ENV_ROOT}/bin"
 export ENV_COMPLETION="${ENV_ROOT}/completion.d"
-export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1 -type f"
+export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1"
 export ENV_LIB="${ENV_ROOT}/lib"
 export ENV_PROFILE="${ENV_ROOT}/profile.d"
 export ENV_USR="${ENV_ROOT}/usr"
 export ENV_UPDATE_INTERVAL=5 # minutes
 export ENV_VAR="${ENV_ROOT}/var"
+
+
+#
+# PROFILES
+#
+# As with files in /etc/profile.d, profile files in Moonshell should be used to
+# define variables and other less dynamic things. Functions should not reside
+# here, but if they do, they must work outside of a moonshell initialised
+# environment. Handy things to define in profile.d/private:
+#   * AWS_ACCOUNTS[@]
+#   * AWS_REGION
+for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+    source "${profile_file}"
+done
 
 
 #
@@ -100,10 +114,6 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # Source all the things!!!
     for lib_file in $(find ${ENV_LIB}/ ${ENV_FIND_OPTS} -name '*.sh'); do
         source "${lib_file}"
-    done
-
-    for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-        source "${profile_file}"
     done
 
     for completion_file in $(find "${ENV_COMPLETION}/" ${ENV_FIND_OPTS} -name '*.sh'); do
