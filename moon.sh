@@ -35,20 +35,6 @@ export ENV_VAR="${ENV_ROOT}/var"
 
 
 #
-# PROFILES
-#
-# As with files in /etc/profile.d, profile files in Moonshell should be used to
-# define variables and other less dynamic things. Functions should not reside
-# here, but if they do, they must work outside of a moonshell initialised
-# environment. Handy things to define in profile.d/private:
-#   * AWS_ACCOUNTS[@]
-#   * AWS_REGION
-for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-    source "${profile_file}"
-done
-
-
-#
 # SELF CHECK
 #
 # This enables moon.sh to be sourced, and if not 'installed' will work through
@@ -63,6 +49,20 @@ if [[ $(basename "x$0") =~ "bash"$ ]]; then
 else
     source ${ENV_LIB}/common.sh
 fi
+
+
+#
+# PROFILES
+#
+# As with files in /etc/profile.d, profile files in Moonshell should be used to
+# define variables and other less dynamic things. Functions should not reside
+# here, but if they do, they must work outside of a moonshell initialised
+# environment. Handy things to define in profile.d/private:
+#   * AWS_ACCOUNTS[@]
+#   * AWS_REGION
+for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+    source "${profile_file}"
+done
 
 
 #
