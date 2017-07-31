@@ -102,10 +102,12 @@ s3_purge_versions () {
         || echoerr "INFO: No object versions found."
 
     local -a delete_markers=($(s3_list_delete_markers ${s3_bucket_name}))
-    [[ ${delete_markers[@]-} ]] \
-        && echoerr "WARNING: Deleting delete markers" \
-        && s3_delete_object_versions ${s3_bucket_name} ${delete_markers[@]} \
-        || echoerr "INFO: No Delete Markers."
+    if [[ ${delete_markers[@]-} ]] && [[ ! ${delete_markers[0]} == "None" ]]; then
+        echoerr "WARNING: Deleting delete markers"
+        s3_delete_object_versions ${s3_bucket_name} ${delete_markers[@]}
+    else
+        echoerr "INFO: No Delete Markers."
+    fi
 }
 
 s3_download () {
