@@ -55,9 +55,9 @@ bastion_upload_file () {
     local target_host=$(bastion_target_host ${stack_name})
 
     echoerr "INFO: Uploading ${file_name} to ${bastion}"
-    rsync -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
+    rsync -e "ssh ${SSH_OPTS}" -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
 
     echoerr "INFO: Copying ${file_name} to ${target_host}"
-    bastion_exec "rsync -vP '/tmp/${file_name}' '${target_host}:/tmp/${file_name}'"
+    bastion_exec "rsync -e 'ssh ${SSH_OPTS}' -vP '/tmp/${file_name}' '${target_host}:/tmp/${file_name}'"
 }
 

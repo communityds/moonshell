@@ -1,4 +1,4 @@
 #
 # SSH Opts
 #
-export SSH_OPTS="-A -o StrictHostKeyChecking=no"
+export SSH_OPTS="-o StrictHostKeyChecking=no -o ForwardAgent=yes -o UserKnownHostsFile=/dev/null"
