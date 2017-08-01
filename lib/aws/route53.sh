@@ -103,10 +103,10 @@ route53_get_resource_record () {
     # The resource must be properly fully qualified
     [[ ! ${resource} =~ \.$ ]] && resource="${resource}."
 
-    local resource_record=$(aws route53 list-resource-record-sets \
+    local resource_record="$(aws route53 list-resource-record-sets \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?Name=='${resource}']" \
-        | sed -e 's/^\[//' -e 's/\]$//g' -e '/^$/d')
+        | sed -e 's/^\[//' -e 's/\]$//g' -e '/^$/d')"
 
     if [[ -z ${resource_record-} ]]; then
         echoerr "WARNING: No record found for resource '${resource}'"
