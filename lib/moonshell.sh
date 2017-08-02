@@ -13,18 +13,6 @@ _moonshell () {
         || _moonshell_getopts ${options[@]}
 }
 
-_moonshell_help () {
-    cat << EOF
-Usage: _moonshell [-h|--help] [-r|--reset] [-s|--setup]
-Perform basic functions for Moonshell.
-
-    -h, --help      show this help and exit
-    -r, --reset     remove all var files and regenerate self
-    -s, --setup     install self in to the shell of the running user
-    -t, --test      run bashate, rubocop and markdownlint
-EOF
-}
-
 _moonshell_getopts () {
     OPTIND=1
     local optspec=":hrst" OPTARG=($@)
@@ -52,6 +40,53 @@ _moonshell_getopts () {
     done
 }
 
+_moonshell_help () {
+    cat << EOF
+Usage: _moonshell [-h|--help] [-r|--reset] [-s|--setup]
+Perform basic functions for Moonshell.
+
+    -h, --help      show this help and exit
+    -r, --reset     remove all var files and regenerate self
+    -s, --setup     install self in to the shell of the running user
+    -t, --test      run bashate, rubocop and markdownlint
+EOF
+}
+
+_moonshell_overlay_dir () {
+    # The purpose of 'overlay' is to extend functionality of Moonshell. If you
+    # have developed a library or script that is only relevant to one of your
+    # Moonshot stacks/projects, then you can overlay a custom bin/, lib/ or
+    # profile.d/ dir to override default Moonshell behaviour, or extend it.
+    #
+    local dir=$1
+    local overlay="${ENV_PROFILE}/private/overlay.sh"
+    local -a locations=(lib etc/profile.d etc/completion.d)
+
+    [[ ! -d ${dir} ]] \
+        && echoerr "ERROR: '${dir}' does not exist or is not a directory" \
+        && return 1
+
+    [[ ! -f ${overlay} ]] \
+        && mkdir -p "${ENV_PROFILE}/private" \
+        && touch ${overlay}
+
+    [[ $(grep -c "${dir}" ${overlay}) == 0 ]] \
+        && echo "_moonshell_overlay_dir ${dir}" >> ${overlay}
+
+    [[ -d ${dir}/bin ]] && _moonshell_path_add "${dir}/bin"
+
+    for location in ${locations[@]}; do
+        [[ -d "${dir}/${location}" ]] && _moonshell_source "${dir}/${location}"
+    done
+}
+
+_moonshell_path_add () {
+    local bin_dir=$1
+
+    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
+        && export PATH=${bin_dir}:${PATH}
+}
+
 _moonshell_reset () {
     echoerr "Reinitialising Moonshell.."
     [[ -z ${ENV_VAR-} ]] \
@@ -64,6 +99,14 @@ _moonshell_reset () {
 _moonshell_setup () {
     echoerr "Running Moonshell setup"
     _moonshell_self_check $(realpath $(readlink -f ${ENV_ROOT}))
+}
+
+_moonshell_source () {
+    local source_dir=$1
+
+    for source_file in $(find ${source_dir}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+        source "${source_file}"
+    done
 }
 
 _moonshell_test () {

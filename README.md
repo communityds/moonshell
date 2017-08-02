@@ -73,37 +73,41 @@ Perform basic functions for Moonshell.
     -t, --test      run bashate, rubocop and markdownlint
 ```
 
-### Using
+### Overlaying
+
+Moonshell contains common functions and features that we need across all of our
+products, but each product has differences; requires different tools, different
+variables etc. The solution is to overlay customisations.
+
+Per the structure below, Moonshell uses the FHS standard dirs of `bin`, `lib`,
+`var`, `etc`, etc. If, in your repo checkout of `${HOME}/dev/repo`, you have a
+`bin` and `lib` directory, you can simply:
+
+`_moonshell_overlay_dir ${HOME}/dev/repo`
+
+This will automatically create an entry in `etc/profile.d/private/overlay.sh`,
+so every time you spawn a shell your repo dir is automatically layed atop of
+Moonshell. `bin/` will be prepended to `${PATH}` and every .sh file in `lib/`
+will be sourced. Identically named scripts in `${ENV_BIN}` and functions in
+`${ENV_LIB}` will replace the default in Moonshell.
 
 ## Structure
 
-### moon.sh
+Moonshell tries to adhere to Linux FHS best practice:
 
-This is the magic sauce that makes everything work. It completely sets up
-Moonshell and can be sourced at any time by executing `_moonshell -r`.
+* bin/ - Executable scripts sans type suffix; foo, not foo.sh
 
-### bin
+* lib/ - Non-executable function libraries with suffix; foo.rb, foo.sh etc.
 
-Scripts and other executables that you want available in your $PATH go here.
+* etc/
 
-### completion.d
+        * completion.d/ - Bash completion functions suffixed with `.sh`
 
-If there is a completion script for a script or a function, it goes in here.
+        * profile.d/ - Definitions of variables and other statically set things
 
-### lib
+* usr/ - Extra supporting files for applications
 
-All of the functions should go in here. The `private` directory is ignored by
-git.
-
-### profile.d
-
-ENV vars and other such things go in here. The `private` directory is ignored
-by git.
-
-### var
-
-Everything ephemeral that is created by Moonshell goes in here. This directory
-is git ignored, so don't use it for anything important.
+* var/ - Location for any temp or state files, everything here is ephemeral
 
 ## Why
 
