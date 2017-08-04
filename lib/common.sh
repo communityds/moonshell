@@ -63,10 +63,10 @@ generate_password () {
     # 32 characters, 64 possibilities per character
     # 6.277101735×10⁵⁷ combinations
     # 6,277,101,735,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000
-    # 6,277 thousand million million million million million million
+    # 6.277 million million million million million million million
     # 6.277 billion billion billion billion billion
     # 6.277 trillion trillion trillion trillion
-    # 6,277 thousand quillion quillion quillion
+    # 6.277 million quillion quillion quillion
     # 6.277 trillion pentillion pentillion
     # 6.277 billion hexillion hexillion
     # 6.277 quillion dodecillion

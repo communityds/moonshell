@@ -7,7 +7,7 @@
 # This project is based upon https://github.com/pingram3030/bashenv which is a
 # custom and dynamic environment that can easily be built upon. Custom
 # libraries can be placed in lib/private/ and custom variables in
-# profile.d/private/; these locations are auto-loaded (*.sh).
+# etc/profile.d/private/; these locations are auto-loaded (*.sh).
 #
 # The changes here in most likely will not be pushed back upstream, but
 # functional changes should be ported.
@@ -25,13 +25,17 @@ export ENV_ROOT="${HOME}/.moonshell"
 export ENV_ROOT_REALPATH="$(realpath ${ENV_ROOT})"
 
 export ENV_BIN="${ENV_ROOT}/bin"
-export ENV_COMPLETION="${ENV_ROOT}/completion.d"
-export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1"
+export ENV_ETC="${ENV_ROOT}/etc"
 export ENV_LIB="${ENV_ROOT}/lib"
-export ENV_PROFILE="${ENV_ROOT}/profile.d"
 export ENV_USR="${ENV_ROOT}/usr"
-export ENV_UPDATE_INTERVAL=5 # minutes
 export ENV_VAR="${ENV_ROOT}/var"
+
+export ENV_COMPLETION="${ENV_ETC}/completion.d"
+export ENV_OVERLAY="${ENV_ETC}/overlay.d"
+export ENV_PROFILE="${ENV_ETC}/profile.d"
+
+export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1"
+export ENV_UPDATE_INTERVAL=5 # minutes
 
 
 #
@@ -48,6 +52,7 @@ if [[ $(basename "x$0") =~ "bash"$ ]]; then
     _moonshell_self_check ${moonshell_dir}
 else
     source ${ENV_LIB}/common.sh
+    source ${ENV_LIB}/moonshell.sh
 fi
 
 
@@ -57,21 +62,17 @@ fi
 # As with files in /etc/profile.d, profile files in Moonshell should be used to
 # define variables and other less dynamic things. Functions should not reside
 # here, but if they do, they must work outside of a moonshell initialised
-# environment. Handy things to define in profile.d/private:
+# environment. Handy things to define in etc/profile.d/private:
 #   * AWS_ACCOUNTS[@]
 #   * AWS_REGION
-for profile_file in $(find ${ENV_PROFILE}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-    source "${profile_file}"
-done
+_moonshell_source ${ENV_PROFILE}
 
 
 #
 # PATH MODIFICATION
 #
 [[ -z ${PRE_ENV_PATH-} ]] && export PRE_ENV_PATH="${PATH}"
-
-[[ ! "${PATH}" =~ "${ENV_BIN}" ]] \
-    && export PATH=${ENV_BIN}:${PATH}
+_moonshell_path_add ${ENV_BIN}
 
 
 #
@@ -111,13 +112,8 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
         export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
     fi
 
-    # Source all the things!!!
-    for lib_file in $(find ${ENV_LIB}/ ${ENV_FIND_OPTS} -name '*.sh'); do
-        source "${lib_file}"
-    done
-
-    for completion_file in $(find "${ENV_COMPLETION}/" ${ENV_FIND_OPTS} -name '*.sh'); do
-        source ${completion_file}
-    done
+    # Source the rest of the things!!!
+    _moonshell_source ${ENV_LIB}
+    _moonshell_source ${ENV_COMPLETION}
 fi
 
