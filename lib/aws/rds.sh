@@ -269,6 +269,60 @@ rds_restore_db () {
     return $?
 }
 
+rds_snapshot_create () {
+    local stack_name=$1
+    local snapshot_id=$2
+
+    local instance=$(rds_instance_select ${stack_name})
+    [[ ${instance-} ]] \
+        && echoerr "INFO: Found DB instance '${instance}'" \
+        || return 1
+
+    echoerr "INFO: Creating DB snapshot"
+    aws rds create-db-snapshot \
+        --db-instance-identifier ${instance} \
+        --db-snapshot-identifier ${snapshot_id} \
+
+    echoerr "INFO: Waiting for snapshot to complete"
+    aws rds wait db-snapshot-completed \
+        --db-snapshot-identifier ${snapshot_id}
+
+    return $?
+}
+
+rds_snapshot_delete () {
+    local snapshot_id=$1
+
+    echoerr "INFO: Deleting DB snapshot"
+    aws rds delete-db-snapshot \
+        --db-snapshot-identifier ${snapshot_id}
+
+    return $?
+}
+
+rds_snapshot_list () {
+    local stack_name=$1
+
+    local instance=$(rds_instance_select ${stack_name})
+    [[ ${instance-} ]] \
+        && echoerr "INFO: Found DB instance '${instance}'" \
+        || return 1
+
+    echoerr "INFO: Finding snapshots for DB instance"
+    local snapshots=($(aws rds describe-db-snapshots \
+        --query "DBSnapshots[?DBInstanceIdentifier=='${instance}'].DBSnapshotIdentifier" \
+        --output text))
+    [[ -z ${snapshots[@]-} ]] \
+        && echoerr "INFO: No snapshots found for DB instance '${instance}'" \
+        && return 1
+
+    for snapshot in ${snapshots[@]}; do
+        echo "${snapshot}"
+    done
+
+    return $?
+}
+
 rds_stack_resources () {
     # Enumerate all RDS resources in the stack and return an array
     local stack_name=$1

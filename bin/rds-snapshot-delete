@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) SNAPSHOT_NAME"
+    exit 0
+else
+    SNAPSHOT_NAME=$1
+fi
+
+rds_snapshot_delete ${SNAPSHOT_NAME}
+
+exit $?
