@@ -146,7 +146,7 @@ route53_list_internal () {
     [[ -z ${hosted_zone_id-} ]] && return 1
 
     for record_type in A CNAME; do
-        echoerr "INFO: Listing ${type} records"
+        echoerr "INFO: Listing ${record_type} records"
         records=($(route53_list_type_records ${hosted_zone_id} ${record_type}))
         if [[ ${records[@]-} ]]; then
             for record in ${records[@]}; do
