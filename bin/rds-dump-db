@@ -14,7 +14,7 @@ else
   DATABASE=$2
   [[ ${3-} ]] \
     && OUT_FILE=$3 \
-    || OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}.sql.gz"
+    || OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}_$(date +%s).sql.gz"
 fi
 
 rds_dump_db ${STACK_NAME} ${DATABASE} ${OUT_FILE}
