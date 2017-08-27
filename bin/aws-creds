@@ -25,8 +25,7 @@ config = ParseConfig.new("#{ENV['HOME']}/.aws/config")
 @c_params = config.params
 
 def profiles
-  STDERR.puts "Usage: #{File.basename(__FILE__)} PROFILE|VERB"
-  STDERR.puts 'Verbs: show'
+  STDERR.puts "Usage: #{File.basename(__FILE__)} PROFILE|show"
   STDERR.puts
   if ENV['AWS_DEFAULT_PROFILE']
     STDERR.puts 'Current profile:'
