@@ -116,14 +116,14 @@ rds_mysql_restore_db () {
     local in_file=$3
     local mysql_opts=" "
 
-    echoerr "INFO: Uploading file to $(bastion)"
+    echoerr "INFO: Uploading file to $(bastion):/tmp/"
     bastion_upload_file ${stack_name} ${in_file}
 
     echoerr "INFO: Recreating database: ${database}"
     bastion_exec_remote ${stack_name} \
         "'mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\"'"
 
-    echoerr "INFO: Restoring database from ${in_file}"
+    echoerr "INFO: Restoring database from /tmp/${in_file}"
     bastion_exec_remote ${stack_name} \
         "'zcat /tmp/$(basename ${in_file}) \
             | mysql ${mysql_opts} ${database}; \
