@@ -97,7 +97,7 @@ pack () {
     log "INFO: Building AMI from ${class}.json at $(date --iso-8601=seconds). Outputting to '${log_file}'"
     if [[ ${PACKER_DEBUG-} ]]; then
         if [[ ${VERBOSE-} ]]; then
-            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json 2>&1 >${log_file}
+            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json 2>&1 >>${log_file}
             retr=$?
         else
             ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json | tee -a ${log_file}
@@ -107,7 +107,7 @@ pack () {
         ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 2>&1 | tee -a ${log_file}
         retr=${PIPESTATUS[0]}
     else
-        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json &>${log_file}
+        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json &>>${log_file}
         retr=$?
     fi
 
