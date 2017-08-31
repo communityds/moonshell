@@ -8,13 +8,13 @@
 # date.
 #
 
-export ENV_VAR_ENVIRONMENT="${ENV_VAR}/environment"
+export MOON_VAR_ENVIRONMENT="${MOON_VAR}/environment"
 
-[[ ! -d "${ENV_VAR_ENVIRONMENT}" ]] && mkdir -p "${ENV_VAR_ENVIRONMENT}"
+[[ ! -d "${MOON_VAR_ENVIRONMENT}" ]] && mkdir -p "${MOON_VAR_ENVIRONMENT}"
 
 # Load all dynamically generated environment files
 #
-for env_file in $(find ${ENV_VAR_ENVIRONMENT} ${ENV_FIND_OPTS}); do
+for env_file in $(find ${MOON_VAR_ENVIRONMENT} ${MOON_FIND_OPTS}); do
     source ${env_file}
 done
 
@@ -50,12 +50,12 @@ _environment_function (){
     local path="$1" environment function_f
 
     environment=$(basename ${path})
-    function_f="${ENV_VAR_ENVIRONMENT}/${environment}.sh"
+    function_f="${MOON_VAR_ENVIRONMENT}/${environment}.sh"
 
     [[ -f ${function_f} ]] && return 0
 
     cat > ${function_f} << EOF
-source \${ENV_LIB}/complete.sh
+source \${MOON_LIB}/complete.sh
 
 ${environment} () {
     local repo=\${1-}

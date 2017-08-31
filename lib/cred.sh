@@ -1,12 +1,12 @@
 #
 # CREDENTIAL FUNCTIONS
 #
-export ENV_CREDS="${HOME}/.aws"
-export AWS_CREDS="${ENV_CREDS}/credentials"
-export AWS_CONFIG="${ENV_CREDS}/config"
+export MOON_CREDS="${HOME}/.aws"
+export AWS_CREDS="${MOON_CREDS}/credentials"
+export AWS_CONFIG="${MOON_CREDS}/config"
 
-[[ ! -d "${ENV_CREDS}" ]] && mkdir -p "${ENV_CREDS}"
-chmod 0700 ${ENV_CREDS}
+[[ ! -d "${MOON_CREDS}" ]] && mkdir -p "${MOON_CREDS}"
+chmod 0700 ${MOON_CREDS}
 
 [[ ! -f "${AWS_CREDS}" ]] && touch "${AWS_CREDS}"
 chmod 0400 "${AWS_CREDS}"

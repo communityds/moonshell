@@ -59,7 +59,7 @@ _moonshell_overlay_dir () {
     # profile.d/ dir to override default Moonshell behaviour, or extend it.
     #
     local dir=$1
-    local overlay="${ENV_PROFILE}/private/overlay.sh"
+    local overlay="${MOON_PROFILE}/private/overlay.sh"
     local -a locations=(lib etc/profile.d etc/completion.d)
 
     [[ ! -d ${dir} ]] \
@@ -67,7 +67,7 @@ _moonshell_overlay_dir () {
         && return 1
 
     [[ ! -f ${overlay} ]] \
-        && mkdir -p "${ENV_PROFILE}/private" \
+        && mkdir -p "${MOON_PROFILE}/private" \
         && touch ${overlay}
 
     [[ $(grep -c "${dir}" ${overlay}) == 0 ]] \
@@ -89,28 +89,28 @@ _moonshell_path_add () {
 
 _moonshell_reset () {
     echoerr "Reinitialising Moonshell.."
-    [[ -z ${ENV_VAR-} ]] \
-        && echoerr "ERROR: \${ENV_VAR} is unset; run 'moonshell --setup'" \
+    [[ -z ${MOON_VAR-} ]] \
+        && echoerr "ERROR: \${MOON_VAR} is unset; run 'moonshell --setup'" \
         && return 1 \
-        || rm -Rf ${ENV_VAR}/*
-    source ${ENV_ROOT}/moon.sh
+        || rm -Rf ${MOON_VAR}/*
+    source ${MOON_ROOT}/moon.sh
 }
 
 _moonshell_setup () {
     echoerr "Running Moonshell setup"
-    _moonshell_self_check $(realpath $(readlink -f ${ENV_ROOT}))
+    _moonshell_self_check $(realpath $(readlink -f ${MOON_ROOT}))
 }
 
 _moonshell_source () {
     local source_dir=$1
 
-    for source_file in $(find ${source_dir}/ ${ENV_FIND_OPTS} -name '*.sh'); do
+    for source_file in $(find ${source_dir}/ ${MOON_FIND_OPTS} -name '*.sh'); do
         source "${source_file}"
     done
 }
 
 _moonshell_test () {
-    pushd ${ENV_ROOT} >/dev/null
+    pushd ${MOON_ROOT} >/dev/null
         echoerr "Testing shell..."
         bashate -i E006,E042 moon.sh $(find -name "*.sh")
         echoerr "Testing markdown..."

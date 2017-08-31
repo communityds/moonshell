@@ -5,7 +5,7 @@
 # private libraries, just create the directory, or symlink to a location
 # where you are tracking your senstive files.
 #
-if [[ -d "${ENV_COMPLETION}/private" ]] || [[ -L "${ENV_COMPLETION}/private" ]]; then
-    _moonshell_source "${ENV_COMPLETION}/private"
+if [[ -d "${MOON_COMPLETION}/private" ]] || [[ -L "${MOON_COMPLETION}/private" ]]; then
+    _moonshell_source "${MOON_COMPLETION}/private"
 fi
 

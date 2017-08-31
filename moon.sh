@@ -21,21 +21,21 @@
 #
 # GLOBAL VARIABLES
 #
-export ENV_ROOT="${HOME}/.moonshell"
-export ENV_ROOT_REALPATH="$(realpath ${ENV_ROOT})"
+export MOON_ROOT="${HOME}/.moonshell"
+export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
-export ENV_BIN="${ENV_ROOT}/bin"
-export ENV_ETC="${ENV_ROOT}/etc"
-export ENV_LIB="${ENV_ROOT}/lib"
-export ENV_USR="${ENV_ROOT}/usr"
-export ENV_VAR="${ENV_ROOT}/var"
+export MOON_BIN="${MOON_ROOT}/bin"
+export MOON_ETC="${MOON_ROOT}/etc"
+export MOON_LIB="${MOON_ROOT}/lib"
+export MOON_USR="${MOON_ROOT}/usr"
+export MOON_VAR="${MOON_ROOT}/var"
 
-export ENV_COMPLETION="${ENV_ETC}/completion.d"
-export ENV_OVERLAY="${ENV_ETC}/overlay.d"
-export ENV_PROFILE="${ENV_ETC}/profile.d"
+export MOON_COMPLETION="${MOON_ETC}/completion.d"
+export MOON_OVERLAY="${MOON_ETC}/overlay.d"
+export MOON_PROFILE="${MOON_ETC}/profile.d"
 
-export ENV_FIND_OPTS="-mindepth 1 -maxdepth 1"
-export ENV_UPDATE_INTERVAL=5 # minutes
+export MOON_FIND_OPTS="-mindepth 1 -maxdepth 1"
+export MOON_UPDATE_INTERVAL=5 # minutes
 
 
 #
@@ -51,8 +51,8 @@ if [[ $(basename "x$0") =~ "bash"$ ]]; then
     source "${moonshell_dir}/lib/moonshell.sh"
     _moonshell_self_check ${moonshell_dir}
 else
-    source ${ENV_LIB}/common.sh
-    source ${ENV_LIB}/moonshell.sh
+    source ${MOON_LIB}/common.sh
+    source ${MOON_LIB}/moonshell.sh
 fi
 
 
@@ -65,14 +65,14 @@ fi
 # environment. Handy things to define in etc/profile.d/private:
 #   * AWS_ACCOUNTS[@]
 #   * AWS_REGION
-_moonshell_source ${ENV_PROFILE}
+_moonshell_source ${MOON_PROFILE}
 
 
 #
 # PATH MODIFICATION
 #
-[[ -z ${PRE_ENV_PATH-} ]] && export PRE_ENV_PATH="${PATH}"
-_moonshell_path_add ${ENV_BIN}
+[[ -z ${PRE_MOON_PATH-} ]] && export PRE_MOON_PATH="${PATH}"
+_moonshell_path_add ${MOON_BIN}
 
 
 #
@@ -89,7 +89,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
 
     # If AWS_DEFAULT_PROFILE is unset then aws-creds has most likely not been
     # run and nothing AWS related will work; either in moonshot or moonshell.
-    # `aws-creds` sets up the credentials as ENV vars to be used by the aws-cli
+    # `aws-creds` sets up the credentials as MOON vars to be used by aws-cli
     [[ -z ${AWS_DEFAULT_PROFILE-} ]] \
         && echoerr "ERROR: 'AWS_DEFAULT_PROFILE' is unset. Try 'aws-creds'" \
         && exit 1
@@ -113,7 +113,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     fi
 
     # Source the rest of the things!!!
-    _moonshell_source ${ENV_LIB}
-    _moonshell_source ${ENV_COMPLETION}
+    _moonshell_source ${MOON_LIB}
+    _moonshell_source ${MOON_COMPLETION}
 fi
 

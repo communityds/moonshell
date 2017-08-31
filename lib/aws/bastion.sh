@@ -74,7 +74,7 @@ bastion_utility_host () {
         echo "$(ssh_target_hostname ${stack_name})"
     else
         echoerr "INFO: Defaulting target hostname to 'localhost'."
-        echoerr "INFO: To override this define the function 'ssh_target_hostname' in ${ENV_LIB}/private"
+        echoerr "INFO: To override this define the function 'ssh_target_hostname' in ${MOON_LIB}/private"
         echo "localhost"
     fi
 }

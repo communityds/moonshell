@@ -1,7 +1,7 @@
 #
 # AWS FUNCTION LOADING
 #
-for aws_file in $(find "${ENV_LIB}/aws/" ${ENV_FIND_OPTS} -name '*.sh'); do
+for aws_file in $(find "${MOON_LIB}/aws/" ${MOON_FIND_OPTS} -name '*.sh'); do
     source ${aws_file}
 done
 
