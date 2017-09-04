@@ -96,6 +96,14 @@ route53_fqdn_from_host () {
 }
 
 route53_get_resource_record () {
+    if ! $(which jq &>/dev/null); then
+        echoerr "INFO: Attempting to install jq"
+        sudo yum -y install jq
+        if [[ $? -ne 0 ]]; then
+            echoerr "ERROR: Failed to install jq"
+            return 1
+        fi
+    fi
     # From a ${resource} record in the ${hosted_zone_id}, output JSON
     local hosted_zone_id=$1
     local resource=$2
@@ -106,7 +114,7 @@ route53_get_resource_record () {
     local resource_record="$(aws route53 list-resource-record-sets \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?Name=='${resource}']" \
-        | sed -e 's/^\[//' -e 's/\]$//g' -e '/^$/d')"
+        | jq -c '.[]')"
 
     if [[ -z ${resource_record-} ]]; then
         echoerr "WARNING: No record found for resource '${resource}'"
