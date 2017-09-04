@@ -1,3 +1,5 @@
 ---
 Lint/ScriptPermission:
   Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
