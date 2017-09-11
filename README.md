@@ -34,7 +34,7 @@ Contents:
 
 Everything starts with `./moon.sh`. When sourced it:
 
-1. Sets core `ENV_` variables.
+1. Sets core `MOON_` variables.
 
 1. Checks itself for whether its installed and installs itself if not.
 
@@ -88,8 +88,8 @@ Per the structure below, Moonshell uses the FHS standard dirs of `bin`, `lib`,
 This will automatically create an entry in `etc/profile.d/private/overlay.sh`,
 so every time you spawn a shell your repo dir is automatically layed atop of
 Moonshell. `bin/` will be prepended to `${PATH}` and every .sh file in `lib/`
-will be sourced. Identically named scripts in `${ENV_BIN}` and functions in
-`${ENV_LIB}` will replace the default in Moonshell.
+will be sourced. Identically named scripts in `${MOON_BIN}` and functions in
+`${MOON_LIB}` will replace the default in Moonshell.
 
 ## Structure
 

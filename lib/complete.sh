@@ -2,13 +2,13 @@
 # BASH COMPLETION FUNCTIONS
 #
 
-export ENV_VAR_COMPLETE="${ENV_VAR}/complete"
+export MOON_VAR_COMPLETE="${MOON_VAR}/complete"
 
-[[ ! -d "${ENV_VAR_COMPLETE}" ]] && mkdir -p "${ENV_VAR_COMPLETE}"
+[[ ! -d "${MOON_VAR_COMPLETE}" ]] && mkdir -p "${MOON_VAR_COMPLETE}"
 
 # Load all dynamically generated completion files
 #
-for complete_file in $(find "${ENV_VAR_COMPLETE}" ${ENV_FIND_OPTS}); do
+for complete_file in $(find "${MOON_VAR_COMPLETE}" ${MOON_FIND_OPTS}); do
     source ${complete_file}
 done
 
@@ -29,7 +29,7 @@ _complete_path () {
     local environment completion_f dir repos
 
     environment=$(basename ${path})
-    completion_f="${ENV_VAR_COMPLETE}/${environment}.sh"
+    completion_f="${MOON_VAR_COMPLETE}/${environment}.sh"
 
     local -a repos
 
@@ -38,7 +38,7 @@ _complete_path () {
     done
 
     _complete_function "${environment}" ${repos[@]}
-    source "${ENV_VAR_COMPLETE}/${environment}.sh"
+    source "${MOON_VAR_COMPLETE}/${environment}.sh"
 }
 
 # Create a completion function for $environment from an array of its subdirs
@@ -46,7 +46,7 @@ _complete_path () {
 _complete_function () {
     local environment="$1" opts="${@:2}"
 
-    cat > "${ENV_VAR_COMPLETE}/${environment}.sh" <<EOF
+    cat > "${MOON_VAR_COMPLETE}/${environment}.sh" <<EOF
 #!/usr/bin/env bash
 #
 # Completion file for ${environment}
@@ -69,6 +69,6 @@ complete -F _${environment} ${environment}
 
 EOF
 
-    source "${ENV_VAR_COMPLETE}/${environment}.sh"
+    source "${MOON_VAR_COMPLETE}/${environment}.sh"
 }
 

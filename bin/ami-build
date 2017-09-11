@@ -21,7 +21,7 @@
 
 source $(dirname $0)/../moon.sh
 
-PACKER_DIR="${ENV_VAR}/packer"
+PACKER_DIR="${MOON_VAR}/packer"
 PACKER_VER="1.0.4"
 PACKER_FILE="packer_${PACKER_VER}_linux_amd64.zip"
 PACKER_BASE="https://releases.hashicorp.com/packer/${PACKER_VER}"
