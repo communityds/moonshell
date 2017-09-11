@@ -100,9 +100,9 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
         && exit 1
 
     # Most scripts in bin/ build off of ${APP_NAME} which is programatically
-    # set from the Moonfile. For those that don't need APP_NAME, i.e. can be
-    # run from anywhere in the filesystem, they can set ${MOON_FILE} to false
-    # and bypass this failure mode.
+    # set from `Moonfile.rb`. For those that don't need APP_NAME, i.e. can be
+    # run from anywhere in the filesystem, they can export ${MOON_FILE} to
+    # false and bypass this failure mode.
     if [[ ! -f ${PWD}/Moonfile.rb ]]; then
         if [[ ! ${MOON_FILE-} == false ]]; then
             echoerr "ERROR: Moonfile.rb is not present in CWD"
