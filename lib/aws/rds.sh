@@ -88,7 +88,7 @@ rds_mysql_dump_db () {
 
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'mysqldump ${mysql_opts} ${database} | gzip -c'" \
         ${out_file}
 
@@ -106,7 +106,7 @@ rds_mysql_list_dbs () {
     stack_name=$1
     instance=$2
 
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'mysql -BNe \"SHOW DATABASES;\"'"
 }
 
@@ -120,18 +120,18 @@ rds_mysql_restore_db () {
     bastion_upload_file ${stack_name} ${in_file}
 
     echoerr "INFO: Recreating database: ${database}"
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\"'"
 
     echoerr "INFO: Restoring database from /tmp/${in_file}"
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'zcat /tmp/$(basename ${in_file}) \
             | mysql ${mysql_opts} ${database}; \
             rm -f /tmp/$(basename ${in_file})'"
 
     echoerr "INFO: Removing uploaded files"
     bastion_exec "rm -f /tmp/$(basename ${in_file})"
-    bastion_exec_remote ${stack_name} "rm -f /tmp/$(basename ${in_file})"
+    bastion_exec_utility ${stack_name} "rm -f /tmp/$(basename ${in_file})"
 }
 
 rds_postgres_dump_all () {
@@ -158,7 +158,7 @@ rds_postgres_dump_db () {
 
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'pg_dump -Fp ${pg_opts} ${database}'" \
         ${out_file}
 
@@ -182,7 +182,7 @@ rds_postgres_grant () {
     local stack_name=$1
     local database=$2
     echoerr "INFO: Granting ownership of ${database} to postgres"
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'psql -d ${database} -c \"
             GRANT ${database}_app TO postgres;
             GRANT ${database}_client TO postgres;
@@ -192,7 +192,7 @@ rds_postgres_grant () {
 rds_postgres_list_dbs () {
     local stack_name=$1
 
-    local databases=($(bastion_exec_remote ${stack_name} \
+    local databases=($(bastion_exec_utility ${stack_name} \
         "'psql -tAc \"select datname from pg_DATABASE;\"'"))
     [[ -z ${databases[@]-} ]] && return 1
 
@@ -227,14 +227,14 @@ rds_postgres_restore_db () {
     bastion_upload_file ${stack_name} ${in_file}
 
     echoerr "INFO: Restoring DB to ${database}:"
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'zcat /tmp/$(basename ${in_file}) | psql ${pg_opts} -d ${database}'"
 
     rds_postgres_revoke ${stack_name} ${database}
 
     echoerr "INFO: Removing uploaded files"
     bastion_exec "rm -f /tmp/$(basename ${in_file})"
-    bastion_exec_remote ${stack_name} "rm -f /tmp/$(basename ${in_file})"
+    bastion_exec_utility ${stack_name} "rm -f /tmp/$(basename ${in_file})"
 
     return $?
 }
@@ -244,7 +244,7 @@ rds_postgres_revoke () {
     local stack_name=$1
     local database=$2
     echoerr "INFO: Revoking ownership of ${database} from postgres"
-    bastion_exec_remote ${stack_name} \
+    bastion_exec_utility ${stack_name} \
         "'psql -d ${database} -c \"
             REVOKE ${database}_app FROM postgres;
             REVOKE ${database}_client FROM postgres;

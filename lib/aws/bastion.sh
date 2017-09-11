@@ -20,21 +20,27 @@ bastion_exec () {
     ssh ${SSH_OPTS} $(bastion) "${cmd}"
 }
 
-bastion_exec_remote () {
-    # Execute command on a utility host inside a stack via the bastion
+bastion_exec_host () {
     local stack_name=$1
-    local cmd=$2
-    local outfile=${3-}
-
-    local target_host=$(bastion_target_host ${stack_name})
+    local target_host=$2
+    local cmd=$3
+    local outfile=${4-}
 
     [[ ${outfile-} ]] \
         && ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}" > ${outfile} \
         || ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}"
-
 }
 
-bastion_target_host () {
+bastion_exec_utility () {
+    # Execute command on a utility host inside a stack via the bastion
+    local stack_name=$1
+    local cmd=$2
+    local outfile=${3-}
+    local target_host=$(bastion_utility_host ${stack_name})
+    bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
+}
+
+bastion_utility_host () {
     local stack_name=$1
 
     if $(type ssh_target_hostname &>/dev/null); then
@@ -52,7 +58,7 @@ bastion_upload_file () {
 
     local bastion=$(bastion)
     local file_name="$(basename ${upload_file})"
-    local target_host=$(bastion_target_host ${stack_name})
+    local target_host=$(bastion_utility_host ${stack_name})
 
     echoerr "INFO: Uploading ${file_name} to ${bastion}"
     rsync -e "ssh ${SSH_OPTS}" -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
