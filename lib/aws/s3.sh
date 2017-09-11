@@ -115,11 +115,17 @@ s3_download () {
     local stack_name=$1
     local source=$2
     local destination=$3
+    local options=${4-}
+
+    # '//' is not a valid path in s3 land
+    [[ ${source} =~ ^/$ ]] && unset source
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
 
-    aws s3 sync s3://${s3_bucket_name}/${source} ${destination}
+    local s3_url="s3://${s3_bucket_name}"
+    echoerr "INFO: Downloading resources from ${s3_url}/"
+    aws s3 sync ${options-} ${s3_url}/${source-} ${destination}
     return $?
 }
 
@@ -128,11 +134,17 @@ s3_upload () {
     local stack_name=$1
     local source=$2
     local destination=$3
+    local options=${4-}
+
+    # '//' is not a valid path in s3 land
+    [[ ${destination} =~ ^/$ ]] && unset destination
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
 
-    aws s3 sync ${source} s3://${s3_bucket_name}/${destination}
+    local s3_url="s3://${s3_bucket_name}"
+    echoerr "INFO: Uploading resources to ${s3_url}/"
+    aws s3 sync ${options-} ${source} s3://${s3_bucket_name}/${destination-}
     return $?
 }
 
