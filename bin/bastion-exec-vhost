@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# This script executes a command on remote hosts with PDSH. You must be careful
+# with using sudo and running outside of a full shell as `/etc/profile.d/*.sh`
+# does not get automatically sourced.
+#
+# In the following example we are executing `sudo ... yii` from the
+# `/var/www/vhost/foo.example.com` directory on all `app` hosts, we resolve RR
+# records, on the staging environment of the product/app we are currenlty in.
+#
+# Example:
+#
+# $ bastion-exec-vhost staging app foo.example.com sudo /opt/rh/rh-php56/root/usr/bin/php yii app/update
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+  echoerr "Usage: $(basename $0) ENVIRONMENT TARGET_HOST FQDN COMMAND"
+  echoerr ""
+  echoerr "COMMAND defaults to \$* and can not be null"
+  exit 0
+else
+  ENVIRONMENT=$1
+  STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+  TARGET_HOST=$2
+  FQDN=$3
+  shift 3
+  CMD=$*
+fi
+
+bastion_exec_vhost ${STACK_NAME} ${TARGET_HOST} ${FQDN} ${CMD[@]}
+
+exit $?
+
