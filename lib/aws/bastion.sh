@@ -21,6 +21,7 @@ bastion_exec () {
 }
 
 bastion_exec_host () {
+    # Execute a command on a single host
     local stack_name=$1
     local target_host=$2
     local cmd=$3
@@ -37,7 +38,33 @@ bastion_exec_utility () {
     local cmd=$2
     local outfile=${3-}
     local target_host=$(bastion_utility_host ${stack_name})
+
     bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
+}
+
+bastion_exec_vhost () {
+    # Some host entries are RR records, so will return multiple IPs
+    # Execute command on all resolved hosts for a specific domain.
+    local stack_name=$1
+    local target_host=$2
+    local site_fqdn=$3
+    shift 3
+    local cmd=$*
+
+    bastion_pdsh_host ${stack_name} ${target_host} "cd /var/www/vhost/${site_fqdn}; ${cmd[@]}"
+}
+
+bastion_pdsh_host () {
+    local stack_name=$1
+    local target_host=$2
+    local cmd=$3
+    local outfile=${4-}
+
+    local target_fqdn="${target_host}.${stack_name}.local"
+
+    [[ ${outfile-} ]] \
+        && ssh ${SSH_OPTS} $(bastion) "export PDSH_SSH_ARGS='${SSH_OPTS}'; pdsh -M ssh -w \$(host ${target_fqdn} | awk '{print \$NF}' | paste -sd,) '${cmd}'" > ${outfile} \
+        || ssh ${SSH_OPTS} $(bastion) "export PDSH_SSH_ARGS='${SSH_OPTS}'; pdsh -M ssh -w \$(host ${target_fqdn} | awk '{print \$NF}' | paste -sd,) '${cmd}'"
 }
 
 bastion_utility_host () {
