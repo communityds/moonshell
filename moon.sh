@@ -24,6 +24,8 @@
 export MOON_ROOT="${HOME}/.moonshell"
 export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
+export MOON_SHELL="${MOON_ROOT}/moon.sh"
+
 export MOON_BIN="${MOON_ROOT}/bin"
 export MOON_ETC="${MOON_ROOT}/etc"
 export MOON_LIB="${MOON_ROOT}/lib"
