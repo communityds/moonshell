@@ -22,11 +22,8 @@ rds_engine_type () {
     local stack_name=$1
     local resource_name=$2
 
-    local instance_id=$(echo ${resource_name} | grep -Po '^\w+')
-    [[ -z ${instance_id-} ]] && return 1
-
     local engine=$(aws rds describe-db-instances \
-        --db-instance-identifier ${instance_id} \
+        --db-instance-identifier ${resource_name} \
         --query "DBInstances[].Engine" \
         --output text)
     [[ -z ${engine-} ]] && return 1
