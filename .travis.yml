@@ -1,12 +1,13 @@
 ---
 os: linux
 dist: trusty
-sudo: false
+sudo: true
 language: ruby
 rvm:
   - 2.3.3
 before_script:
-  - pip install bashate
+  - sudo pip install urllib3 --upgrade
+  - sudo pip install bashate
 script:
   - mdl -v $(find . -name '*.md')
   - bundle exec rubocop -D
