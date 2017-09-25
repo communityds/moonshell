@@ -48,6 +48,24 @@ s3_list_delete_markers () {
     return $?
 }
 
+s3_ls () {
+    local stack_name=$1
+    local location=${2-}
+
+    # '//' is not a valid path in s3 land
+    [[ ${location} =~ ^/$ ]] \
+        && echoerr "ERROR: Location can not start with a '/'" \
+        && return 1
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    local s3_url="s3://${s3_bucket_name}/${location-}"
+    echoerr "INFO: Listing objects in ${s3_url}"
+    aws s3 ls ${s3_url}
+    return $?
+}
+
 s3_key_from_version_id () {
     # Return the Key, filepath, of a named ${version_id} from ${s3_bucket_name}
     local s3_bucket_name=$1
