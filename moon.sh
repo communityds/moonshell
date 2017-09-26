@@ -111,7 +111,15 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
             exit 1
         fi
     else
+        # To define the environment name from the stack name we split on
+        # hyphens and strip the first component. This was a decision for
+        # simplicity; deal with it and use underscores in your app name
+        # instead
         export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
+        if [[ ${APP_NAME} =~ ^[a-z0-9A-Z_]*$ ]]; then
+            echoerr "ERROR: APP_NAME may only contain alpha-numeric characters and underscores"
+            exit 1
+        fi
     fi
 
     # Source the rest of the things!!!

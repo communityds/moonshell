@@ -46,6 +46,17 @@ Everything starts with `./moon.sh`. When sourced it:
 
 ## Usage
 
+The majority of Moonshell's functionality relies upon `Moonfile.rb`, Moonshot's
+main configuration file. We read `Moonfile.rb` and programatically set
+`APP_NAME`, which must conform to `^[a-zA-Z0-9_]*$` and which in turn is
+concatenated with the `ENVIRONMENT` name, to create the `STACK_NAME` set by every
+`bin/` script:
+
+* `STACK_NAME="${APP_NAME}-${ENVIRONMENT}"`
+
+Dictating the character class for the App name enables Moonshell to split the
+stack's name at any point to decipher the App and Environment names.
+
 ### Setup
 
 To both setup and use Moonshell, simply source `moon.sh`, this library will
