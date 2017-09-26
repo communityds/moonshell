@@ -19,6 +19,7 @@
 # { "builders": [{ "tags": { "role": "$role_of_this_ami" } }] }
 #
 
+export MOON_FILE=false
 source $(dirname $0)/../moon.sh
 
 PACKER_DIR="${MOON_VAR}/packer"
