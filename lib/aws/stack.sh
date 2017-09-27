@@ -10,15 +10,21 @@ stack_list_app () {
 }
 
 stack_list_all () {
+    aws cloudformation describe-stacks \
+        | jq '.Stacks[].StackName' \
+        | tr -d \" \
+        | sort
+}
+
+stack_list_others () {
     # List every stack in an account, except the one we are administering..
     local stack_name=$1
+    local all_stacks=($(stack_list_all))
 
-    # Because we are using ! we have to use single, not double quotes; back-slash
-    # escaping does nothing.
-    aws cloudformation describe-stacks \
-        --query 'Stacks[?!contains(StackName,'"'"${stack_name}"'"')].StackName' \
-        --output text
-    return $?
+    local stack
+    for stack in ${all_stacks[@]/^$stack_name$}; do
+        echo "${stack}"
+    done
 }
 
 stack_name_from_vpc_id () {

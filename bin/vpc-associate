@@ -42,7 +42,7 @@ CORE_STACK_PREFIX="core"
 # MAIN
 #
 echoerr "INFO: Finding non-${SELF_STACK_NAME} VPCs"
-TARGET_STACKS=($(stack_list_all ${SELF_STACK_NAME}))
+TARGET_STACKS=($(stack_list_others ${SELF_STACK_NAME}))
 TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
 
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
