@@ -11,8 +11,7 @@ stack_list_app () {
 
 stack_list_all () {
     aws cloudformation describe-stacks \
-        | jq '.Stacks[].StackName' \
-        | tr -d \" \
+        | jq -r '.Stacks[].StackName' \
         | sort
 }
 
