@@ -6,7 +6,7 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: ${EXE} ENVIRONMENT [LOCATION]"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [LOCATION]"
     exit 0
 else
     ENVIRONMENT=$1
