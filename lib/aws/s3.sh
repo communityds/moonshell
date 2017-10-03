@@ -135,6 +135,9 @@ s3_download () {
     local destination=$3
     local options=${4-}
 
+    [[ ${source} =~ /$ ]] \
+        && local verb=sync \
+        || local verb=cp
     # '//' is not a valid path in s3 land
     [[ ${source} =~ ^/$ ]] && unset source
 
@@ -143,7 +146,7 @@ s3_download () {
 
     local s3_url="s3://${s3_bucket_name}"
     echoerr "INFO: Downloading resources from ${s3_url}/"
-    aws s3 sync ${options-} ${s3_url}/${source-} ${destination}
+    aws s3 ${verb} ${options-} ${s3_url}/${source-} ${destination}
     return $?
 }
 
@@ -154,6 +157,9 @@ s3_upload () {
     local destination=$3
     local options=${4-}
 
+    [[ ${destination} =~ /$ ]] \
+        && local verb=sync \
+        || local verb=cp
     # '//' is not a valid path in s3 land
     [[ ${destination} =~ ^/$ ]] && unset destination
 
@@ -162,7 +168,7 @@ s3_upload () {
 
     local s3_url="s3://${s3_bucket_name}"
     echoerr "INFO: Uploading resources to ${s3_url}/"
-    aws s3 sync ${options-} ${source} s3://${s3_bucket_name}/${destination-}
+    aws s3 ${verb} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
     return $?
 }
 
