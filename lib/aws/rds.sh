@@ -111,6 +111,8 @@ rds_mysql_restore_db () {
     local stack_name=$1
     local database=$2
     local in_file=$3
+
+    local upload_file=$(basename ${in_file})
     local mysql_opts=" "
 
     echoerr "INFO: Uploading file to $(bastion):/tmp/"
@@ -120,15 +122,15 @@ rds_mysql_restore_db () {
     bastion_exec_utility ${stack_name} \
         "'mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\"'"
 
-    echoerr "INFO: Restoring database from /tmp/${in_file}"
+    echoerr "INFO: Restoring database from /tmp/${upload_file}"
     bastion_exec_utility ${stack_name} \
-        "'zcat /tmp/$(basename ${in_file}) \
+        "'zcat /tmp/${upload_file} \
             | mysql ${mysql_opts} ${database}; \
-            rm -f /tmp/$(basename ${in_file})'"
+            rm -f /tmp/${upload_file}'"
 
     echoerr "INFO: Removing uploaded files"
-    bastion_exec "rm -f /tmp/$(basename ${in_file})"
-    bastion_exec_utility ${stack_name} "rm -f /tmp/$(basename ${in_file})"
+    bastion_exec "rm -f /tmp/${upload_file}"
+    bastion_exec_utility ${stack_name} "rm -f /tmp/${upload_file}"
 }
 
 rds_postgres_dump_all () {
@@ -215,6 +217,7 @@ rds_postgres_restore_db () {
     local database=$2
     local in_file=$3
 
+    local upload_file=$(basename ${in_file})
     local bastion=$(bastion)
     local pg_opts="--single-transaction --echo-errors"
 
@@ -225,13 +228,13 @@ rds_postgres_restore_db () {
 
     echoerr "INFO: Restoring DB to ${database}:"
     bastion_exec_utility ${stack_name} \
-        "'zcat /tmp/$(basename ${in_file}) | psql ${pg_opts} -d ${database}'"
+        "'zcat /tmp/${upload_file} | psql ${pg_opts} -d ${database}'"
 
     rds_postgres_revoke ${stack_name} ${database}
 
     echoerr "INFO: Removing uploaded files"
-    bastion_exec "rm -f /tmp/$(basename ${in_file})"
-    bastion_exec_utility ${stack_name} "rm -f /tmp/$(basename ${in_file})"
+    bastion_exec "rm -f /tmp/${upload_file}"
+    bastion_exec_utility ${stack_name} "rm -f /tmp/${upload_file}"
 
     return $?
 }

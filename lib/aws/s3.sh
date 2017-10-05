@@ -135,11 +135,14 @@ s3_download () {
     local destination=$3
     local options=${4-}
 
-    [[ ${source} =~ /$ ]] \
-        && local verb=sync \
-        || local verb=cp
-    # '//' is not a valid path in s3 land
-    [[ ${source} =~ ^/$ ]] && unset source
+    # Remove / prefix, s3 does not like '//'
+    local source=${source/#\//}
+
+    if [[ ${source-} =~ /$ ]] || [[ -z ${source-} ]]; then
+        local verb=sync
+    else
+        local verb=cp
+    fi
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -157,11 +160,12 @@ s3_upload () {
     local destination=$3
     local options=${4-}
 
-    [[ ${destination} =~ /$ ]] \
+    # Remove / prefix, s3 does not like '//'
+    destination=${destination/#\//}
+
+    [[ ${source} =~ /$ ]] \
         && local verb=sync \
         || local verb=cp
-    # '//' is not a valid path in s3 land
-    [[ ${destination} =~ ^/$ ]] && unset destination
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
