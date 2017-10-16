@@ -126,6 +126,8 @@ main () {
     local class
     local -a classes=($@)
     verify_class_file ${classes[@]}
+    local start_time=$(date +%s)
+
     log "INFO: Starting image building"
     pushd "${BUILD_ROOT}" > /dev/null
         log "INFO: Verifying packer"
@@ -135,7 +137,9 @@ main () {
             pack ${class}
         done
     popd > /dev/null
+
     log "INFO: Building finished"
+    log "INFO: Total build time: $(( $(date +%s) - ${start_time} )) seconds"
 }
 
 
@@ -148,8 +152,8 @@ while getopts "dv" option; do
     esac
 done
 
-[[ ${PACKER_DEBUG} ]] && shift
-[[ ${VERBOSE} ]] && shift
+[[ ${PACKER_DEBUG-} ]] && shift
+[[ ${VERBOSE-} ]] && shift
 
 if [[ $# == 0 ]]; then
     usage 0

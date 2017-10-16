@@ -9,7 +9,7 @@ source $(dirname $0)/../moon.sh
 
 usage () {
     echoerr "Deregister AMIs in the currently set account."
-    echoerr "Usage: $(basename $0) all|ROLE"
+    echoerr "Usage: $(basename $0) all|ROLE [AMI_TO_EXCLUDE]"
     echoerr
     echoerr "Notes:"
     echoerr " * ROLE is the value of the 'role' tag set on the AMI by Packer"
@@ -26,7 +26,13 @@ usage () {
     && AMIS=($(ami_list_all)) \
     || AMIS=($(ami_list_role "${ROLE}"))
 
+[[ ${2-} =~ ^ami-[0-9a-f]+$ ]] \
+    && EXCLUDE=$2 \
+    && echoerr "INFO: Excluding AMI: ${EXCLUDE}" \
+    && AMIS=(${AMIS[@]/$EXCLUDE/})
+
 if [[ ${AMIS[@]-} ]]; then
+    [[ ${EXCLUDE-} ]] && AMIS=(${AMIS[@]/$EXCLUDE/})
     for ami in ${AMIS[@]}; do
         instances=($(instances_running_ami ${ami}))
         if [[ ${instances[@]-} ]]; then
