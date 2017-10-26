@@ -38,7 +38,10 @@ s3_purge_versions ${S3_BUCKET_NAME}
 echoerr "INFO: Listing bogon object versions"
 bogons=($(aws s3api list-object-versions --bucket ${S3_BUCKET_NAME}))
 if [[ ${bogons[@]-} ]]; then
-  echoerr "ERROR: Found bogon objects. This should not be.."
+  # Because there is a limit on deleting a maximum of 1000 objects at any one
+  # time we can simply re-run this script to clean things up.
+  # TODO: handle >1000 records sanely..
+  echoerr "WARNING: Found remnant objects. Re-run this script to continue removing"
 else
   echoerr "INFO: No bogons found"
 fi
