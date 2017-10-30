@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#
+# This script makes it easy to properly terminate an instance that was launched
+# inside an Auto-Scaling Group. You can simply `aws ec2 terminate-instance`,
+# but this has the, slightly, undesired consequence of relying on the health
+# checks to fail, which may take many minutes, before the instance is replaced.
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+[[ $# -lt 1 ]] \
+  && echoerr "Usage: $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
+  && exit \
+  || INSTANCES=($@)
+
+for instance in ${INSTANCES[@]}; do
+  if [[ ${instance} =~ ^i-[a-f0-9]*$ ]]; then
+    echoerr "INFO: Rebooting instance '${instance}'"
+    aws ec2 reboot-instances \
+      --region ${AWS_REGION} \
+      --instance-ids ${instance}
+  else
+    echoerr "ERROR: Instance ID '${instance}' is invalid"
+  fi
+done
