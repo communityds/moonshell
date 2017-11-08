@@ -26,7 +26,8 @@ usage () {
     || AMIS=($(ami_list_role "${ROLE}"))
 
 if [[ ${AMIS[@]-} ]]; then
-    ami_describe ${AMIS[@]}
+    ami_list_sorted ${AMIS[@]}
+#    ami_describe ${AMIS[@]}
 else
     echoerr "INFO: No AMIs of role '${ROLE}' found"
 fi
