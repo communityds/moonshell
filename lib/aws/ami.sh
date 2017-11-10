@@ -12,11 +12,11 @@ ami_describe_launch_permissions () {
 }
 
 ami_describe () {
-    local ami_ids=$@
+    local -a ami_ids=$@
 
     echoerr "INFO: Describing AMIs"
     aws ec2 describe-images \
-        --image-ids ${ami_ids} \
+        --image-ids ${ami_ids[@]} \
         --output table
     return $?
 }
@@ -84,7 +84,7 @@ ami_list_all () {
 }
 
 ami_list_role () {
-    # Return an array of AMI ids
+    # Return a sorted array of AMI ids
     local ami_role="$1"
     local account_id=$(sts_account_id)
 
@@ -104,3 +104,13 @@ ami_list_role () {
     return $?
 }
 
+ami_list_sorted () {
+    local -a ami_ids=$@
+
+    echoerr "INFO: Listing and date sorting AMIs"
+    aws ec2 describe-images \
+        --image-ids ${ami_ids[@]} \
+        | jq -r '.Images|=sort_by(.CreationDate)|.Images[].ImageId'
+
+    return $?
+}
