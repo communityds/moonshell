@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+#
+# This script deletes a user by first working through removal of the user from
+# all the things before account deletion. This is done for completeness and to
+# remove dependency issues.
+#
+# Note: The $USER running this script must have appropriate IAM permissions.
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echo "****************************************"
+echo "Welcome to the User off-boarding script."
+echo "****************************************"
+
+AWS_USERS=($(aws iam list-users --query 'Users[].UserName' --output text))
+echo
+echo "Select a user to delete:"
+aws_user=$(choose ${AWS_USERS[@]})
+
+echo "You have chosen: ${aws_user}"
+echo -n "To continue user deactivation, press enter, else Ctrl-C to abort."
+read yolo
+
+# API keys
+echoerr "INFO: Discovering access keys"
+ACCESS_KEYS=($(aws iam list-access-keys --user-name ${aws_user} --query 'AccessKeyMetadata[].AccessKeyId' --output text))
+if [[ ${ACCESS_KEYS[@]} ]]; then
+    for access_key in ${ACCESS_KEYS[@]}; do
+        echoerr "WARNING: Deleting access key: ${access_key}"
+        aws iam delete-access-key --user-name ${aws_user} --access-key-id ${access_key}
+    done
+else
+    echoerr "INFO: No access keys found"
+fi
+
+# Groups
+echoerr "INFO: Discovering group memberships"
+AWS_GROUPS=($(aws iam list-groups-for-user --user-name ${aws_user} --query 'Groups[].GroupName' --output text))
+
+if [[ ${AWS_GROUPS[@]} ]]; then
+    for aws_group in ${AWS_GROUPS[@]}; do
+        echoerr "WARNING: Removing from group: ${aws_group}"
+        aws iam remove-user-from-group --user-name ${aws_user} --group-name ${aws_group}
+    done
+else
+    echoerr "INFO: No group memberships found"
+fi
+
+# Policies
+echoerr "INFO: Discovering attached policies"
+AWS_POLICIES=($(aws iam list-attached-user-policies --user-name ${aws_user} --query 'AttachedPolicies[].PolicyArn' --output text))
+
+if [[ ${AWS_POLICIES[@]} ]]; then
+    for aws_policy in ${AWS_POLICIES[@]}; do
+        echoerr "WARNING: Detaching policy: ${aws_policy}"
+        aws iam detach-user-policy --user-name ${aws_user} --policy-arn ${aws_policy}
+    done
+else
+    echoerr "INFO: No attached policies found"
+fi
+
+# Service Specific Credentials
+echoerr "INFO: Discovering service specific credentials"
+AWS_SSC=($(aws iam list-service-specific-credentials --user-name ${aws_user} --query 'ServiceSpecificCredentials[].ServiceSpecificCredentialId' --output text))
+
+if [[ ${AWS_SSC[@]} ]]; then
+    for aws_ssc in ${AWS_SSC[@]}; do
+        echoerr "WARNING: Deleting service specific credential: ${aws_ssc}"
+        aws iam delete-service-specific-credential --user-name ${aws_user} --service-specific-credential-id ${aws_ssc}
+    done
+else
+    echoerr "INFO: No service specific credentials found"
+fi
+
+# SSH Keys
+echoerr "INFO: Discovering SSH public keys"
+SSH_KEYS=($(aws iam list-ssh-public-keys --user-name ${aws_user} --query 'SSHPublicKeys[].SSHPublicKeyId' --output text))
+
+if [[ ${SSH_KEYS[@]} ]]; then
+    for ssh_key in ${SSH_KEYS[@]}; do
+        echoerr "WARNING: Deleting SSH key: ${ssh_key}"
+        aws iam deactivate-mfa-device --user-name ${aws_user} --ssh-public-key-id ${ssh_key}
+    done
+else
+    echoerr "INFO: No SSH public keys found"
+fi
+
+# MFA
+echoerr "INFO: Discovering MFA devices"
+AWS_MFA=($(aws iam list-mfa-devices --user-name ${aws_user} --query 'MFADevices[].SerialNumber' --output text))
+
+if [[ ${AWS_MFA[@]} ]]; then
+    for aws_mfa in ${AWS_MFA[@]}; do
+        echoerr "WARNING: Deleting MFA device: ${aws_mfa}"
+        aws iam deactivate-mfa-device --user-name ${aws_user} --serial-number ${aws_mfa}
+    done
+else
+    echoerr "INFO: No MFA devices found"
+fi
+
+# Deletion
+echoerr "WARNING: Deleting user ${aws_user}"
+aws iam delete-user --user-name ${aws_user}
+
+# Fin
+echoerr "INFO: Finished off-boarding for ${aws_user}"
