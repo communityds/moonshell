@@ -4,7 +4,7 @@
 bastion () {
     # Only one bastion exists per AWS account inside a 'core' stack.
     # The bastion host in ~/.ssh/config must be set accordingly
-    local bastion_hostname="bastion-${AWS_DEFAULT_PROFILE}"
+    local bastion_hostname="bastion-${AWS_ACCOUNT_NAME}"
     if [[ "$(grep ${bastion_hostname} ${HOME}/.ssh/config)" == "" ]]; then
         echoerr "ERROR: You do not have configuration set for ${bastion_hostname} in ~/.ssh/config"
         exit 1
