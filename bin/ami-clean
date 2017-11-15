@@ -9,7 +9,7 @@ source $(dirname $0)/../moon.sh
 
 usage () {
     echoerr "Deregister AMIs in the currently set account."
-    echoerr "Usage: $(basename $0) all|ROLE [AMI_TO_EXCLUDE]"
+    echoerr "Usage: $(basename $0) all|ROLE [AMI_TO_EXCLUDE AMI AMI]"
     echoerr
     echoerr "Notes:"
     echoerr " * ROLE is the value of the 'role' tag set on the AMI by Packer"
@@ -17,22 +17,31 @@ usage () {
     echoerr " * This script is designed for automated operation, it must be cancelled manually"
 }
 
-[[ $# -lt 1 ]] \
-    && usage \
-    && exit \
-    || ROLE=$1
+if [[ $# -lt 1 ]]; then
+    usage
+    exit
+else
+    ROLE=$1
+    shift
+    EXCLUDE=(${@-})
+fi
 
 [[ ${ROLE} == "all" ]] \
     && AMIS=($(ami_list_all)) \
     || AMIS=($(ami_list_role "${ROLE}"))
 
-[[ ${2-} =~ ^ami-[0-9a-f]+$ ]] \
-    && EXCLUDE=$2 \
-    && echoerr "INFO: Excluding AMI: ${EXCLUDE}" \
-    && AMIS=(${AMIS[@]/$EXCLUDE/})
+if [[ ${EXCLUDE[@]-} ]]; then
+    for exclude in ${EXCLUDE[@]-}; do
+        if [[ ${exclude} =~ ^ami-[0-9a-f]+$ ]]; then
+            echoerr "INFO: Excluding AMI: ${exclude}"
+            AMIS=(${AMIS[@]/$exclude/})
+        else
+            echoerr "WARNING: Ignoring invalid AMI: ${exclude}"
+        fi
+    done
+fi
 
 if [[ ${AMIS[@]-} ]]; then
-    [[ ${EXCLUDE-} ]] && AMIS=(${AMIS[@]/$EXCLUDE/})
     for ami in ${AMIS[@]}; do
         instances=($(instances_running_ami ${ami}))
         if [[ ${instances[@]-} ]]; then
@@ -46,3 +55,4 @@ if [[ ${AMIS[@]-} ]]; then
 else
     echoerr "INFO: No AMIs found"
 fi
+
