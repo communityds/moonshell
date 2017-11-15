@@ -89,11 +89,23 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # non-zero exit codes as serious and exit.
     set -eu
 
-    # If AWS_DEFAULT_PROFILE is unset then aws-creds has most likely not been
-    # run and nothing AWS related will work; either in moonshot or moonshell.
-    # `aws-creds` sets up the credentials as MOON vars to be used by aws-cli
-    [[ -z ${AWS_DEFAULT_PROFILE-} ]] \
-        && echoerr "ERROR: 'AWS_DEFAULT_PROFILE' is unset. Try 'aws-creds'" \
+    # Originally we used AWS_DEFAULT_PROFILE to label accounts and it was used
+    # by lib/aws/bastion.sh. This was not portable because when connected to a
+    # remote host, where you have passed through AWS env vars, aws-cli commands
+    # fail because there is no ~/.aws/{config,credentials} configured.
+    # tl;dr; AWS_DEFAULT_PROFILE is reserved and should only be set where you
+    # have run `aws configure`; this is a machine local thing.
+    # 
+    # As we still need a way of differentiating accounts and hosts etc we
+    # instead set AWS_ACCOUNT_NAME. This is not currently used by aws-cli, so
+    # we appropriate it here. This should be set to the defining suffix
+    # required; for example 'production' or 'development' are used in bastion
+    # functions to set the name of the bastion to use; 'bastion-production' or
+    # 'bastion-development', which in turn should reference host entries in
+    # ~/.ssh/config
+    #
+    [[ -z ${AWS_ACCOUNT_NAME} ]] \
+        && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset. aws-creds?" \
         && exit 1
 
     # aws-cli uses this and it enables a more dynamic environment

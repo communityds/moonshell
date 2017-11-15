@@ -27,9 +27,9 @@ config = ParseConfig.new("#{ENV['HOME']}/.aws/config")
 def profiles
   STDERR.puts "Usage: #{File.basename(__FILE__)} PROFILE|show"
   STDERR.puts
-  if ENV['AWS_DEFAULT_PROFILE']
+  if ENV['AWS_ACCOUNT_NAME']
     STDERR.puts 'Current profile:'
-    STDERR.puts "  #{ENV['AWS_DEFAULT_PROFILE']}"
+    STDERR.puts "  #{ENV['AWS_ACCOUNT_NAME']}"
     STDERR.puts
   end
   STDERR.puts 'Available profiles:'
@@ -41,7 +41,8 @@ def echo_params(profile)
   # 'credentials'..
   config_profile = "profile #{profile}"
   puts "export AWS_REGION=#{@c_params[config_profile]['region']}"
-  puts "export AWS_DEFAULT_PROFILE=#{profile}"
+  # See moon.sh for why we set AWS_ACCOUNT_NAME instead of AWS_DEFAULT_PROFILE
+  puts "export AWS_ACCOUNT_NAME=#{profile}"
   puts "export AWS_ACCESS_KEY_ID=#{@p_params[profile]['aws_access_key_id']}"
   # rubocop:disable Metrics/LineLength
   puts "export AWS_SECRET_ACCESS_KEY=#{@p_params[profile]['aws_secret_access_key']}"
