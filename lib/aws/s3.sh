@@ -135,7 +135,7 @@ s3_purge_versions () {
     fi
 
     local delete_marker_json=$(s3_get_delete_markers ${s3_bucket_name})
-    if [[ ${delete_marker_json-} ]] && [[ ! ${delete_marker_json-} =~ ^(None|\[\])$ ]]; then
+    if [[ ${delete_marker_json-} ]] && [[ ! ${delete_marker_json-} =~ ^(null|None|\[\])$ ]]; then
         echoerr "WARNING: Deleting delete markers"
         s3_delete_objects ${s3_bucket_name} ${delete_marker_json}
     else
