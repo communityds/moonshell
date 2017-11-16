@@ -36,7 +36,7 @@ sleep 7
 s3_purge_versions ${S3_BUCKET_NAME}
 
 echoerr "INFO: Listing bogon object versions"
-bogons=($(aws s3api list-object-versions --bucket ${S3_BUCKET_NAME}))
+bogons=($(aws s3api list-object-versions --region ${AWS_REGION} --bucket ${S3_BUCKET_NAME}))
 if [[ ${bogons[@]-} ]]; then
   # Because there is a limit on deleting a maximum of 1000 objects at any one
   # time we can simply re-run this script to clean things up.

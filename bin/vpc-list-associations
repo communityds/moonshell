@@ -33,6 +33,7 @@ REQUESTER_CONNECTIONS=($(vpc_peers_from_requester ${SELF_VPC_ID}))
 echoerr
 for ((i = 0; i < ${#REQUESTER_CONNECTIONS[@]}; i += 1)); do
   echoerr "  ${i}: ${REQUESTER_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
+    --region ${AWS_REGION} \
     --vpc-peering-connection-ids ${REQUESTER_CONNECTIONS[$i]} \
     --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
     --output text)"
@@ -44,6 +45,7 @@ echoerr
 ACCEPTER_CONNECTIONS=($(vpc_peers_to_accepter ${SELF_VPC_ID}))
 for ((i = 0; i < ${#ACCEPTER_CONNECTIONS[@]}; i += 1)); do
   echoerr "  ${i}: ${ACCEPTER_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
+    --region ${AWS_REGION} \
     --vpc-peering-connection-ids ${ACCEPTER_CONNECTIONS[$i]} \
     --query "VpcPeeringConnections[].Tags[?Key=='source_stack'].Value" \
     --output text)"

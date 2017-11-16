@@ -16,12 +16,13 @@ source $(dirname $0)/../moon.sh
   || INSTANCES=($@)
 
 for instance in ${INSTANCES[@]}; do
-  if [[ ${instance} =~ ^i-[a-f0-9]*$ ]]; then
-    echoerr "INFO: Terminating instance '${instance}'"
-    aws autoscaling terminate-instance-in-auto-scaling-group \
-      --no-should-decrement-desired-capacity \
-      --instance-id ${instance}
-  else
-    echoerr "ERROR: Instance ID '${instance}' is invalid"
-  fi
+    if [[ ${instance} =~ ^i-[a-f0-9]*$ ]]; then
+        echoerr "INFO: Terminating instance '${instance}'"
+        aws autoscaling terminate-instance-in-auto-scaling-group \
+            --region ${AWS_REGION} \
+            --no-should-decrement-desired-capacity \
+            --instance-id ${instance}
+    else
+        echoerr "ERROR: Instance ID '${instance}' is invalid"
+    fi
 done

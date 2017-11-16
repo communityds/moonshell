@@ -4,13 +4,15 @@
 stack_list_app () {
     # List all stacks of the same type as the app you are administering
     aws cloudformation describe-stacks \
-    --query "Stacks[?contains (StackName, '${APP_NAME}')].StackName" \
-    --output text
+        --region ${AWS_REGION} \
+        --query "Stacks[?contains (StackName, '${APP_NAME}')].StackName" \
+        --output text
     return $?
 }
 
 stack_list_all () {
     aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
         | jq -r '.Stacks[].StackName' \
         | sort
 }
@@ -31,6 +33,7 @@ stack_name_from_vpc_id () {
     local vpc_id=$1
 
     local stack_name=$(aws ec2 describe-vpcs \
+        --region ${AWS_REGION} \
         --filters Name=vpc-id,Values=${vpc_id} \
         --query "Vpcs[].Tags[?Key=='aws:cloudformation:stack-name'].Value" \
         --output text)
@@ -50,10 +53,11 @@ stack_resource_id () {
     local resource=$2
 
     local resource_id=$(aws cloudformation describe-stack-resource \
-    --stack-name ${stack_name} \
-    --logical-resource-id ${resource} \
-    --query "StackResourceDetail.PhysicalResourceId" \
-    --output text)
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --logical-resource-id ${resource} \
+        --query "StackResourceDetail.PhysicalResourceId" \
+        --output text)
 
     if [[ ${resource_id-} ]]; then
         echo ${resource_id}
@@ -71,6 +75,7 @@ stack_resource_type () {
     local resource_type=$2
 
     local -a resource_names=($(aws cloudformation list-stack-resources \
+        --region ${AWS_REGION} \
         --stack-name "${stack_name}" \
         --query "StackResourceSummaries[?ResourceType=='${resource_type}'].PhysicalResourceId" \
         --output text))
@@ -92,6 +97,7 @@ stack_value () {
     local param=$3
 
     local resource_id=$(aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
         --stack-name ${stack_name} \
         --query "Stacks[].${param}s[?${param}Key=='${resource}'].${param}Value" \
         --output text)

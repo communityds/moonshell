@@ -35,6 +35,7 @@ route53_delete_record_set () {
 
     echoerr "INFO: Deleting resource from ${hosted_zone_id}"
     local change_id=$(aws route53 change-resource-record-sets \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --change-batch "{\"Changes\": [{
         \"Action\": \"DELETE\",
@@ -49,7 +50,9 @@ route53_delete_record_set () {
         && return 1
 
     echoerr "INFO: Waiting for ${change_id} to complete..."
-    aws route53 wait resource-record-sets-changed --id ${change_id}
+    aws route53 wait resource-record-sets-changed \
+        --region ${AWS_REGION} \
+        --id ${change_id}
     return $?
 }
 
@@ -89,6 +92,7 @@ route53_fqdn_from_host () {
     local host=$2
 
     aws route53 list-resource-record-sets \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?contains (Name, '${host}')].Name" \
         --output text
@@ -112,6 +116,7 @@ route53_get_resource_record () {
     [[ ! ${resource} =~ \.$ ]] && resource="${resource}."
 
     local resource_record="$(aws route53 list-resource-record-sets \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?Name=='${resource}']" \
         | jq -c '.[]')"
@@ -138,6 +143,7 @@ route53_list_host_records () {
     local stack_name=$1
     local hosted_zone_id=$2
     aws route53 list-resource-record-sets \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?ResourceRecords[?contains(Value, '${stack_name}')]].Name" \
         --output text
@@ -176,6 +182,7 @@ route53_list_type_records () {
         || local type=$2
 
     aws route53 list-resource-record-sets \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --query "ResourceRecordSets[?Type=='${type}'].Name" \
         --output text
@@ -193,6 +200,7 @@ route53_vpc_associate () {
 
     echoerr "INFO: Associating ${vpc} to ${hosted_zone_id} (${hosted_zone_name})"
     local change_id=$(aws route53 associate-vpc-with-hosted-zone \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
         --query "ChangeInfo.Id" \
@@ -217,6 +225,7 @@ route53_vpc_dissociate () {
 
     echoerr "INFO: Dissociating ${vpc} from ${hosted_zone_id} (${hosted_zone_name})"
     local change_id=$(aws route53 disassociate-vpc-from-hosted-zone \
+        --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
         --query "ChangeInfo.Id" \
@@ -234,6 +243,7 @@ route53_zone_name_from_id () {
     local hosted_zone_id=$1
 
     local hosted_zone_name=$(aws route53 list-hosted-zones \
+        --region ${AWS_REGION} \
         --query "HostedZones[?Id=='/hostedzone/${hosted_zone_id}'].Name" \
         --output text)
     [[ -z ${hosted_zone_name-} ]] \

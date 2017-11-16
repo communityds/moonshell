@@ -25,7 +25,9 @@ case $VERB in
     upload)
         for nest in $(ls moonshot/nest*yml); do
             echoerr "INFO: Uploading ${nest}"
-            aws s3 cp ${nest} s3://${S3_BUCKET}/${APP_NAME}/ --acl public-read
+            aws s3 cp ${nest} s3://${S3_BUCKET}/${APP_NAME}/ \
+                --region ${AWS_REGION} \
+                --acl public-read
         done
     ;;
     *)

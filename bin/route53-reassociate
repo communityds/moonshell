@@ -27,6 +27,7 @@ HOSTED_ZONE=$(stack_resource_id ${STACK_NAME} InternalRoute53HostedZone)
 echoerr "INFO: ${STACK_NAME} InternalRoute53HostedZone: ${HOSTED_ZONE}"
 
 SELF_DOMAIN_NAME=$(aws route53 list-hosted-zones \
+  --region ${AWS_REGION} \
   --query "HostedZones[?Id=='/hostedzone/${HOSTED_ZONE}'].Name" \
   --output text \
   | sed 's/\.$//')
@@ -35,6 +36,7 @@ echoerr "INFO: Hosted zone domain name: ${SELF_DOMAIN_NAME}"
 
 declare -a ASSOCIATED_VPCS
 ASSOCIATED_VPCS=($(aws ec2 describe-vpc-peering-connections \
+  --region ${AWS_REGION} \
   --filters \
     Name=accepter-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
     Name=status-code,Values=active,pending-acceptance,provisioning \
@@ -61,6 +63,7 @@ fi
 
 declare -a CURRENT_ROUTE53_ASSOCIATIONS
 CURRENT_ROUTE53_ASSOCIATIONS=($(aws route53 get-hosted-zone \
+  --region ${AWS_REGION} \
   --id ${HOSTED_ZONE} \
   --query "VPCs[*].VPCId" \
   --output text))

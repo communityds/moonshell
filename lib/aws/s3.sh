@@ -25,6 +25,7 @@ s3_delete_objects () {
     fi
 
     aws s3api delete-objects \
+        --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --delete "file://${tmp_file}"
 
@@ -54,7 +55,7 @@ s3_download () {
 
     local s3_url="s3://${s3_bucket_name}"
     echoerr "INFO: Downloading resources from ${s3_url}/"
-    aws s3 ${verb} ${options-} ${s3_url}/${source-} ${destination}
+    aws s3 ${verb} --region ${AWS_REGION} ${options-} ${s3_url}/${source-} ${destination}
     return $?
 }
 
@@ -73,6 +74,7 @@ s3_get_versions () {
     # we need a way to handle this more intelligently instead of relying
     # on the user to run this several times..
     aws s3api list-object-versions \
+        --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --max-items 1000 \
         --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" \
@@ -87,6 +89,7 @@ s3_get_delete_markers () {
     local s3_bucket_name=$1
 
     aws s3api list-object-versions \
+        --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" \
         | jq -c '.'
@@ -108,7 +111,7 @@ s3_ls () {
 
     local s3_url="s3://${s3_bucket_name}/${location-}"
     echoerr "INFO: Listing objects in ${s3_url}"
-    aws s3 ls ${s3_url}
+    aws s3 ls --region ${AWS_REGION} ${s3_url}
     return $?
 }
 
@@ -181,7 +184,7 @@ s3_upload () {
 
     local s3_url="s3://${s3_bucket_name}"
     echoerr "INFO: Uploading resources to ${s3_url}/"
-    aws s3 ${verb} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
+    aws s3 ${verb} --region ${AWS_REGION} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
     return $?
 }
 

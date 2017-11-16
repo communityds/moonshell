@@ -3,6 +3,7 @@
 #
 kms_list_keys () {
     aws kms list-aliases \
+        --region ${AWS_REGION} \
         --query "Aliases[].AliasArn" \
         --output text
     return $?
@@ -17,6 +18,7 @@ kms_list_keys_detail () {
 
     for key in ${keys[@]}; do
         managed=$(aws kms describe-key --key-id ${key} \
+            --region ${AWS_REGION} \
             --output text \
             --query "KeyMetadata.Origin")
         if [[ ${managed} == "AWS_KMS" ]]; then
@@ -24,6 +26,7 @@ kms_list_keys_detail () {
         elif [[ ${managed} == "EXTERNAL" ]]; then
             echoerr "INFO: External key: ${key}"
             aws kms describe-key \
+                --region ${AWS_REGION} \
                 --key-id ${key} \
                 --query "KeyMetadata.{Arn:Arn,CreationDate:CreationDate,Description:Description,KeyState:KeyState,ExpirationModel:ExpirationModel}" \
                 --output table
