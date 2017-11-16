@@ -104,7 +104,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # 'bastion-development', which in turn should reference host entries in
     # ~/.ssh/config
     #
-    [[ -z ${AWS_ACCOUNT_NAME} ]] \
+    [[ -z ${AWS_ACCOUNT_NAME-} ]] \
         && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset. aws-creds?" \
         && exit 1
 
