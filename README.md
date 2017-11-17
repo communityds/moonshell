@@ -59,8 +59,8 @@ stack's name at any point to decipher the App and Environment names.
 
 ### Setup
 
-To both setup and use Moonshell, simply source `moon.sh`, this library will
-take care of self installation.
+To both setup and use Moonshell, simply source `moon.sh`, this library takes
+care of self installation.
 
 ```
 source moon.sh
@@ -112,9 +112,9 @@ Moonshell tries to adhere to Linux FHS best practice:
 
 * etc/
 
-        * completion.d/ - Bash completion functions suffixed with `.sh`
+  * completion.d/ - Bash completion functions suffixed with `.sh`
 
-        * profile.d/ - Definitions of variables and other statically set things
+  * profile.d/ - Definitions of variables and other statically set things
 
 * usr/ - Extra supporting files for applications
 
@@ -200,14 +200,16 @@ These outputs are required to be set:
 
 * `InternalRoute53HostedZoneId`: Due to the potential for name-space violations
   we must have available the zone's ID to interrogate. The default for the
-  zone's name ***must*** be "${APP_NAME}-${ENVIRONMENT}.local".
+  zone's name ***must*** be "${APP_NAME}-${ENVIRONMENT}.local". `'.local`
+  domains are, like the 10.0.0.0/8 network range, unusable on the internet, so
+  it further reinforces that DNS is local to the host you are on.
 
 * `VPCNetwork`: This must be set to the network CIDR used for the entire VPC
 
 * `RouteTableId`: This is the route table used by all primatives insiide the VPC
 
-Moonshot Defaults:
+CloudFormation Defaults:
 
-* `aws:cloudformation:stack-name`: Moonshot gives us the stack-name for free
-  and we use it to find the VPCId from the stack's name.
+* `aws:cloudformation:stack-name`: CF gives us the stack-name for free and we
+  use it to find the VPCId from the stack's name.
 
