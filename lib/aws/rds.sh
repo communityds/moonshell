@@ -23,6 +23,7 @@ rds_engine_type () {
     local resource_name=$2
 
     local engine=$(aws rds describe-db-instances \
+        --region ${AWS_REGION} \
         --db-instance-identifier ${resource_name} \
         --query "DBInstances[].Engine" \
         --output text)
@@ -280,11 +281,13 @@ rds_snapshot_create () {
 
     echoerr "INFO: Creating DB snapshot"
     aws rds create-db-snapshot \
+        --region ${AWS_REGION} \
         --db-instance-identifier ${instance} \
         --db-snapshot-identifier ${snapshot_id} \
 
     echoerr "INFO: Waiting for snapshot to complete"
     aws rds wait db-snapshot-completed \
+        --region ${AWS_REGION} \
         --db-snapshot-identifier ${snapshot_id}
 
     return $?
@@ -295,6 +298,7 @@ rds_snapshot_delete () {
 
     echoerr "INFO: Deleting DB snapshot"
     aws rds delete-db-snapshot \
+        --region ${AWS_REGION} \
         --db-snapshot-identifier ${snapshot_id}
 
     return $?
@@ -310,6 +314,7 @@ rds_snapshot_list () {
 
     echoerr "INFO: Finding snapshots for DB instance"
     local snapshots=($(aws rds describe-db-snapshots \
+        --region ${AWS_REGION} \
         --query "DBSnapshots[?DBInstanceIdentifier=='${instance}'].DBSnapshotIdentifier" \
         --output text))
     [[ -z ${snapshots[@]-} ]] \

@@ -73,6 +73,7 @@ echoerr "INFO: Setting Peering Options"
 #    \"AllowEgressFromLocalVpcToRemoteClassicLink\": true,
 #    \"AllowDnsResolutionFromRemoteVpc\": true
 retr=$(aws ec2 modify-vpc-peering-connection-options \
+  --region ${AWS_REGION} \
   --vpc-peering-connection-id ${VPC_PEERING_ID} \
   --requester-peering-connection-options "{
     \"AllowDnsResolutionFromRemoteVpc\": true
@@ -84,6 +85,7 @@ retr=$(aws ec2 modify-vpc-peering-connection-options \
 
 echoerr "INFO: Tagging resource: ${VPC_PEERING_ID}"
 aws ec2 create-tags \
+  --region ${AWS_REGION} \
   --resources ${VPC_PEERING_ID} \
   --tags \
     Key=source_stack,Value=${SELF_STACK_NAME} \
@@ -92,6 +94,7 @@ aws ec2 create-tags \
 echoerr "INFO: Creating Route to ${TARGET_STACK_NAME}"
 echoerr "INFO: Failure to create route is not fatal"
 aws ec2 create-route \
+  --region ${AWS_REGION} \
   --route-table-id ${SELF_VPC_ROUTE_TABLE}\
   --destination-cidr-block ${TARGET_VPC_NETWORK}\
   --vpc-peering-connection-id ${VPC_PEERING_ID} \
@@ -103,6 +106,7 @@ aws ec2 create-route \
 echoerr "INFO: Creating Route from ${TARGET_STACK_NAME}"
 echoerr "INFO: Failure to create route is not fatal"
 aws ec2 create-route \
+  --region ${AWS_REGION} \
   --route-table-id ${TARGET_VPC_ROUTE_TABLE}\
   --destination-cidr-block ${SELF_VPC_NETWORK}\
   --vpc-peering-connection-id ${VPC_PEERING_ID} \
@@ -113,11 +117,13 @@ aws ec2 create-route \
 
 echoerr "INFO: Describing ${SELF_STACK_NAME} routes"
 aws ec2 describe-route-tables \
+  --region ${AWS_REGION} \
   --query "RouteTables[?RouteTableId=='${SELF_VPC_ROUTE_TABLE}'].Routes" \
   --output table
 
 echoerr "INFO: Describing ${TARGET_STACK_NAME} routes"
 aws ec2 describe-route-tables \
+  --region ${AWS_REGION} \
   --query "RouteTables[?RouteTableId=='${TARGET_VPC_ROUTE_TABLE}'].Routes" \
   --output table
 

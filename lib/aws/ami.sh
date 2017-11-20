@@ -6,6 +6,7 @@ ami_describe_launch_permissions () {
     echoerr "INFO: Echoing launch permissions for ami '${ami_id}'"
     # Table output looks purdy with this data
     aws ec2 describe-image-attribute \
+        --region ${AWS_REGION} \
         --image-id ${ami_id} \
         --attribute launchPermission \
         --output table
@@ -16,6 +17,7 @@ ami_describe () {
 
     echoerr "INFO: Describing AMIs"
     aws ec2 describe-images \
+        --region ${AWS_REGION} \
         --image-ids ${ami_ids[@]} \
         --output table
     return $?
@@ -29,6 +31,7 @@ ami_deregister () {
 
     echoerr "INFO: Finding snapshot for ${ami_id}"
     local snapshot_id=$(aws ec2 describe-snapshots \
+        --region ${AWS_REGION} \
         --query "Snapshots[?contains(Description, '${ami_id}')].SnapshotId" \
         --output text)
 
@@ -36,7 +39,7 @@ ami_deregister () {
     sleep ${wait}
 
     aws ec2 deregister-image --image-id ${ami_id} \
-        && aws ec2 delete-snapshot --snapshot-id ${snapshot_id} \
+        && aws ec2 delete-snapshot --region ${AWS_REGION} --snapshot-id ${snapshot_id} \
         || echoerr "ERROR: Failed to deregister ${ami_id}. ${snapshot_id} is preserved"
 }
 
@@ -49,6 +52,7 @@ ami_export () {
     echoerr "INFO: Modifying launch permissions for ami '${ami_id}'"
     for account in ${accounts[@]-}; do
         aws ec2 modify-image-attribute \
+            --region ${AWS_REGION} \
             --image-id ${ami_id} \
             --launch-permission "{ \"Add\": [{ \"UserId\": \"${account}\" }] }"
     done
@@ -59,6 +63,7 @@ ami_find_roles () {
 
     echoerr "INFO: Finding all AMIs roles"
     aws ec2 describe-images \
+        --region ${AWS_REGION} \
         --filter \
             Name=owner-id,Values=${account_id} \
             Name=state,Values=available \
@@ -75,6 +80,7 @@ ami_list_all () {
 
     echoerr "INFO: Finding all available AMIs owned by ${account_id}"
     aws ec2 describe-images \
+        --region ${AWS_REGION} \
         --filter \
             Name=owner-id,Values=${account_id} \
             Name=state,Values=available \
@@ -95,6 +101,7 @@ ami_list_role () {
 
     echoerr "INFO: Finding all ${ami_role} AMIs owned by ${account_id}"
     aws ec2 describe-images \
+        --region ${AWS_REGION} \
         --filter \
             Name=owner-id,Values=${account_id} \
             Name=state,Values=available \
@@ -109,6 +116,7 @@ ami_list_sorted () {
 
     echoerr "INFO: Listing and date sorting AMIs"
     aws ec2 describe-images \
+        --region ${AWS_REGION} \
         --image-ids ${ami_ids[@]} \
         | jq -r '.Images|=sort_by(.CreationDate)|.Images[].ImageId'
 

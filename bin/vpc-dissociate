@@ -102,6 +102,7 @@ TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_APP_NAME} RouteTableId)
 echoerr "INFO: Removing routes from ${SELF_STACK_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
+  --region ${AWS_REGION} \
   --route-table-id ${SELF_VPC_ROUTE_TABLE} \
   --destination-cidr-block ${TARGET_VPC_NETWORK} \
   >/dev/null \
@@ -110,6 +111,7 @@ aws ec2 delete-route \
 echoerr "INFO: Removing routes from ${TARGET_APP_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
+  --region ${AWS_REGION} \
   --route-table-id ${TARGET_VPC_ROUTE_TABLE} \
   --destination-cidr-block ${SELF_VPC_NETWORK} \
   >/dev/null \
@@ -117,6 +119,7 @@ aws ec2 delete-route \
 
 echoerr "INFO: Deleting connection: ${VPC_PEERING_ID}"
 retr=$(aws ec2 delete-vpc-peering-connection \
+  --region ${AWS_REGION} \
   --vpc-peering-connection-id ${VPC_PEERING_ID} \
   --query "Return" \
   --output text)

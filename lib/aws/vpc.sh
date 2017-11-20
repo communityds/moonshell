@@ -18,6 +18,7 @@ vpc_peer_associate () {
 
     echoerr "INFO: Creating peering connection between ${source_vpc_id} and ${target_vpc_id}"
     local peering_id=$(aws ec2 create-vpc-peering-connection \
+        --region ${AWS_REGION} \
         --vpc-id ${source_vpc_id} \
         --peer-vpc-id ${target_vpc_id} \
         --query "VpcPeeringConnection.VpcPeeringConnectionId" \
@@ -28,6 +29,7 @@ vpc_peer_associate () {
 
     echoerr "INFO: Accepting Peering Connection"
     aws ec2 accept-vpc-peering-connection \
+        --region ${AWS_REGION} \
         --vpc-peering-connection-id ${peering_id} \
         >/dev/null
     local retr=$?
@@ -50,6 +52,7 @@ vpc_peer_connection () {
 
     echoerr "INFO: Searching for peering connections from ${req_vpc_id}"
     local peering_connections=($(aws ec2 describe-vpc-peering-connections \
+        --region ${AWS_REGION} \
         --filters \
             Name=requester-vpc-info.vpc-id,Values=${req_vpc_id} \
             Name=accepter-vpc-info.vpc-id,Values=${acc_vpc_id} \
@@ -77,13 +80,13 @@ vpc_peer_dissociate () {
     # Delete an existing peering connection between two VPCs.
     local source_vpc_id=$1
     local target_vpc_id=$2
-
 }
 
 vpc_peers_from_requester () {
     local req_vpc_id=$1
 
     aws ec2 describe-vpc-peering-connections \
+        --region ${AWS_REGION} \
         --filters \
             Name=requester-vpc-info.vpc-id,Values=${req_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
@@ -96,6 +99,7 @@ vpc_peers_to_accepter () {
     local acc_vpc_id=$1
 
     aws ec2 describe-vpc-peering-connections \
+        --region ${AWS_REGION} \
         --filters \
             Name=accepter-vpc-info.vpc-id,Values=${acc_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
