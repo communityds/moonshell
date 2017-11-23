@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# After using packer over time situations will arise that result in it leaving
+# detritus all around the place; one such example is a launcher key. If packer
+# has not exited cleanly, or been able to clean up properly, the list of
+# launcher keys will pile up. This script removes all packer keys.
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Finding packer launcher keys"
+LAUNCHER_KEYS=($(aws ec2 describe-key-pairs \
+    --query "KeyPairs[?contains (KeyName, 'packer')].KeyName" \
+    --output text))
+
+echoerr "INFO: Listing packer launcher keys"
+echo ${LAUNCHER_KEYS[@]} | sed 's/ /\n/g'
+
+echoerr "INFO: Commencing key deletion in 5 seconds. Ctrl-C to cancel."
+sleep 5
+
+for launcher_key in ${LAUNCHER_KEYS[@]}; do
+    echoerr "INFO: Deleting key '${launcher_key}'"
+    aws ec2 delete-key-pair --key-name ${launcher_key}
+done
+
+echoerr "INFO: All packer launcher keys have been deleted"
