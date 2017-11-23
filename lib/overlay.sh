@@ -17,6 +17,7 @@ overlay_dir () {
 
     [[ -d ${dir}/bin ]] && overlay_path_prepend "${dir}/bin"
 
+    local location
     for location in ${locations[@]}; do
         [[ -d "${dir}/${location}" ]] && overlay_source_dir "${dir}/${location}"
     done
@@ -37,6 +38,7 @@ overlay_path_prepend () {
 overlay_source_dir () {
     local source_dir=$1
 
+    local source_file
     for source_file in $(find ${source_dir}/ ${MOON_FIND_OPTS} -name '*.sh'); do
         source "${source_file}"
     done
