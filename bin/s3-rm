@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# Remove files from a stack's s3 bucket.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT FILE_PATH [AWSCLI_OPTIONS]"
+    exit 0
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    FILE_PATH=$2
+    shift 2
+    OPTIONS=($*)
+fi
+
+s3_rm ${STACK_NAME} ${FILE_PATH} ${OPTIONS[@]-}
+
+echoerr "INFO: Complete"

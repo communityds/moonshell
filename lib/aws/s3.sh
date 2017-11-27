@@ -146,6 +146,21 @@ s3_purge_versions () {
     fi
 }
 
+s3_rm () {
+    local stack_name=$1
+    local file_path=$2
+    shift 2
+    local options=($*)
+
+    local s3_bucket=$(s3_stack_bucket_name ${stack_name})
+
+    [[ ${file_path} =~ ^/ ]] \
+        && file_path=${file_path:1}
+
+    aws s3 rm s3://${s3_bucket}/${file_path} ${options[@]-}
+    return $?
+}
+
 s3_stack_bucket_name () {
     # From the AWS::S3::Buckets defined in a stack, if there are multiple
     # buckets, prompt for selection and return a string of a single S3 bucket
