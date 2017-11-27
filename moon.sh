@@ -17,11 +17,18 @@
 
 [[ ${DEBUG-} ]] && set -x
 
+# If moon.sh is sourced by root or a user with passwordless sudo, then assume
+# a system level installation
+if [[ $(whoami) =~ ^root$ ]] || $(sudo -n -v 2>/dev/null); then
+    export MOON_ROOT="$(realpath $(dirname ${BASH_SOURCE[0]}))"
+else
+    export MOON_ROOT="${HOME}/.moonshell"
+fi
+
 
 #
 # GLOBAL VARIABLES
 #
-export MOON_ROOT="${HOME}/.moonshell"
 export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
 export MOON_SHELL="${MOON_ROOT}/moon.sh"
@@ -48,13 +55,20 @@ export MOON_UPDATE_INTERVAL=5 # minutes
 #
 # In Vagrant $0 is "-bash". basename doesn't like "-b"
 moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
+if [[ ${moonshell_dir} =~ " " ]]; then
+    echo "ERROR: The path to moon.sh can not contain spaces: '${moonshell_dir}'" 1>&2
+    return 1
+fi
+
 if [[ $(basename "x$0") =~ "bash"$ ]]; then
-    source "${moonshell_dir}/lib/common.sh"
-    source "${moonshell_dir}/lib/moonshell.sh"
-    _moonshell_self_check ${moonshell_dir}
+    source ${moonshell_dir}/lib/common.sh
+    source ${moonshell_dir}/lib/moonshell.sh
+    source ${moonshell_dir}/lib/overlay.sh
+    _moonshell_check ${moonshell_dir}
 else
     source ${MOON_LIB}/common.sh
     source ${MOON_LIB}/moonshell.sh
+    source ${MOON_LIB}/overlay.sh
 fi
 
 
@@ -74,7 +88,7 @@ _moonshell_source ${MOON_PROFILE}
 # PATH MODIFICATION
 #
 [[ -z ${PRE_MOON_PATH-} ]] && export PRE_MOON_PATH="${PATH}"
-_moonshell_path_add ${MOON_BIN}
+overlay_path_prepend ${MOON_BIN}
 
 
 #
