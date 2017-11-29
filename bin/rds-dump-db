@@ -19,4 +19,6 @@ fi
 
 rds_dump_db ${STACK_NAME} ${DATABASE} ${OUT_FILE}
 
+echoerr "INFO: DB dump saved as ${OUT_FILE}"
+
 exit $?
