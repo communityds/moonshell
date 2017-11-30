@@ -103,11 +103,12 @@ _moonshell_test () {
 
 _moonshell_system_check () {
     local moonshell_dir=$1
+    local sudo
 
     # As this function is only used when called from _moonshell_check we are
     # making the small assumption that we have passed the root/sudo test, so
     # this block should JustWork.
-    [[ ! $(whoami) =~ ^root$ ]] && local sudo=sudo
+    [[ ! $(whoami) =~ ^root$ ]] && sudo=sudo
 
     if [[ ! -f /etc/profile.d/moon.sh ]]; then
         echo "source ${moonshell_dir}/moon.sh" \
