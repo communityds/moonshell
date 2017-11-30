@@ -13,6 +13,18 @@ _moonshell () {
         || _moonshell_getopts ${options[@]}
 }
 
+_moonshell_check () {
+    local moonshell_dir=$1
+
+    # If we are being run by root, or a user with passwordless sudo assume a
+    # system level installation, else assume 'local'
+    if [[ $(whoami) =~ ^root$ ]] || $(sudo -n -v 2>/dev/null); then
+        _moonshell_system_check ${moonshell_dir}
+    else
+        _moonshell_self_check ${moonshell_dir}
+    fi
+}
+
 _moonshell_getopts () {
     OPTIND=1
     local optspec=":hrst" OPTARG=($@)
@@ -52,41 +64,6 @@ Perform basic functions for Moonshell.
 EOF
 }
 
-_moonshell_overlay_dir () {
-    # The purpose of 'overlay' is to extend functionality of Moonshell. If you
-    # have developed a library or script that is only relevant to one of your
-    # Moonshot stacks/projects, then you can overlay a custom bin/, lib/ or
-    # profile.d/ dir to override default Moonshell behaviour, or extend it.
-    #
-    local dir=$1
-    local overlay="${MOON_PROFILE}/private/overlay.sh"
-    local -a locations=(lib etc/profile.d etc/completion.d)
-
-    [[ ! -d ${dir} ]] \
-        && echoerr "ERROR: '${dir}' does not exist or is not a directory" \
-        && return 1
-
-    [[ ! -f ${overlay} ]] \
-        && mkdir -p "${MOON_PROFILE}/private" \
-        && touch ${overlay}
-
-    [[ $(grep -c "${dir}" ${overlay}) == 0 ]] \
-        && echo "_moonshell_overlay_dir ${dir}" >> ${overlay}
-
-    [[ -d ${dir}/bin ]] && _moonshell_path_add "${dir}/bin"
-
-    for location in ${locations[@]}; do
-        [[ -d "${dir}/${location}" ]] && _moonshell_source "${dir}/${location}"
-    done
-}
-
-_moonshell_path_add () {
-    local bin_dir=$1
-
-    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
-        && export PATH=${bin_dir}:${PATH}
-}
-
 _moonshell_reset () {
     echoerr "Reinitialising Moonshell.."
     [[ -z ${MOON_VAR-} ]] \
@@ -120,6 +97,24 @@ _moonshell_test () {
     popd >/dev/null
 }
 
+#
+# MOONSHELL SYSTEM FUNCTIONS
+#
+
+_moonshell_system_check () {
+    local moonshell_dir=$1
+    local sudo
+
+    # As this function is only used when called from _moonshell_check we are
+    # making the small assumption that we have passed the root/sudo test, so
+    # this block should JustWork.
+    [[ ! $(whoami) =~ ^root$ ]] && sudo=sudo
+
+    if [[ ! -f /etc/profile.d/moon.sh ]]; then
+        echo "source ${moonshell_dir}/moon.sh" \
+            | ${sudo-} tee /etc/profile.d/moon.sh >/dev/null
+    fi
+}
 
 #
 # MOONSHELL SELF FUNCTIONS
