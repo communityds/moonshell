@@ -172,7 +172,7 @@ _moonshell_self_check_bashrc () {
 
     local bash_file="${HOME}/$(bash_rc_file)"
     local grep_bin=$(which grep | tail -1)
-    local installed=$(${grep_bin} -v '^#' ${bash_file} | ${grep_bin} -c "${moonshell_home_link}/moon.sh" 2>/dev/null)
+    local installed=$(${grep_bin} -v '^#' ${bash_file} 2>/dev/null | ${grep_bin} -c "${moonshell_home_link}/moon.sh" 2>/dev/null)
 
     if [[ ${installed} == 0 ]]; then
         echoerr "WARNING: 'moon.sh' is not being sourced from ${bash_file}"
