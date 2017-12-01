@@ -197,7 +197,7 @@ rds_postgres_list_dbs () {
     [[ -z ${databases[@]-} ]] && return 1
 
     for database in ${databases[@]-}; do
-        if ! contains ${database} ${POSTGRES_IGNORED_DBS[@]}; then
+        if ! contains ${database} ${POSTGRES_IGNORED_DBS[@]-}; then
             echo ${database}
         fi
     done
