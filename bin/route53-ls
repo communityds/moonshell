@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# List A and CNAME records from a list of available hosted zones for the
+# account you have credentials loaded for.
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+ACC_ID=$(sts_account_id)
+
+echoerr "INFO: Enumerating all hosted zones for account '${ACC_ID}'"
+
+HOSTED_ZONES=($(aws route53 list-hosted-zones-by-name \
+    --region ${AWS_REGION} \
+    --query 'HostedZones[].Name' \
+    --output text))
+
+HOSTED_ZONE_NAME=$(choose ${HOSTED_ZONES[@]})
+
+[[ ! ${HOSTED_ZONE_NAME-} =~ \.$ ]] \
+    && echoerr "ERROR: Hosted zone name '${HOSTED_ZONE_NAME}' is not absolute." \
+    && exit 1
+
+echoerr "INFO: Hosted Zone: ${HOSTED_ZONE_NAME}"
+
+route53_list_name ${HOSTED_ZONE_NAME}

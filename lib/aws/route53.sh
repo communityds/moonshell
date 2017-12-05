@@ -137,6 +137,27 @@ route53_internal_hosted_zone_id () {
     return $?
 }
 
+route53_list_name () {
+    local hosted_zone_name=$1
+
+    local hosted_zone_id=$(aws route53 list-hosted-zones \
+        --region ${AWS_REGION} \
+        --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
+        --output text)
+    [[ -z ${hosted_zone_id-} ]] \
+        && echoerr "ERROR: Unable to find 'Id' for zone '${hosted_zone_name}'" \
+        && return 1
+
+    local record_type
+    for record_type in A CNAME; do
+        aws route53 list-resource-record-sets \
+            --region ${AWS_REGION} \
+            --hosted-zone-id ${hosted_zone_id} \
+            --query "ResourceRecordSets[?Type=='${record_type}'].{Name:Name,${record_type}:ResourceRecords[].Value}" \
+            --output text
+    done
+}
+
 route53_list_external () { return;}
 
 route53_list_host_records () {
