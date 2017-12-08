@@ -37,9 +37,10 @@ overlay_path_prepend () {
 
 overlay_source_dir () {
     local source_dir=$1
+    local opts=${MOON_FIND_OPTS:--mindepth 1 -maxdepth 1}
 
     local source_file
-    for source_file in $(find ${source_dir}/ ${MOON_FIND_OPTS} -name '*.sh'); do
+    for source_file in $(find ${source_dir}/ ${opts} -name '*.sh'); do
         source "${source_file}"
     done
 }
