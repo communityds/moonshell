@@ -151,5 +151,8 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # Source the rest of the things!!!
     _moonshell_source ${MOON_LIB}
     _moonshell_source ${MOON_COMPLETION}
+
+    # Auto-source the CWD
+    overlay_dir ${PWD}
 fi
 
