@@ -19,20 +19,26 @@ overlay_dir () {
 
     local location
     for location in ${locations[@]}; do
-        [[ -d "${dir}/${location}" ]] && overlay_source_dir "${dir}/${location}"
+        [[ -d "${dir}/${location}" ]] \
+            && overlay_source_dir "${dir}/${location}" \
+            || true
     done
 }
 
 overlay_path_append () {
     local bin_dir=$1
 
-    [[ ! "${PATH}" =~ "${bin_dir}" ]] && export PATH=${PATH}:${bin_dir}
+    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
+        && export PATH=${PATH}:${bin_dir} \
+        || true
 }
 
 overlay_path_prepend () {
     local bin_dir=$1
 
-    [[ ! "${PATH}" =~ "${bin_dir}" ]] && export PATH=${bin_dir}:${PATH}
+    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
+        && export PATH=${bin_dir}:${PATH} \
+        || true
 }
 
 overlay_source_dir () {
