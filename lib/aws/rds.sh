@@ -162,7 +162,7 @@ rds_postgres_dump_db () {
         "'pg_dump -Fp ${pg_opts} ${database}'" \
         ${out_file}
 
-    if [[ $(uname) == ^Darwin$ ]]; then
+    if [[ $(uname) =~ ^Darwin$ ]]; then
         sed -i -e '/^COMMENT ON EXTENSION plpgsql IS/d' ${out_file}
         sed -i -e '/^COMMENT ON EXTENSION citext IS/d' ${out_file}
         sed -i -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' ${out_file}
