@@ -162,11 +162,17 @@ rds_postgres_dump_db () {
         "'pg_dump -Fp ${pg_opts} ${database}'" \
         ${out_file}
 
-    sed -i \
-        -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
-        -e '/^COMMENT ON EXTENSION citext IS/d' \
-        -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' \
-        ${out_file}
+    if [[ $(uname) == ^Darwin$ ]]; then
+        sed -i -e '/^COMMENT ON EXTENSION plpgsql IS/d' ${out_file}
+        sed -i -e '/^COMMENT ON EXTENSION citext IS/d' ${out_file}
+        sed -i -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' ${out_file}
+    else
+        sed -i \
+            -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
+            -e '/^COMMENT ON EXTENSION citext IS/d' \
+            -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' \
+            ${out_file}
+    fi
 
     # Because we had to sed the sql, we couldn't pipe directly to gzip, so we
     # must do shoddy things to make the system work. AWS have been removed from

@@ -46,6 +46,7 @@ def echo_params(profile)
   puts "export AWS_ACCESS_KEY_ID=#{@p_params[profile]['aws_access_key_id']}"
   # rubocop:disable Metrics/LineLength
   puts "export AWS_SECRET_ACCESS_KEY=#{@p_params[profile]['aws_secret_access_key']}"
+  # rubocop:enable Metrics/LineLength
 end
 
 if ARGV.count < 1

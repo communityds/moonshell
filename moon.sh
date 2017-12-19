@@ -53,13 +53,13 @@ export MOON_UPDATE_INTERVAL=5 # minutes
 # This enables moon.sh to be sourced, and if not 'installed' will work through
 # creating symlinks, updating .bashrc/.bash_profile and installing gems
 #
-# In Vagrant $0 is "-bash". basename doesn't like "-b"
 moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
 if [[ ${moonshell_dir} =~ " " ]]; then
     echo "ERROR: The path to moon.sh can not contain spaces: '${moonshell_dir}'" 1>&2
     return 1
 fi
 
+# In Vagrant $0 is "-bash"; basename doesn't like "-b"
 if [[ $(basename "x$0") =~ "bash"$ ]]; then
     source ${moonshell_dir}/lib/common.sh
     source ${moonshell_dir}/lib/moonshell.sh
