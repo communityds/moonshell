@@ -18,5 +18,5 @@ else
   CMD=${@}
 fi
 
-bastion_exec "export PDSH_SSH_ARGS='${PDSH_SSH_ARGS}'; pdsh -M ssh -w \$(host ${TARGET_HOST} | awk '{print \$NF}' | paste -sd,) ${CMD}"
+bastion_exec "export PDSH_SSH_ARGS='${PDSH_SSH_ARGS}'; pdsh -M ssh -w \$(host ${TARGET_HOST} | awk '{print \$NF}' | paste -sd,) '${CMD}'"
 
