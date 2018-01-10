@@ -232,7 +232,7 @@ _moonshell_self_fix_bashrc () {
 _moonshell_self_fix_link () {
     local src=$1
     local dst=$2
-    ln -sv ${src} ${dst}
+    ln -sfhv ${src} ${dst}
 }
 
 _moonshell_self_fix_gems () {
