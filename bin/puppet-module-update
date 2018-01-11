@@ -12,5 +12,6 @@ source $(dirname $0)/../moon.sh
 
 # We must be in the root of the repo else ../moon.sh would not have been sourced
 pushd "${PWD}/puppet" >/dev/null
-  r10k -c r10k.yml puppetfile install -v info
+    # if ./r10k.yaml is present, r10k will auto load it.
+    r10k puppetfile install -v info
 popd >/dev/null
