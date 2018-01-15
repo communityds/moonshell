@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# Downloads a specific version of a file stored in a stack's s3 bucket
+#
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 3 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE DEST_FILE|DEST_PATH"
+    exit 0
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    S3_FILE=$2
+    DESTINATION=$3
+fi
+
+VERSION_TIMESTAMPS=($(s3_file_versions ${STACK_NAME} "${S3_FILE}"))
+
+echoerr "Select version of '${S3_FILE} to download:"
+VERSION_TIMESTAMP=$(choose ${VERSION_TIMESTAMPS[@]})
+
+s3_get_file_version ${STACK_NAME} "${S3_FILE}" "${VERSION_TIMESTAMP}" ${DESTINATION}
+
+echoerr "INFO: Complete"
+
