@@ -97,6 +97,57 @@ s3_get_delete_markers () {
     return $?
 }
 
+s3_get_file_version () {
+    local stack_name=$1
+    local file_path=$2
+    local version_timestamp=$3
+    local destination=$4
+
+    [[ ${file_path} =~ ^\/ ]] \
+        && file_path=${file_path/\//}
+
+    [[ -d ${destination} ]] \
+        && destination="${destination}/$(basename ${file_path})"
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+
+    local version_id=$(aws s3api list-object-versions \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --prefix "${file_path}" \
+        --query "Versions[?LastModified=='${version_timestamp}'].VersionId" \
+        --output text)
+
+    echoerr "INFO: Getting version '${version_id}' of '${file_path}'"
+    aws s3api get-object \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key ${file_path} \
+        --version-id ${version_id} \
+        ${destination}
+
+    return $?
+}
+
+s3_file_versions () {
+    local stack_name=$1
+    local file_path=$2
+
+    [[ ${file_path} =~ ^\/ ]] \
+        && file_path=${file_path/\//}
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+
+    local version_timestamps=($(aws s3api list-object-versions \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --prefix "${file_path}" \
+        --query "Versions[].LastModified" \
+        --output text))
+
+    echo ${version_timestamps[@]}
+}
+
 s3_ls () {
     local stack_name=$1
     local location=${2-}
