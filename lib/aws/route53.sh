@@ -1,6 +1,43 @@
 #
 # ROUTE53 FUNCTIONS
 #
+route53_change_resource_records () {
+    local hosted_zone_id=$1
+    local action=$2
+    local resource_record="$3"
+
+    [[ ! ${action} =~ ^(UPSERT|DELETE)$ ]] \
+        && echoerr "ERROR: Unsupported action '${action}'" \
+        && return 1
+
+    [[ $# -gt 3 ]] \
+        && echoerr "ERROR: Too many arguments, did you send and array and not a string?" \
+        && return 1
+
+    echoerr "INFO: Executing ${action} on ${hosted_zone_id}"
+    local change_id=$(aws route53 change-resource-record-sets \
+        --region ${AWS_REGION} \
+        --hosted-zone-id ${hosted_zone_id} \
+        --change-batch "{\"Changes\": [{
+        \"Action\": \"${action}\",
+        \"ResourceRecordSet\":
+            ${resource_record}
+        }]}" \
+        --query "ChangeInfo.Id" \
+        --output text)
+
+    [[ -z ${change_id-} ]] \
+        && echoerr "ERROR: Failed to submit change" \
+        && return 1
+
+    echoerr "INFO: Waiting for ${change_id} to complete..."
+    aws route53 wait resource-record-sets-changed \
+        --region ${AWS_REGION} \
+        --id ${change_id}
+    return $?
+
+}
+
 route53_delete_records () {
     # Iterate over an array of ${resources[@]} and delete each entry from the
     # ${hosted_zone_id}
@@ -34,32 +71,14 @@ route53_delete_record_set () {
         || local resource_record="$2"
 
     echoerr "INFO: Deleting resource from ${hosted_zone_id}"
-    local change_id=$(aws route53 change-resource-record-sets \
-        --region ${AWS_REGION} \
-        --hosted-zone-id ${hosted_zone_id} \
-        --change-batch "{\"Changes\": [{
-        \"Action\": \"DELETE\",
-        \"ResourceRecordSet\":
-            ${resource_record}
-        }]}" \
-        --query "ChangeInfo.Id" \
-        --output text)
-
-    [[ -z ${change_id-} ]] \
-        && echoerr "ERROR: Failed to submit change" \
-        && return 1
-
-    echoerr "INFO: Waiting for ${change_id} to complete..."
-    aws route53 wait resource-record-sets-changed \
-        --region ${AWS_REGION} \
-        --id ${change_id}
+    route53_change_resource_records ${hosted_zone_id} DELETE ${resource_record}
     return $?
 }
 
 route53_external_hosted_zone_name () {
     local stack_name=$1
 
-    stack_value_parameter ${stack_name} "ExternalRoute53HostedZoneName"
+    stack_value_output ${stack_name} "ExternalRoute53HostedZoneName"
     return $?
 }
 
@@ -128,6 +147,24 @@ route53_get_resource_record () {
         echo "${resource_record}"
         return 0
     fi
+}
+
+route53_id_from_zone_name () {
+    local hosted_zone_name=$1
+
+    # hosted_zone_name must be absolute.
+    [[ ! ${hosted_zone_name} =~ \.$ ]] \
+        && hosted_zone_name="${hosted_zone_name}."
+
+    local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
+        --region ${AWS_REGION} \
+        --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
+        --output text)
+
+    [[ -z ${hosted_zone_id-} ]] \
+        && echoerr "ERROR: No Id found for ${hosted_zone_name}" \
+        && return 1 \
+        || echo ${hosted_zone_id}
 }
 
 route53_internal_hosted_zone_id () {
