@@ -13,7 +13,7 @@ bash_rc_file () {
         Darwin) echo ".bash_profile";;
         *)
             echoerr "ERROR: Unsupported system '${uname}'"
-            exit 1
+            return 1
         ;;
     esac
 }

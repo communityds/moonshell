@@ -199,7 +199,7 @@ route53_list_type_records () {
     local hosted_zone_id=$1
     [[ ! ${2} =~ ^(A|CNAME)$ ]] \
         && echoerr "ERROR: Unsupported type '${2}'" \
-        && exit 1 \
+        && return 1 \
         || local type=$2
 
     aws route53 list-resource-record-sets \
