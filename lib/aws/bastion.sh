@@ -7,7 +7,7 @@ bastion () {
     local bastion_hostname="bastion-${AWS_ACCOUNT_NAME}"
     if [[ "$(grep ${bastion_hostname} ${HOME}/.ssh/config)" == "" ]]; then
         echoerr "ERROR: You do not have configuration set for ${bastion_hostname} in ~/.ssh/config"
-        exit 1
+        return 1
     else
         echo -n "${bastion_hostname}"
         return 0
