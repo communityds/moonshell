@@ -19,26 +19,22 @@ if [[ -z ${HOSTED_ZONE_ID-} ]]; then
     exit 1
 fi
 
-echo -n "Record to add: "
-read RESOURCE
+read -p "Record to add: " RESOURCE
 [[ ! ${RESOURCE} =~ "${DOMAIN_NAME}" ]] \
     && echoerr "ERROR: The resource name to add must be suffixed with the domain name '${DOMAIN_NAME}'"\
     && exit 1
 
-echo -n "Type (CNAME|A): "
-read TYPE
+read -p "Type (CNAME|A): " TYPE
 [[ ! ${TYPE} =~ ^(A|CNAME)$ ]] \
     && echoerr "ERROR: Type must be either A or CNAME" \
     && exit 1
 
-echo -n "TTL (seconds): "
-read TTL
+read -p "TTL (seconds): " TTL
 [[ ! ${TTL} =~ ^[0-9]+$ ]] \
     && echoerr "ERROR: TTL must be numerid" \
     && exit 1
 
-echo -n "Target FQDN: "
-read TARGET
+read -p "Target FQDN: " TARGET
 
 RESOURCE_RECORD="{\"Name\":\"${RESOURCE}\",\"Type\":\"${TYPE}\",\"TTL\":${TTL},\"ResourceRecords\":[{\"Value\":\"${TARGET}\"}]}"
 

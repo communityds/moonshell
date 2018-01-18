@@ -19,8 +19,7 @@ echo "Choose a host to purge:"
 RESOURCE_NAME=$(choose ${RESOURCE_NAMES[@]})
 RESOURCE_RECORD=$(route53_get_resource_record ${HOSTED_ZONE_ID} ${RESOURCE_NAME})
 
-echo -n "Are you sure you wish to permanently delete host '${RESOURCE_NAME}'? (y/N): "
-read choice
+read -p "Are you sure you wish to permanently delete host '${RESOURCE_NAME}'? (y/N): " -n 1 choice
 [[ ! ${choice} =~ ^[y|Y]$ ]] \
     && echoerr "INFO: Cancelled by user request" \
     && exit \
