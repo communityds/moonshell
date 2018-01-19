@@ -93,7 +93,7 @@ route53_external_hosted_zone_id () {
     local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
         --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
         --output text \
-        | grep -Po '(\w+)$')
+        | grep -Eo '(\w+)$')
 
     if [[ -z ${hosted_zone_id-} ]]; then
         echoerr "ERROR: could not find hosted_zone_id from ${hosted_zone_name}"

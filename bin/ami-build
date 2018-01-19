@@ -24,7 +24,7 @@ source $(dirname $0)/../moon.sh
 
 PACKER_DIR="${MOON_VAR}/packer"
 PACKER_VER="1.0.4"
-PACKER_FILE="packer_${PACKER_VER}_linux_amd64.zip"
+PACKER_FILE="packer_${PACKER_VER}_$(uname -s | tr A-Z a-z)_amd64.zip"
 PACKER_BASE="https://releases.hashicorp.com/packer/${PACKER_VER}"
 PACKER_URL="${PACKER_BASE}/${PACKER_FILE}"
 PACKER_LOG=1
@@ -40,7 +40,7 @@ VERBOSE=
 
 # pipe delimited string of AMIs to build - CLASSES="foo|bar|baz"
 # foo.json, bar.json and baz.json must exist in the packer directory.
-CLASSES="$(find packer/ -name '*.json' -printf '%f\n' | sed 's/\.json//' | sort)"
+CLASSES="$(find packer/ -name '*.json' -exec basename -s .json '{}' \;)"
 
 BUILD_ROOT="${PWD}"
 
@@ -64,7 +64,7 @@ usage () {
 
 log () {
     local message="$@"
-    echo "$(date --iso-8601=seconds) ${message}" >> ${LOG}
+    echo "$(date +%Y-%m-%dT%H:%M:%S) ${message}" >> ${LOG}
     echoerr "${message}"
 }
 
@@ -95,10 +95,10 @@ pack () {
 
     local ami_id retr
 
-    log "INFO: Building AMI from ${class}.json at $(date --iso-8601=seconds). Outputting to '${log_file}'"
+    log "INFO: Building AMI from ${class}.json at $(date +%Y-%m-%dT%H:%M:%S). Outputting to '${log_file}'"
     if [[ ${PACKER_DEBUG-} ]]; then
         if [[ ${VERBOSE-} ]]; then
-            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json 2>&1 >>${log_file}
+            ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json >>${log_file} 2>&1
             retr=$?
         else
             ${PACKER_DIR}/packer build -debug ${PACKER_ARGS-} packer/${class}.json | tee -a ${log_file}
@@ -108,13 +108,13 @@ pack () {
         ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json 2>&1 | tee -a ${log_file}
         retr=${PIPESTATUS[0]}
     else
-        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json &>>${log_file}
+        ${PACKER_DIR}/packer build ${PACKER_ARGS-} packer/${class}.json >>${log_file} 2>&1
         retr=$?
     fi
 
     if [[ ${retr} == 0 ]]; then
-        log "INFO: Finished building AMI from ${class}.json at $(date --iso-8601=seconds)"
-        ami_id=$(grep -Po "ami-[0-9a-f]{8,17}" ${log_file} | tail -1)
+        log "INFO: Finished building AMI from ${class}.json at $(date +%Y-%m-%dT%H:%M:%S)"
+        ami_id=$(grep -Eo "ami-[0-9a-f]{8,17}" ${log_file} | tail -1)
         log "INFO: ${class} AMI: ${ami_id}"
     else
         log "ERROR: Build failed with status '${retr}'"

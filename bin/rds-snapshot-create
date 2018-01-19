@@ -14,7 +14,7 @@ source $(dirname $0)/../moon.sh
 #
 # Even though AWS use colons in their automated snapshots they do not permit
 # users to define a snapshot name with them..
-DEFAULT_SNAPSHOT_NAME="manual-$(date --iso-8601)-$(date +%H-%M)"
+DEFAULT_SNAPSHOT_NAME="manual-$(date +%Y-%m-%d-%H-%M)"
 
 if [[ $# -lt 1 ]]; then
     echoerr "Usage: $(basename $0) ENVIRONMENT [SNAPSHOT_NAME]"
