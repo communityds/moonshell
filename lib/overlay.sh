@@ -3,9 +3,42 @@
 #
 # The purpose of 'overlay' is to extend functionality of Moonshell. If you
 # have developed a library or script that is only relevant to one of your
-# Moonshot stacks/projects, then you can overlay a custom bin/, lib/ or
-# profile.d/ dir to override default Moonshell behaviour, or extend it.
+# Moonshot stacks/projects, then just `overlay_dir $path_to_project`.
 #
+# overlay_dir:
+#   * source ${PWD}/lib/*.sh
+#   * source ${PWD}/etc/profile.d/*.sh
+#   * source ${PWD}/etc/completion.d/*.sh
+#   * PATH=${PWD}/bin:${PATH}
+
+overlay_dir_install () {
+    local dir=$1
+
+    # We must resolve the dir in case of it being '.'
+    local dir_realpath="$(realpath ${dir})"
+    local dir_name="$(basename ${dir_realpath})"
+
+    local lib_file="${MOON_LIB}/private/overlay-${dir_name}.sh"
+
+    if [[ -f "${lib_file}" ]]; then
+        local existing_dir=$(awk '{print $2}' "${lib_file}")
+        if [[ "${existing_dir}" == "${dir_realpath}" ]]; then
+            echoerr "WARNING: Overlay has already installed itself for '${dir_name}'"
+            return 0
+        else
+            echoerr "ERROR: Overlay file '${lib_file}' already exists, but points to a different dir: '${existing_dir}'"
+            return 1
+        fi
+    else
+        echoerr "INFO: Installing '${dir_name}' in to '${lib_file}'"
+        echo "overlay_dir ${dir_realpath}" > "${lib_file}"
+
+        echoerr "INFO: Sourcing '${lib_file}'"
+        source ${lib_file}
+
+        return $?
+    fi
+}
 
 overlay_dir () {
     local dir=$1

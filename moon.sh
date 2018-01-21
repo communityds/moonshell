@@ -9,26 +9,17 @@
 # libraries can be placed in lib/private/ and custom variables in
 # etc/profile.d/private/; these locations are auto-loaded (*.sh).
 #
-# The changes here in most likely will not be pushed back upstream, but
-# functional changes should be ported.
-#
 # Copyright: Phil Ingram (pingramdotau@gmaildotcom)
 #
 
 [[ ${DEBUG-} ]] && set -x
 
-# If moon.sh is sourced by root or a user with passwordless sudo, then assume
-# a system level installation
-if [[ $(whoami) =~ ^root$ ]] || $(sudo -n -v 2>/dev/null); then
-    export MOON_ROOT="$(realpath $(dirname ${BASH_SOURCE[0]}))"
-else
-    export MOON_ROOT="${HOME}/.moonshell"
-fi
-
 
 #
 # GLOBAL VARIABLES
 #
+export MOON_ROOT="$(dirname ${BASH_SOURCE[0]})"
+# realpath resolves symlinks which can be handy
 export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
 export MOON_SHELL="${MOON_ROOT}/moon.sh"
@@ -44,7 +35,6 @@ export MOON_OVERLAY="${MOON_ETC}/overlay.d"
 export MOON_PROFILE="${MOON_ETC}/profile.d"
 
 export MOON_FIND_OPTS="-mindepth 1 -maxdepth 1"
-export MOON_UPDATE_INTERVAL=5 # minutes
 
 
 #
@@ -53,24 +43,24 @@ export MOON_UPDATE_INTERVAL=5 # minutes
 # This enables moon.sh to be sourced, and if not 'installed' will work through
 # creating symlinks, updating .bashrc/.bash_profile and installing gems
 #
-moonshell_dir="$(realpath $(dirname ${BASH_SOURCE[0]}))"
-if [[ ${moonshell_dir} =~ " " ]]; then
-    echo "ERROR: The path to moon.sh can not contain spaces: '${moonshell_dir}'" 1>&2
+if [[ ${MOON_ROOT} =~ " " ]]; then
+    echo "ERROR: The path to moon.sh can not contain spaces: '${MOON_ROOT}'" 1>&2
     return 1
 fi
 
-# In Vagrant $0 is "-bash"; basename doesn't like "-b"
-if [[ $(basename "x$0") =~ "bash"$ ]]; then
-    source ${moonshell_dir}/lib/common.sh
-    source ${moonshell_dir}/lib/moonshell.sh
-    source ${moonshell_dir}/lib/overlay.sh
-    _moonshell_check ${moonshell_dir}
-else
-    source ${MOON_LIB}/common.sh
-    source ${MOON_LIB}/moonshell.sh
-    source ${MOON_LIB}/overlay.sh
-fi
+source ${MOON_LIB}/common.sh
+source ${MOON_LIB}/moonshell.sh
+source ${MOON_LIB}/overlay.sh
 
+_moonshell_check ${MOON_ROOT}
+
+if [[ $? -gt 0 ]]; then
+    echoerr "FATAL: _moonshell_check did not return 0. Aborting"
+    # Exiting from a function can nuke a terminal, so return instead.
+    [[ $(basename "x$0") =~ "bash"$ ]] \
+        && return 255 \
+        || exit 255
+fi
 
 #
 # PROFILES
