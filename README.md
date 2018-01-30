@@ -36,13 +36,11 @@ Everything starts with `./moon.sh`. When sourced it:
 
 1. Sets core `MOON_` variables.
 
-1. Checks itself for whether its installed and installs itself if not.
-
 1. Adds itself to `PATH`.
 
 1. Sources `*.sh` files from `lib`, `profile.d` and `completion.d`.
 
-1. Handles being sourced from Bash or a script.
+1. Automatically sources {etc,lib,etc/{profile.d,completion.d}} in `.`
 
 ## Usage
 
@@ -54,16 +52,13 @@ concatenated with the `ENVIRONMENT` name, to create the `STACK_NAME` set by ever
 
 * `STACK_NAME="${APP_NAME}-${ENVIRONMENT}"`
 
-Dictating the character class for the App name enables Moonshell to split the
-stack's name at any point to decipher the App and Environment names.
+To override this behaviour put `export MOON_FILE=false` in your script before
+sourcing `moon.sh`
 
 ### Setup
 
-To both setup and use Moonshell, simply source `moon.sh`, this library takes
-care of self installation.
-
 ```
-source moon.sh
+bundle install
 ```
 
 ### Admin
@@ -73,14 +68,13 @@ can tab complete its options for more info.
 
 ```
 [user@host ~]$ _moonshell -<tab><tab>
--h       --help   -r       --reset  -s       --setup  -t       --test
+-h       --help   -r       --reset  -t       --test
 [user@host ~]$ _moonshell --help
 Usage: _moonshell [-h|--help] [-r|--reset] [-s|--setup]
 Perform basic functions for Moonshell.
 
     -h, --help      show this help and exit
     -r, --reset     remove all var files and regenerate self
-    -s, --setup     install self in to the shell of user: 'user'
     -t, --test      run bashate, rubocop and markdownlint
 ```
 
@@ -94,7 +88,7 @@ Per the structure below, Moonshell uses the FHS standard dirs of `bin`, `lib`,
 `var`, `etc`, etc. If, in your repo checkout of `${HOME}/dev/repo`, you have a
 `bin` and `lib` directory, you can simply:
 
-`_moonshell_overlay_dir ${HOME}/dev/repo`
+`overlay_dir_install PATH_TO_REPO`
 
 This will automatically create an entry in `etc/profile.d/private/overlay.sh`,
 so every time you spawn a shell your repo dir is automatically layed atop of
@@ -147,13 +141,19 @@ is where it's at.
 [Google Shell Style Guide](https://google.github.io/styleguide/shell.xml?showone=File_Extensions#File_Extensions)
 
 * Bash is on everything.
+
 * Bash doesn't require installation and updating of vendor modules.
+
 * Bash is really good at getting things from A to B with a bit of simple
   manipulation in between.
+
 * Nothing in this repo requires associative arrays, so there is less of a need
   for a higher level language.
+
 * Bash functions and scripts integrate really well with the Bash cli.
+
 * There are fewer bugs caused by edge cases found in higher level languages.
+
 * I <3 Bash :D
 
 ## How
