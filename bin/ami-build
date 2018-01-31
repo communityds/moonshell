@@ -32,9 +32,9 @@ PACKER_DEBUG=
 VERBOSE=
 
 [[ ! -d packer ]] \
-  && echoerr "ERROR: Dir 'packer' does not exist." \
-  && echoerr "Are you in the correct repo?" \
-  && exit 1
+    && echoerr "ERROR: Dir 'packer' does not exist." \
+    && echoerr "Are you in the correct repo?" \
+    && exit 1
 
 [[ ! -d ${PACKER_DIR} ]] && mkdir ${PACKER_DIR}
 
@@ -69,13 +69,13 @@ log () {
 }
 
 verify_class_file () {
-  local class classes=($@)
-  for class in ${classes[@]}; do
-    [[ ! -f "${BUILD_ROOT}/packer/${class}.json" ]] \
-      && log "ERROR: Class file '${class}.json' does not exist in ${PWD}/packer/" \
-      && exit 1
-  done
-  return 0
+    local class classes=($@)
+    for class in ${classes[@]}; do
+        [[ ! -f "${BUILD_ROOT}/packer/${class}.json" ]] \
+            && log "ERROR: Class file '${class}.json' does not exist in ${PWD}/packer/" \
+            && exit 1
+    done
+    return 0
 }
 
 install_packer () {

@@ -1,8 +1,15 @@
 #!groovy
+/*
+Welcome to the MoonShell Jenkinsfile
+
+There are many ways to set up and define a Jenkinsfile, but a completely
+declarative pipeline was chosen as it's simplest for people who are leveling
+up bash to use.
+*/
 
 node {
     git_clone()
-    test_setup()
+    setup()
     test()
     copy()
     output()
@@ -14,7 +21,7 @@ def git_clone () {
     }
 }
 
-def test_setup () {
+def setup () {
     stage('Setup') {
         sh('bundle install')
     }
@@ -29,24 +36,23 @@ def test () {
         }, rubocop: {
             sh('rubocop -D')
         }, bashate: {
-            sh('bashate -v -i E006,E042 $(find . -name "*.sh")')
+            // lint all files with a bash shebang
+            sh('bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" .)')
         }
     }
 }
 
 def copy () {
     stage('Copy') {
-        def DESTINATION = "${env.JENKINS_HOME}/sources/moonshell/${env.BRANCH_NAME}"
+        def DESTINATION = "${env.JENKINS_HOME}/artifacts/moonshell/${env.BRANCH_NAME}"
         sh("mkdir -p '${DESTINATION}'")
         sh("rsync -rvC '${env.WORKSPACE}/' '${DESTINATION}/' --delete-before --exclude='cds@tmp'")
     }
 }
 
 def output () {
-    // ~/sources is maintained as a source of repositories that have passed
-    // testing; this may not apply to other organisations.
     stage('Output') {
-        def DESTINATION = "${env.JENKINS_HOME}/sources/moonshell/${env.BRANCH_NAME}"
+        def DESTINATION = "${env.JENKINS_HOME}/artifacts/moonshell/${env.BRANCH_NAME}"
         sh("git rev-parse HEAD | tr -d '\\n' > '${DESTINATION}/commit'")
         def GIT_COMMIT = readFile "${DESTINATION}/commit"
         echo "GIT_COMMIT=${GIT_COMMIT}"

@@ -10,12 +10,12 @@ source $(dirname $0)/../moon.sh
 export PDSH_SSH_ARGS="-o StrictHostKeyChecking=no"
 
 if [[ $# -lt 2 ]]; then
-  echoerr "Usage: $(basename $0) HOST COMMAND"
-  exit
+    echoerr "Usage: $(basename $0) HOST COMMAND"
+    exit
 else
-  TARGET_HOST=$1
-  shift
-  CMD=${@}
+    TARGET_HOST=$1
+    shift
+    CMD=${@}
 fi
 
 bastion_exec "export PDSH_SSH_ARGS='${PDSH_SSH_ARGS}'; pdsh -M ssh -w \$(host ${TARGET_HOST} | awk '{print \$NF}' | paste -sd,) '${CMD}'"

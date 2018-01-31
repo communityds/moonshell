@@ -8,17 +8,17 @@ export MOON_FILE=false
 source $(dirname $0)/../moon.sh
 
 [[ $# -lt 1 ]] \
-  && echo "Usage $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
-  && exit
+    && echo "Usage $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
+    && exit
 
 instances=($@)
 
 for instance in ${instances[@]}; do
-  if [[ ! ${instance} =~ ^i-[0-9a-f]+$ ]]; then
-    echo "WARNING: Instance '${instance}' is not a valid instance id; ignoring."
-  else
-    instance_private_ip ${instance}
-  fi
+    if [[ ! ${instance} =~ ^i-[0-9a-f]+$ ]]; then
+        echo "WARNING: Instance '${instance}' is not a valid instance id; ignoring."
+    else
+        instance_private_ip ${instance}
+    fi
 done
 
 

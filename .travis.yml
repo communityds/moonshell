@@ -11,7 +11,7 @@ before_script:
 script:
   - mdl -v $(find . -name '*.md')
   - bundle exec rubocop -D
-  - bashate -v -i E006,E042 $(find . -name '*.sh')
+  - bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" .)
 notifications:
   slack:
     secure: VMF91WiBPo0Wbe//O7kWvFOWr9HhHnE7fmAQXYtdp6r6RXOIivTD8AJyjUJ4XdPhoYXcfrp0ab8W7s5DZ/u0z38B2QEYQM6XyyUm14TiIhYOSdfSNU3Yvivch/Uo1wOG6dTvEQkoXqVPE9XiX6iI6TxFGSkncGvSF54yeReHY9mr1Beb6mN4cDSbPyvjwvCRTcqNY+2HszEIFFWW+/yaeU8WADyIQGeW/YUfGes90ySx0X3tczAHEG4pDcvyaP9ODk17ORT8scChN6Zs0gJSRhKvnBM8GQyrnfmoTzW5CIwrgUOALzaVr9IV2L9mJ11crUVQxgXI38NwOAEprds5kKKnbVm4KxMm71pNLt8tIRGCmjcvMiuHIVz/CxvduZyYXNeSEeq2iY1K0w5qC7nPxf0G7ZmqJpYqnS0qESzk/qVI/2uXStgel3UqFEie0gQ41zpTb7Gw8GSUbmoar2bVScB/QklQ+uYuy4n+VqXogO0dV+yasC4KU38PROM3wgNmjqIstlE72vsAq8rmIHny0e3agt2EXnQoryoBLh93ozL9V8frT0q5DYI3bTkVzJ3hjLa2cDoU8Kug4s62+KT+aE5NkPK9Anr4O7BCqNPnVNNSd+v8e7eJKoQgvo75uIBrKGNQ/OP3D0+iwA1LYl3kn4HN0iJ1f3slJdyKOTu7SBw=

@@ -4,9 +4,9 @@
 # is designed to work from the root of a Moonshot repo.
 #
 # We find all VPCs and prompt the user. We then gather the variables of:
-#   * AWS::EC2::VPC
-#   * RouteTableID
-#   * VPCNetwork
+#    * AWS::EC2::VPC
+#    * RouteTableID
+#    * VPCNetwork
 #
 # The selected peering connection is then deleted along with route entries.
 #
@@ -14,18 +14,18 @@
 source $(dirname $0)/../moon.sh
 
 usage () {
-  echoerr "Usage: $(basename $0) ENVIRONMENT"
-  exit
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
 }
 
 #
 # INPUT
 #
 if [[ $# -lt 1 ]]; then
-  usage
+    usage
 else
-  export ENVIRONMENT=$1
-  export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    export ENVIRONMENT=$1
+    export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 fi
 
 #
@@ -33,16 +33,16 @@ fi
 #
 CORE_STACK_PREFIX="core-infra"
 [[ ${APP_NAME} =~ ^${CORE_STACK_PREFIX} ]] \
-  && echoerr "ERROR: This script can not be run on ${CORE_STACK_PREFIX}" \
-  && exit 1
+    && echoerr "ERROR: This script can not be run on ${CORE_STACK_PREFIX}" \
+    && exit 1
 
 # This list excludes "active", "pending-acceptance" and "provisioning"
 # $(aws ec2 describe-vpc-peering-connections help)
 PEERING_STATUS_CODES=(\
-  "deleted" \
-  "expired" \
-  "failed" \
-  "rejected" \
+    "deleted" \
+    "expired" \
+    "failed" \
+    "rejected" \
 )
 
 #
@@ -57,40 +57,40 @@ echoerr "INFO: Discovering existing peering connections"
 PEERING_CONNECTIONS=($(vpc_peers_from_requester ${SELF_VPC_ID}))
 
 if [[ -z ${PEERING_CONNECTIONS[@]-} ]]; then
-  echoerr "INFO: No peering connections found for ${SELF_STACK_NAME}"
-  exit 0
+    echoerr "INFO: No peering connections found for ${SELF_STACK_NAME}"
+    exit 0
 fi
 
 echoerr
 echo "Choose a stack to dissociate ${SELF_STACK_NAME} from:"
 # We avoid using $(choose) here becase we want extra custom output
 for ((i = 0; i < ${#PEERING_CONNECTIONS[@]}; i += 1)); do
-  echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
-    --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
-    --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
-    --output text)"
+    echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
+        --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
+        --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
+        --output text)"
 done
 if [[ ${#PEERING_CONNECTIONS[@]} -lt 2 ]]; then
-  echo -n "Choice [0]: "
+    echo -n "Choice [0]: "
 else
-  echo -n "Choice [0-$((${#PEERING_CONNECTIONS[@]} - 1))]: "
+    echo -n "Choice [0-$((${#PEERING_CONNECTIONS[@]} - 1))]: "
 fi
 read choice
 if [[ ${choice} =~ ^[0-9]+$ ]]; then
-  if [[ -z ${PEERING_CONNECTIONS[$choice]} ]]; then
-    echoerr "ERROR: Choice '${choice}' is invalid."
-    exit 1
-  else
-    VPC_PEERING_ID=${PEERING_CONNECTIONS[$choice]}
-    TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
-      --vpc-peering-connection-id ${VPC_PEERING_ID} \
-      --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
-      --output text
-    )
-  fi
+    if [[ -z ${PEERING_CONNECTIONS[$choice]} ]]; then
+        echoerr "ERROR: Choice '${choice}' is invalid."
+        exit 1
+    else
+        VPC_PEERING_ID=${PEERING_CONNECTIONS[$choice]}
+        TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
+            --vpc-peering-connection-id ${VPC_PEERING_ID} \
+            --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
+            --output text
+        )
+    fi
 else
-  echoerr "ERROR: Choice '${choice}' is not numeric"
-  exit 1
+    echoerr "ERROR: Choice '${choice}' is not numeric"
+    exit 1
 fi
 
 # Find target StackName, Network and Route table
@@ -102,30 +102,30 @@ TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_APP_NAME} RouteTableId)
 echoerr "INFO: Removing routes from ${SELF_STACK_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
-  --region ${AWS_REGION} \
-  --route-table-id ${SELF_VPC_ROUTE_TABLE} \
-  --destination-cidr-block ${TARGET_VPC_NETWORK} \
-  >/dev/null \
-  || true
+    --region ${AWS_REGION} \
+    --route-table-id ${SELF_VPC_ROUTE_TABLE} \
+    --destination-cidr-block ${TARGET_VPC_NETWORK} \
+    >/dev/null \
+    || true
 
 echoerr "INFO: Removing routes from ${TARGET_APP_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
-  --region ${AWS_REGION} \
-  --route-table-id ${TARGET_VPC_ROUTE_TABLE} \
-  --destination-cidr-block ${SELF_VPC_NETWORK} \
-  >/dev/null \
-  || true
+    --region ${AWS_REGION} \
+    --route-table-id ${TARGET_VPC_ROUTE_TABLE} \
+    --destination-cidr-block ${SELF_VPC_NETWORK} \
+    >/dev/null \
+    || true
 
 echoerr "INFO: Deleting connection: ${VPC_PEERING_ID}"
 retr=$(aws ec2 delete-vpc-peering-connection \
-  --region ${AWS_REGION} \
-  --vpc-peering-connection-id ${VPC_PEERING_ID} \
-  --query "Return" \
-  --output text)
+    --region ${AWS_REGION} \
+    --vpc-peering-connection-id ${VPC_PEERING_ID} \
+    --query "Return" \
+    --output text)
 if [[ ! ${retr} == "True" ]]; then
-  echoerr "ERROR: Failed to delete ${VPC_PEERING_ID}. status: '${retr}'"
-  exit 255
+    echoerr "ERROR: Failed to delete ${VPC_PEERING_ID}. status: '${retr}'"
+    exit 255
 fi
 
 echoerr "INFO: Dissociating self route53"
