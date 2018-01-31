@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 #
-# MoonShell Initialiser: 'The One Ring'
+# Welcome to the MoonShell initialiser
 #
-# Sourcing this file loads in all lib/ files and prepends bin/ to PATH
+# Sourcing this file sources all files in lib/ and etc/ and prepends bin/ to
+# PATH.
 #
-# This project is based upon https://github.com/pingram3030/bashenv which is a
-# custom and dynamic environment that can easily be built upon. Custom
-# libraries can be placed in lib/private/ and custom variables in
-# etc/profile.d/private/; these locations are auto-loaded (*.sh).
+# Custom libraries can be created in lib/private/ and custom variables defined
+# in etc/profile.d/private/; these locations are auto-sourced, but .gitignore'd
 #
 # Copyright: Phil Ingram (pingramdotau@gmaildotcom)
 #
@@ -18,7 +17,8 @@
 #
 # GLOBAL VARIABLES
 #
-export MOON_ROOT="$(dirname ${BASH_SOURCE[0]})"
+[[ -z ${MOON_ROOT-} ]] \
+    && export MOON_ROOT="$(dirname ${BASH_SOURCE[0]})"
 # realpath resolves symlinks which can be handy
 export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
@@ -31,7 +31,6 @@ export MOON_USR="${MOON_ROOT}/usr"
 export MOON_VAR="${MOON_ROOT}/var"
 
 export MOON_COMPLETION="${MOON_ETC}/completion.d"
-export MOON_OVERLAY="${MOON_ETC}/overlay.d"
 export MOON_PROFILE="${MOON_ETC}/profile.d"
 
 export MOON_FIND_OPTS="-mindepth 1 -maxdepth 1"
@@ -62,6 +61,7 @@ if [[ $? -gt 0 ]]; then
         || exit 255
 fi
 
+
 #
 # PROFILES
 #
@@ -77,7 +77,7 @@ _moonshell_source ${MOON_PROFILE}
 #
 # PATH MODIFICATION
 #
-[[ -z ${PRE_MOON_PATH-} ]] && export PRE_MOON_PATH="${PATH}"
+[[ -z ${MOON_PATH_PRE-} ]] && export MOON_PATH_PRE="${PATH}"
 overlay_path_prepend ${MOON_BIN}
 
 
@@ -93,44 +93,36 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # non-zero exit codes as serious and exit.
     set -eu
 
-    # Originally we used AWS_DEFAULT_PROFILE to label accounts and it was used
-    # by lib/aws/bastion.sh. This was not portable because when connected to a
-    # remote host, where you have passed through AWS env vars, aws-cli commands
-    # fail because there is no ~/.aws/{config,credentials} configured.
-    # tl;dr; AWS_DEFAULT_PROFILE is reserved and should only be set where you
-    # have run `aws configure`; this is a machine local thing.
-    # 
-    # As we still need a way of differentiating accounts and hosts etc we
-    # instead set AWS_ACCOUNT_NAME. This is not currently used by aws-cli, so
-    # we appropriate it here. This should be set to the defining suffix
-    # required; for example 'production' or 'development' are used in bastion
-    # functions to set the name of the bastion to use; 'bastion-production' or
-    # 'bastion-development', which in turn should reference host entries in
-    # ~/.ssh/config
+    # We require a way of differentiating accounts and bastion hosts , so we
+    # set AWS_ACCOUNT_NAME. This variable is not used by any AWS tools, so
+    # we appropriate it here. We make the assumption that your bastion hosts,
+    # as defined in ~/.ssh/config, follow the naming convention of
+    # "bastion-${AWS_ACCOUNT_NAME}"
     #
     [[ -z ${AWS_ACCOUNT_NAME-} ]] \
         && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset. aws-creds?" \
         && exit 1
 
-    # aws-cli uses this and it enables a more dynamic environment
+    # AWS_REGION must be set by the end user through a means of their choosing;
+    # such as by using the bin/aws-creds ruby script. NOTE: `bundle install` is
+    # not automatic.
     [[ -z ${AWS_REGION-} ]] \
         && echoerr "ERROR: 'AWS_REGION' is unset." \
         && exit 1
 
     # Most scripts in bin/ build off of ${APP_NAME} which is programatically
-    # set from `Moonfile.rb`. For those that don't need APP_NAME, i.e. can be
-    # run from anywhere in the filesystem, they can export ${MOON_FILE} to
-    # false and bypass this failure mode.
+    # set from `Moonfile.rb` below. For those that don't need APP_NAME, i.e.
+    # can be run from anywhere in the filesystem, they can export ${MOON_FILE}
+    # as false and bypass this failure mode.
     if [[ ! -f ${PWD}/Moonfile.rb ]]; then
         if [[ ! ${MOON_FILE-} == false ]]; then
             echoerr "ERROR: Moonfile.rb is not present in CWD"
             exit 1
         fi
     else
-        # To define the environment name from the stack name we split on
-        # hyphens and strip the first component. This was a decision for
-        # simplicity; deal with it and use underscores in your app name
-        # instead
+        # We only support an app_name that does not contain hyphens. We make
+        # this assumption to simplify code and deliberately choose one side of
+        # the fence; Mea culpa.
         export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
         if [[ ! ${APP_NAME} =~ ^[a-z0-9A-Z_]*$ ]]; then
             echoerr "ERROR: APP_NAME may only contain alpha-numeric characters and underscores"
