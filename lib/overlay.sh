@@ -18,23 +18,23 @@ overlay_dir_install () {
     local dir_realpath="$(realpath ${dir})"
     local dir_name="$(basename ${dir_realpath})"
 
-    local lib_file="${MOON_LIB}/private/overlay-${dir_name}.sh"
+    local overlay_file="${MOON_PROFILE}/private/overlay-${dir_name}.sh"
 
-    if [[ -f "${lib_file}" ]]; then
-        local existing_dir=$(awk '{print $2}' "${lib_file}")
+    if [[ -f "${overlay_file}" ]]; then
+        local existing_dir=$(awk '{print $2}' "${overlay_file}")
         if [[ "${existing_dir}" == "${dir_realpath}" ]]; then
             echoerr "WARNING: Overlay has already installed itself for '${dir_name}'"
             return 0
         else
-            echoerr "ERROR: Overlay file '${lib_file}' already exists, but points to a different dir: '${existing_dir}'"
+            echoerr "ERROR: Overlay file '${overlay_file}' already exists, but points to a different dir: '${existing_dir}'"
             return 1
         fi
     else
-        echoerr "INFO: Installing '${dir_name}' in to '${lib_file}'"
-        echo "overlay_dir ${dir_realpath}" > "${lib_file}"
+        echoerr "INFO: Installing '${dir_name}' in to '${overlay_file}'"
+        echo "overlay_dir ${dir_realpath}" > "${overlay_file}"
 
-        echoerr "INFO: Sourcing '${lib_file}'"
-        source ${lib_file}
+        echoerr "INFO: Sourcing '${overlay_file}'"
+        source ${overlay_file}
 
         return $?
     fi

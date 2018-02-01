@@ -6,8 +6,6 @@
 # where you are tracking your senstive files.
 #
 if [[ -d "${MOON_PROFILE}/private" ]] || [[ -L "${MOON_PROFILE}/private" ]]; then
-    for private_file in $(find "${MOON_PROFILE}/private/" ${MOON_FIND_OPTS} -name '*.sh'); do
-        source ${private_file}
-    done
+    _moonshell_source ${MOON_PROFILE}/private
 fi
 
