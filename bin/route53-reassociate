@@ -11,9 +11,9 @@ source $(dirname $0)/../moon.sh
 # Intro
 #
 [[ $# -lt 1 ]] \
-  && echoerr "Usage $(basename $0) ENVIRONMENT" \
-  && exit \
-  || ENVIRONMENT="$1"
+    && echoerr "Usage $(basename $0) ENVIRONMENT" \
+    && exit \
+    || ENVIRONMENT="$1"
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 
@@ -27,62 +27,62 @@ HOSTED_ZONE=$(stack_resource_id ${STACK_NAME} InternalRoute53HostedZone)
 echoerr "INFO: ${STACK_NAME} InternalRoute53HostedZone: ${HOSTED_ZONE}"
 
 SELF_DOMAIN_NAME=$(aws route53 list-hosted-zones \
-  --region ${AWS_REGION} \
-  --query "HostedZones[?Id=='/hostedzone/${HOSTED_ZONE}'].Name" \
-  --output text \
-  | sed 's/\.$//')
+    --region ${AWS_REGION} \
+    --query "HostedZones[?Id=='/hostedzone/${HOSTED_ZONE}'].Name" \
+    --output text \
+    | sed 's/\.$//')
 echoerr "INFO: Hosted zone domain name: ${SELF_DOMAIN_NAME}"
 
 
 declare -a ASSOCIATED_VPCS
 ASSOCIATED_VPCS=($(aws ec2 describe-vpc-peering-connections \
-  --region ${AWS_REGION} \
-  --filters \
-    Name=accepter-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
-    Name=status-code,Values=active,pending-acceptance,provisioning \
-  --query "VpcPeeringConnections[].RequesterVpcInfo.VpcId" \
-  --output text))
+    --region ${AWS_REGION} \
+    --filters \
+        Name=accepter-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
+        Name=status-code,Values=active,pending-acceptance,provisioning \
+    --query "VpcPeeringConnections[].RequesterVpcInfo.VpcId" \
+    --output text))
 ASSOCIATED_VPCS+=($(aws ec2 describe-vpc-peering-connections \
-  --filters \
-    Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
-    Name=status-code,Values=active,pending-acceptance,provisioning \
-  --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
-  --output text))
+    --filters \
+        Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
+        Name=status-code,Values=active,pending-acceptance,provisioning \
+    --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
+    --output text))
 
 if [[ ${ASSOCIATED_VPCS[@]-} ]]; then
-  # Ensure we are part of this array, else we will be dissociated later, which
-  # will result in sadness..
-  if ! contains ${SELF_VPC_ID} ${ASSOCIATED_VPCS[@]-}; then
-    ASSOCIATED_VPCS+=(${SELF_VPC_ID})
-  fi
-  echoerr "INFO: Associated VPCs: $(echo ${ASSOCIATED_VPCS[@]} | tr ' ' ,)"
+    # Ensure we are part of this array, else we will be dissociated later, which
+    # will result in sadness..
+    if ! contains ${SELF_VPC_ID} ${ASSOCIATED_VPCS[@]-}; then
+        ASSOCIATED_VPCS+=(${SELF_VPC_ID})
+    fi
+    echoerr "INFO: Associated VPCs: $(echo ${ASSOCIATED_VPCS[@]} | tr ' ' ,)"
 else
-  echoerr "WARNING: There are no VPC associations for stack '${STACK_NAME}'"
-  exit 1
+    echoerr "WARNING: There are no VPC associations for stack '${STACK_NAME}'"
+    exit 1
 fi
 
 declare -a CURRENT_ROUTE53_ASSOCIATIONS
 CURRENT_ROUTE53_ASSOCIATIONS=($(aws route53 get-hosted-zone \
-  --region ${AWS_REGION} \
-  --id ${HOSTED_ZONE} \
-  --query "VPCs[*].VPCId" \
-  --output text))
+    --region ${AWS_REGION} \
+    --id ${HOSTED_ZONE} \
+    --query "VPCs[*].VPCId" \
+    --output text))
 echoerr "INFO: Current Route53 associations: $(echo ${CURRENT_ROUTE53_ASSOCIATIONS[@]} | tr ' ' ,)"
 
 for vpc in ${CURRENT_ROUTE53_ASSOCIATIONS[@]}; do
-  if ! contains ${vpc} ${ASSOCIATED_VPCS[@]}; then
-    route53_vpc_dissociate ${HOSTED_ZONE} ${vpc}
-    # Pop the VPC from the array
-    CURRENT_ROUTE53_ASSOCIATIONS=("${CURRENT_ROUTE53_ASSOCIATIONS[@]/$vpc}")
-  fi
+    if ! contains ${vpc} ${ASSOCIATED_VPCS[@]}; then
+        route53_vpc_dissociate ${HOSTED_ZONE} ${vpc}
+        # Pop the VPC from the array
+        CURRENT_ROUTE53_ASSOCIATIONS=("${CURRENT_ROUTE53_ASSOCIATIONS[@]/$vpc}")
+    fi
 done
 
 for vpc in ${ASSOCIATED_VPCS[@]}; do
-  if ! contains ${vpc} ${CURRENT_ROUTE53_ASSOCIATIONS[@]}; then
-    route53_vpc_associate ${HOSTED_ZONE} ${vpc}
-    # Push the new VPC in to the current list
-    CURRENT_ROUTE53_ASSOCIATIONS+=(${vpc})
-  fi
+    if ! contains ${vpc} ${CURRENT_ROUTE53_ASSOCIATIONS[@]}; then
+        route53_vpc_associate ${HOSTED_ZONE} ${vpc}
+        # Push the new VPC in to the current list
+        CURRENT_ROUTE53_ASSOCIATIONS+=(${vpc})
+    fi
 done
 echoerr "INFO: VPCs associated with the ${HOSTED_ZONE} hosted zone: $(echo ${CURRENT_ROUTE53_ASSOCIATIONS[@]} | tr ' ' ,)"
 

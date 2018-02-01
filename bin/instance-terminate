@@ -11,9 +11,9 @@ export MOON_FILE=false
 source $(dirname $0)/../moon.sh
 
 [[ $# -lt 1 ]] \
-  && echoerr "Usage: $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
-  && exit \
-  || INSTANCES=($@)
+    && echoerr "Usage: $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
+    && exit \
+    || INSTANCES=($@)
 
 for instance in ${INSTANCES[@]}; do
     if [[ ${instance} =~ ^i-[a-f0-9]*$ ]]; then

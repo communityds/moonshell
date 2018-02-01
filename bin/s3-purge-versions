@@ -6,21 +6,21 @@
 source $(dirname $0)/../moon.sh
 
 usage () {
-  echoerr "This script purges every version of every object from the S3 bucket created in the environment's stack"
-  echoerr
-  echoerr "Usage: $(basename $0) ENVIRONMENT"
-  exit
+    echoerr "This script purges every version of every object from the S3 bucket created in the environment's stack"
+    echoerr
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
 }
 
 #
 # INPUT
 #
 if [[ $# -lt 1 ]]; then
-  usage
+    usage
 else
-  ENVIRONMENT=$1
-  STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-  S3_BUCKET_NAME=$(s3_stack_bucket_name ${STACK_NAME})
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    S3_BUCKET_NAME=$(s3_stack_bucket_name ${STACK_NAME})
 fi
 
 
@@ -28,8 +28,8 @@ echo "You are about to delete the entire contents of the S3 bucket '${S3_BUCKET_
 echo -n "Are you sure you wish to continue? (y/N) "
 read yolo
 [[ ! ${yolo} =~ ^[yY]$ ]] \
-  && echo "INFO: Quitting." \
-  && exit 0
+    && echo "INFO: Quitting." \
+    && exit 0
 
 echoerr "INFO: Deletion of all objects from '${S3_BUCKET_NAME}' will commence in 7 seconds (ctrl-C to cancel)"
 sleep 7
@@ -38,12 +38,12 @@ s3_purge_versions ${S3_BUCKET_NAME}
 echoerr "INFO: Listing bogon object versions"
 bogons=($(aws s3api list-object-versions --region ${AWS_REGION} --bucket ${S3_BUCKET_NAME}))
 if [[ ${bogons[@]-} ]]; then
-  # Because there is a limit on deleting a maximum of 1000 objects at any one
-  # time we can simply re-run this script to clean things up.
-  # TODO: handle >1000 records sanely..
-  echoerr "WARNING: Found remnant objects. Re-run this script to continue removing"
+    # Because there is a limit on deleting a maximum of 1000 objects at any one
+    # time we can simply re-run this script to clean things up.
+    # TODO: handle >1000 records sanely..
+    echoerr "WARNING: Found remnant objects. Re-run this script to continue removing"
 else
-  echoerr "INFO: No bogons found"
+    echoerr "INFO: No bogons found"
 fi
 
 echoerr "INFO: Deletion complete. Have a nice day :)"

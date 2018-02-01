@@ -16,17 +16,17 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 2 ]]; then
-  echoerr "Usage: $(basename $0) ENVIRONMENT TARGET_HOST FQDN COMMAND"
-  echoerr ""
-  echoerr "COMMAND defaults to \$* and can not be null"
-  exit 0
+    echoerr "Usage: $(basename $0) ENVIRONMENT TARGET_HOST FQDN COMMAND"
+    echoerr ""
+    echoerr "COMMAND defaults to \$* and can not be null"
+    exit 0
 else
-  ENVIRONMENT=$1
-  STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-  TARGET_HOST=$2
-  FQDN=$3
-  shift 3
-  CMD=$*
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    TARGET_HOST=$2
+    FQDN=$3
+    shift 3
+    CMD=$*
 fi
 
 bastion_exec_vhost ${STACK_NAME} ${TARGET_HOST} ${FQDN} ${CMD[@]}

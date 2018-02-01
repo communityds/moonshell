@@ -6,15 +6,15 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 2 ]]; then
-  echoerr "Usage: $(basename $0) ENVIRONMENT DATABASE [OUT_FILE]"
-  exit 0
+    echoerr "Usage: $(basename $0) ENVIRONMENT DATABASE [OUT_FILE]"
+    exit 0
 else
-  ENVIRONMENT=$1
-  STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-  DATABASE=$2
-  [[ ${3-} ]] \
-    && OUT_FILE=$3 \
-    || OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}_$(date +%s).sql.gz"
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    DATABASE=$2
+    [[ ${3-} ]] \
+        && OUT_FILE=$3 \
+        || OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}_$(date +%s).sql.gz"
 fi
 
 rds_dump_db ${STACK_NAME} ${DATABASE} ${OUT_FILE}
