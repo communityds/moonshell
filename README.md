@@ -42,6 +42,27 @@ Everything starts with `./moon.sh`. When sourced it:
 
 1. Automatically sources {etc,lib,etc/{profile.d,completion.d}} in `.`
 
+### Setup
+
+```
+bundle install
+```
+
+To get the most out of Moonshell you have to source it from either your
+`~/.bashrc` or `~/.bash_profile`, which ever is best for your choice of
+operating system.
+
+Sample:
+
+```
+# MoonShell - https://github.com/communityds/moonshell
+#
+# This block must be the last entry in your .bash_profile/.bashrc. moon.sh
+# assumes that it is being sourced last for the modifications it makes to PATH.
+#export DEBUG=true
+source ${HOME}/tools/moonshell/moon.sh
+```
+
 ## Usage
 
 The majority of Moonshell's functionality relies upon `Moonfile.rb`, Moonshot's
@@ -55,11 +76,19 @@ concatenated with the `ENVIRONMENT` name, to create the `STACK_NAME` set by ever
 To override this behaviour put `export MOON_FILE=false` in your script before
 sourcing `moon.sh`
 
-### Setup
+### Debug
+
+To see Bash debug ouput of any failing command, simply execute the command with
+the `DEBUG` variable set.
+
+For example:
 
 ```
-bundle install
+DEBUG=true s3-ls dev
 ```
+
+To debug issues with the initial shell sourcing of Moonshell, uncomment the
+`DEBUG` line from your `~/.bashrc`/`~/.bash_profile` and spawn a new shell.
 
 ### Admin
 
