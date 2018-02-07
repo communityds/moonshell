@@ -12,7 +12,19 @@
 #   * PATH=${PWD}/bin:${PATH}
 
 overlay_dir_install () {
-    local dir=$1
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: overlay_dir_install PATH_TO_DIR"
+        echoerr
+        echoerr "Examples:"
+        echoerr "  $ overlay_dir_install foo/"
+        echoerr "  $ overlay_dir_install /home/bar/baz/"
+        return
+    elif [[ ! -d "$1" ]]; then
+        echoerr "ERROR: '$1' is not a directory"
+        return 1
+    else
+        local dir=$1
+    fi
 
     # We must resolve the dir in case of it being '.'
     local dir_realpath="$(realpath ${dir})"
