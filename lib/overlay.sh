@@ -18,6 +18,9 @@ overlay_dir_install () {
     local dir_realpath="$(realpath ${dir})"
     local dir_name="$(basename ${dir_realpath})"
 
+    # This dir should be created by ${MOON_PROFILE}/private.sh, but that may
+    # not have been sourced yet to do so.
+    [[ ! -d "${MOON_PROFILE}/private" ]] && mkdir -p "${MOON_PROFILE}/private"
     local overlay_file="${MOON_PROFILE}/private/overlay-${dir_name}.sh"
 
     if [[ -f "${overlay_file}" ]]; then
