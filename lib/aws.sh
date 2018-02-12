@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # AWS FUNCTION LOADING
 #

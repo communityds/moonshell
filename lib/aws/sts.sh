@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # SECURITY TOKEN SERVICE FUNCTIONS
 #
