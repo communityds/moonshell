@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # SIMPLE STORAGE SERVICE (S3) FUNCTIONS
 #

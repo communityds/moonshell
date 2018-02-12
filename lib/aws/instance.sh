@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # INSTANCE FUNCTIONS
 #
