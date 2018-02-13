@@ -69,7 +69,7 @@ overlay_dir () {
     fi
 
     if [[ -d ${dir}/bin ]]; then
-        overlay_path_prepend "${dir}/bin"
+        overlay_path_prepend "$(realpath ${dir}/bin)"
     elif [[ ! -d ${dir} ]]; then
         echoerr "ERROR: '${dir}' does not exist or is not a directory" \
         return 1
@@ -95,7 +95,7 @@ overlay_path_append () {
 
     if [[ -d ${bin_dir} ]]; then
         if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
-            export PATH=${PATH}:${bin_dir}
+            export PATH=${PATH}:$(realpath ${bin_dir})
         fi
     else
         echoerr "ERROR: '${bin_dir}' is not a dir"
@@ -113,7 +113,7 @@ overlay_path_prepend () {
 
     if [[ -d ${bin_dir} ]]; then
         if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
-            export PATH=${bin_dir}:${PATH}
+            export PATH=$(realpath ${bin_dir}):${PATH}
         fi
     else
         echoerr "ERROR: '${bin_dir}' is not a dir"
