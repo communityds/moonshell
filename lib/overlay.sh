@@ -14,7 +14,7 @@
 
 overlay_dir_install () {
     if [[ $# -lt 1 ]]; then
-        echoerr "Usage: overlay_dir_install PATH_TO_DIR"
+        echoerr "Usage: ${FUNCNAME[0]} PATH_TO_DIR"
         echoerr
         echoerr "Examples:"
         echoerr "  $ overlay_dir_install foo/"
@@ -57,16 +57,27 @@ overlay_dir_install () {
 }
 
 overlay_dir () {
-    local dir=$1
-    local -a locations=(lib etc/profile.d etc/completion.d)
+    if [[ ${1-} ]]; then
+        local dir=$1
+    else
+        echoerr "Usage: ${FUNCNAME[0]} DIRECTORY"
+        echoerr
+        echoerr "Example:"
+        echoerr "  ${FUNCNAME[0]} foo/"
+        echoerr "  ${FUNCNAME[0]} /path/to/bar"
+        return
+    fi
 
-    [[ ! -d ${dir} ]] \
-        && echoerr "ERROR: '${dir}' does not exist or is not a directory" \
-        && return 1
-
-    [[ -d ${dir}/bin ]] && overlay_path_prepend "${dir}/bin"
+    if [[ -d ${dir}/bin ]]; then
+        overlay_path_prepend "$(realpath ${dir}/bin)"
+    elif [[ ! -d ${dir} ]]; then
+        echoerr "ERROR: '${dir}' does not exist or is not a directory" \
+        return 1
+    fi
 
     local location
+    local -a locations=(lib etc/profile.d etc/completion.d)
+
     for location in ${locations[@]}; do
         [[ -d "${dir}/${location}" ]] \
             && overlay_source_dir "${dir}/${location}" \
@@ -75,27 +86,60 @@ overlay_dir () {
 }
 
 overlay_path_append () {
-    local bin_dir=$1
+    if [[ ${1-} ]]; then
+        local bin_dir=$1
+    else
+        echoerr "Usage: ${FUNCNAME[0]} BIN_DIR"
+        return
+    fi
 
-    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
-        && export PATH=${PATH}:${bin_dir} \
-        || true
+    if [[ -d ${bin_dir} ]]; then
+        if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
+            export PATH=${PATH}:$(realpath ${bin_dir})
+        fi
+    else
+        echoerr "ERROR: '${bin_dir}' is not a dir"
+        return 1
+    fi
 }
 
 overlay_path_prepend () {
-    local bin_dir=$1
+    if [[ ${1-} ]]; then
+        local bin_dir=$1
+    else
+        echoerr "Usage: ${FUNCNAME[0]} BIN_DIR"
+        return
+    fi
 
-    [[ ! "${PATH}" =~ "${bin_dir}" ]] \
-        && export PATH=${bin_dir}:${PATH} \
-        || true
+    if [[ -d ${bin_dir} ]]; then
+        if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
+            export PATH=$(realpath ${bin_dir}):${PATH}
+        fi
+    else
+        echoerr "ERROR: '${bin_dir}' is not a dir"
+        return 1
+    fi
 }
 
 overlay_source_dir () {
-    local source_dir=$1
-    local opts=${MOON_FIND_OPTS:--mindepth 1 -maxdepth 1}
+    local find_opts=${MOON_FIND_OPTS:--mindepth 1 -maxdepth 1}
+
+    if [[ ${1-} ]]; then
+        local source_dir=$1
+    else
+        echoerr "Usage: ${FUNCNAME[0]} DIR_TO_SOURCE"
+        return
+    fi
+
+    if [[ ! -d ${source_dir} ]]; then
+        echoerr "ERROR: '${source_dir}' is not a dir"
+        return 1
+    fi
 
     local source_file
-    for source_file in $(find ${source_dir}/ ${opts} -name '*.sh'); do
+    local -a source_files=($(find ${source_dir}/ ${find_opts} -name '*.sh'))
+
+    for source_file in ${source_files[@]}; do
         source "${source_file}"
     done
 }
