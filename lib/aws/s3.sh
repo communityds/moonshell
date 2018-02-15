@@ -255,3 +255,149 @@ s3_upload () {
     return $?
 }
 
+s3_upload_multipart () {
+    # Upload a named object to ${s3_bucket_name} using the multipart upload API
+    local stack_name=${1}
+    local source=$(realpath ${2})
+    local destination=${3}
+    local options=${4-}
+
+    # Maybe parameterise chunk size?
+    local chunksize=5m
+
+    # Remove / prefix, s3 does not like '//'
+    destination=${destination/#\//}
+
+    if [[ ${source} =~ /$ ]]; then
+        echoerr "ERROR: Only individual files currently supported by s3_upload_multipart"
+        return 1
+    fi
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    local s3_url="s3://${s3_bucket_name}"
+    echoerr "INFO: Uploading resources to ${s3_url}/"
+
+    # Store arrays of file names, with corresponding upload 'etags'
+    local -a files
+    local -a etags
+
+    # Checksum and key for the file upload
+    local csum="$(openssl md5 -binary ${source} | base64)"
+    local key=$(basename "${source}")
+
+    # Set up temporary directory and a cleanup command so we can exit cleanly and easily on errors
+    local filesdir="$(mktemp --tmpdir -d s3upload.XXXXXX)"
+    pushd ${filesdir} >/dev/null
+
+        split -a 4 -b ${chunksize} ${source} s3part-
+
+        # Dummy file entry in index 0, since s3 API indexes file parts starting from 1
+        files=(dummy $(ls -1 s3part-* | sort))
+
+        # Initiate the upload and retrieve the upload ID from the response
+        local response=$(aws s3api create-multipart-upload \
+            --region ${AWS_REGION} \
+            --bucket ${s3_bucket_name} \
+            --key ${key} \
+            --metadata md5=${csum})
+        local upload_id=$(echo "${response}" | jq -r '.UploadId')
+        if [[ -z "${upload_id}" ]]; then
+            echoerr "ERROR: Unable to initiate multipart upload"
+	    popd >/dev/null
+	    rm -rf ${filesdir}
+            return 1
+        fi
+
+        # Iterate through the file parts, uploading each one
+        local num_parts=$((${#files[@]} - 1))
+        local index
+        for index in $(seq ${num_parts}); do
+            echoerr "INFO: uploading part ${index} of ${num_parts}..."
+            local file=${files[$index]};
+            local etag=$(_s3_upload_multipart_part ${s3_bucket_name} ${key} ${index} ${file} "${upload_id}")
+            if [[ -z "${etag}" ]]; then
+                echoerr "ERROR: Upload failed on part ${index} of ${num_parts}"
+		popd >/dev/null
+		rm -rf ${filesdir}
+                return 1
+            fi
+            etags[${index}]="${etag}"
+        done
+
+        # Assemble that sucker together at the other end...
+        local fileparts=${filesdir}/fileparts.json
+        local comma=','
+        printf '{"Parts": [\n' >> ${fileparts}
+        for index in $(seq ${num_parts}); do
+            [[ ${index} -eq ${num_parts} ]] && comma=""
+            # the ETags come back pre-quoted, for some reason...
+            printf '{"ETag": %s, "PartNumber": %d}%s\n' ${etags[${index}]} ${index} "${comma}" >> ${fileparts}
+        done
+        printf ']}\n' >> ${fileparts}
+
+        # Make the final API call and check the result
+        response=$(aws s3api complete-multipart-upload \
+            --region ${AWS_REGION} \
+            --multipart-upload "file://${fileparts}" \
+            --bucket ${s3_bucket_name} \
+            --key ${key} \
+            --upload-id "${upload_id}")
+
+        local location=$(echo "${response}" | jq -r '.Location')
+        if [[ -z ${location} ]]; then
+            echoerr "ERROR: Failed to complete multipart upload"
+	    popd >/dev/null
+	    rm -rf ${filesdir}
+            return 1
+        fi
+
+        echoerr "INFO: File successfully uploaded to ${location}"
+
+	popd >/dev/null
+
+    rm -rf ${filesdir}
+
+    return 0
+}
+
+_s3_upload_multipart_part() {
+    local s3_bucket_name=${1}
+    local key=${2}
+    local part=${3}
+    local file=${4}
+    local upload_id=${5}
+    local md5=$(openssl md5 -binary ${file} | base64)
+    local response
+    local etag
+
+    local max_retries=10
+    local retry
+    for retry in $(seq ${max_retries}); do
+        response=$(aws s3api upload-part \
+            --region ${AWS_REGION} \
+            --bucket ${s3_bucket_name} \
+            --key ${key} \
+            --part-number ${part} \
+            --body ${file} \
+            --upload-id ${upload_id} \
+            --content-md5 ${md5})
+        etag=$(echo $response | jq -r '.ETag')
+        if [[ -z "$etag" ]]; then
+            echoerr "INFO: Upload of part ${part} failed on attempt ${retry}"
+	    if [[ ${retry} -lt ${max_retries} ]]; then
+		echoerr "INFO: retrying..."
+		 # Wait a few seconds in case of temporary connectivity loss
+		sleep 3
+	    fi
+	    continue
+        fi
+
+        # Success, return the etag
+        echo "${etag}"
+        return 0
+    done
+
+    return 1
+}
