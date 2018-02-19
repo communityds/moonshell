@@ -139,7 +139,7 @@ overlay_source_dir () {
     local source_file
     local -a source_files=($(find ${source_dir}/ ${find_opts} -name '*.sh'))
 
-    for source_file in ${source_files[@]}; do
+    for source_file in ${source_files[@]-}; do
         source "${source_file}"
     done
 }
