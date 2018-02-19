@@ -134,7 +134,9 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     _moonshell_source ${MOON_LIB}
     _moonshell_source ${MOON_COMPLETION}
 
-    # Auto-source the CWD
-    overlay_dir ${PWD}
+    # Auto-source the CWD, unless we are in /
+    # /etc/profile.d/*.sh can not be sourced with `set -u`
+    [[ ! $(realpath ${PWD}) =~ ^/$ ]] \
+        && overlay_dir ${PWD}
 fi
 
