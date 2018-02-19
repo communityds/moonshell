@@ -137,6 +137,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # Auto-source the CWD, unless we are in /
     # /etc/profile.d/*.sh can not be sourced with `set -u`
     [[ ! $(realpath ${PWD}) =~ ^/$ ]] \
-        && overlay_dir ${PWD}
+        && overlay_dir ${PWD} \
+        || true
 fi
 
