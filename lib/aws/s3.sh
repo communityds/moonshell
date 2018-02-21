@@ -305,8 +305,8 @@ s3_upload_multipart () {
         local upload_id=$(echo "${response}" | jq -r '.UploadId')
         if [[ -z "${upload_id}" ]]; then
             echoerr "ERROR: Unable to initiate multipart upload"
-	    popd >/dev/null
-	    rm -rf ${filesdir}
+            popd >/dev/null
+            rm -rf ${filesdir}
             return 1
         fi
 
@@ -319,8 +319,8 @@ s3_upload_multipart () {
             local etag=$(_s3_upload_multipart_part ${s3_bucket_name} ${key} ${index} ${file} "${upload_id}")
             if [[ -z "${etag}" ]]; then
                 echoerr "ERROR: Upload failed on part ${index} of ${num_parts}"
-		popd >/dev/null
-		rm -rf ${filesdir}
+                popd >/dev/null
+                rm -rf ${filesdir}
                 return 1
             fi
             etags[${index}]="${etag}"
@@ -348,14 +348,14 @@ s3_upload_multipart () {
         local location=$(echo "${response}" | jq -r '.Location')
         if [[ -z ${location} ]]; then
             echoerr "ERROR: Failed to complete multipart upload"
-	    popd >/dev/null
-	    rm -rf ${filesdir}
+            popd >/dev/null
+            rm -rf ${filesdir}
             return 1
         fi
 
         echoerr "INFO: File successfully uploaded to ${location}"
 
-	popd >/dev/null
+        popd >/dev/null
 
     rm -rf ${filesdir}
 
