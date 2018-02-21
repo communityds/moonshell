@@ -51,16 +51,6 @@ source ${MOON_LIB}/common.sh
 source ${MOON_LIB}/moonshell.sh
 source ${MOON_LIB}/overlay.sh
 
-_moonshell_check ${MOON_ROOT}
-
-if [[ $? -gt 0 ]]; then
-    echoerr "FATAL: _moonshell_check did not return 0. Aborting"
-    # Exiting from a function can nuke a terminal, so return instead.
-    [[ $(basename "x$0") =~ "bash"$ ]] \
-        && return 255 \
-        || exit 255
-fi
-
 
 #
 # PROFILES

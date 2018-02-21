@@ -14,7 +14,14 @@
 # Because we output everything to STDERR this script is safe to eval :D
 #
 
-require 'parseconfig'
+begin
+  require 'parseconfig'
+rescue LoadError => e
+  puts "#{e.class}: #{e.message}"
+  puts e.backtrace.join("\n")
+  puts "Have you executed 'bundle install'?"
+  exit 1
+end
 
 credentials = ParseConfig.new("#{ENV['HOME']}/.aws/credentials")
 config = ParseConfig.new("#{ENV['HOME']}/.aws/config")
