@@ -14,17 +14,6 @@ _moonshell () {
         || _moonshell_getopts ${options[@]}
 }
 
-_moonshell_check () {
-    local moonshell_dir=$1
-
-    [[ ! -f "${moonshell_dir}/Gemfile.lock" ]] \
-        && echoerr "ERROR: Gemfile.lock not present." \
-        && echoerr "INFO: Try executing 'bundle install' inside of ${moonshell_dir}" \
-        && return 1
-
-    return 0
-}
-
 _moonshell_getopts () {
     OPTIND=1
     local optspec=":hrst" OPTARG=($@)
