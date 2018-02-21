@@ -251,33 +251,29 @@ s3_upload () {
 
     local s3_url="s3://${s3_bucket_name}"
     echoerr "INFO: Uploading resources to ${s3_url}/"
+
+    # If uploading a sufficiently large file, explicitly use the AWS multipart upload API
+    if [[ ${verb} = 'cp' ]]; then
+        local filesize=$(stat -c '%s' ${source})
+        if [[ ${filesize} -gt 5242880 ]]; then
+            s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options}
+            return $?
+        fi
+    fi
+
     aws s3 ${verb} --region ${AWS_REGION} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
     return $?
 }
 
 s3_upload_multipart () {
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
-    local stack_name=${1}
+    local s3_bucket_name=${1}
     local source=$(realpath ${2})
     local destination=${3}
     local options=${4-}
 
     # Maybe parameterise chunk size?
     local chunksize=5m
-
-    # Remove / prefix, s3 does not like '//'
-    destination=${destination/#\//}
-
-    if [[ ${source} =~ /$ ]]; then
-        echoerr "ERROR: Only individual files currently supported by s3_upload_multipart"
-        return 1
-    fi
-
-    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
-
-    local s3_url="s3://${s3_bucket_name}"
-    echoerr "INFO: Uploading resources to ${s3_url}/"
 
     # Store arrays of file names, with corresponding upload 'etags'
     local -a files
@@ -287,7 +283,7 @@ s3_upload_multipart () {
     local csum="$(openssl md5 -binary ${source} | base64)"
     local key=${destination}
 
-    # Set up temporary directory and a cleanup command so we can exit cleanly and easily on errors
+    # Set up temporary directory
     local filesdir="$(mktemp --tmpdir -d s3upload.XXXXXX)"
     pushd ${filesdir} >/dev/null
 
