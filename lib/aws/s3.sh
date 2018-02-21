@@ -285,7 +285,7 @@ s3_upload_multipart () {
 
     # Checksum and key for the file upload
     local csum="$(openssl md5 -binary ${source} | base64)"
-    local key=$(basename "${source}")
+    local key=${destination}
 
     # Set up temporary directory and a cleanup command so we can exit cleanly and easily on errors
     local filesdir="$(mktemp --tmpdir -d s3upload.XXXXXX)"
