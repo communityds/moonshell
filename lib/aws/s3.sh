@@ -382,12 +382,15 @@ _s3_upload_multipart_part() {
         etag=$(echo $response | jq -r '.ETag')
         if [[ -z "$etag" ]]; then
             echoerr "INFO: Upload of part ${part} failed on attempt ${retry}"
-	    if [[ ${retry} -lt ${max_retries} ]]; then
-		echoerr "INFO: retrying..."
-		 # Wait a few seconds in case of temporary connectivity loss
-		sleep 3
-	    fi
-	    continue
+            if [[ ${retry} -lt ${max_retries} ]]; then
+                echoerr "INFO: retrying..."
+                 # Wait a few seconds in case of temporary connectivity loss
+                sleep 3
+            fi
+            continue
+        elif [[ ${retry} -gt 1 ]]; then
+            # Give feedback if the retry succeeded
+            echoerr "INFO: Upload of part ${part} succeeded on attempt ${retry}"
         fi
 
         # Success, return the etag
