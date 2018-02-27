@@ -6,10 +6,9 @@
 # Puppetfile in the puppet directory.
 #
 
-export MOON_FILE=false
-export AWS_ACCOUNT_NAME=false
+[[ -z ${AWS_ACCOUNT_NAME-} ]] && export AWS_ACCOUNT_NAME=false
 
-source $(dirname $0)/../moon.sh
+source ${MOON_SHELL}
 
 # We must be in the root of the repo else ../moon.sh would not have been sourced
 pushd "${PWD}/puppet" >/dev/null
