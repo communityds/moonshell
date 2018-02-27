@@ -4,7 +4,7 @@ dist: trusty
 sudo: true
 language: ruby
 rvm:
-  - 2.3.3
+  - 2.4.0
 before_script:
   - sudo pip install urllib3 --upgrade
   - sudo pip install bashate
