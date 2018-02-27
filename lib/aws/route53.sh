@@ -208,6 +208,15 @@ route53_list_host_records () {
         --output text
 }
 
+route53_list_hosted_zones () {
+    echoerr "INFO: Listing available hosted zones"
+    aws route53 list-hosted-zones \
+        --region ${AWS_REGION} \
+        --query "HostedZones[].Name" \
+        --output text
+    return $?
+}
+
 route53_list_internal () {
     local stack_name=$1
 

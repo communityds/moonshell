@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# This script dumps the JSON of a single, or all, zones in the currently
+# configured AWS account to, by default, /tmp/$domain.json
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+# To provide a more informative 'Usage' messgage we first find all available
+# hosted zones
+ZONE_NAMES=($(route53_list_hosted_zones))
+
+[[ -z ${ZONE_NAMES[@]-} ]] \
+    && echoerr "ERROR: There are no Route53 hosted zones for account: ${AWS_ACCOUNT_NAME}" \
+    && exit 1
+
+dump_zone () {
+    local domain=$1
+    # Zone names in Route53 ALWAYS have a trailing period.
+    local dump_file="${domain}json"
+    local dump_path="${DUMP_DIR}/${dump_file}"
+    local zone_id=$(route53_id_from_zone_name ${domain})
+
+    echoerr "INFO: Dumping ${domain} ($(basename ${zone_id})) to '${dump_path}'"
+    aws route53 list-resource-record-sets \
+        --region ${AWS_REGION} \
+        --hosted-zone-id ${zone_id} > ${dump_path}
+}
+
+# INPUT
+#
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) all|ZONE_NAME [DUMP_DIR]"
+    echoerr
+    echoerr "Available zone names:"
+    for zone in ${ZONE_NAMES[@]}; do
+        echoerr "  * ${zone}"
+    done
+    exit
+else
+    ZONE_NAME=$1
+    if [[ ${ZONE_NAME} == "all" ]]; then
+        echoerr "INFO: Dumping all zones"
+    elif contains ${ZONE_NAME} ${ZONE_NAMES[@]}; then
+        # We iterate over the ZONE_NAMES array, so set it to an array of one
+        echoerr "INFO: Dumping zone '${ZONE_NAME}'"
+        ZONE_NAMES=(${ZONE_NAME})
+    else
+        [[ ! ${ZONE_NAME} =~ \.$ ]] \
+            && echoerr "ERROR: Route53 zone names must be fully qualified; have a trailing period" \
+            || echoerr "ERROR: Unrecognized zone name '${ZONE_NAME}'"
+        exit 1
+    fi
+
+    DUMP_DIR=$(realpath ${2-\/tmp})
+    [[ ! -d ${DUMP_DIR} ]] \
+        && echoerr "ERROR: '${DUMP_DIR}' is not a directory" \
+        && exit 1
+    echoerr "INFO: Dump dir resoved to ${DUMP_DIR}"
+fi
+
+# MAIN
+#
+for zone_name in ${ZONE_NAMES[@]}; do
+    dump_zone ${zone_name}
+done
+
+[[ ${#ZONE_NAMES[@]} -gt 1 ]] && PLURAL=s
+echoerr "INFO: Dump${PLURAL-} complete"
+
