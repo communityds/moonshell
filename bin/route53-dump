@@ -58,7 +58,7 @@ else
     [[ ! -d ${DUMP_DIR} ]] \
         && echoerr "ERROR: '${DUMP_DIR}' is not a directory" \
         && exit 1
-    echoerr "INFO: Dump dir resoved to ${DUMP_DIR}"
+    echoerr "INFO: Dump dir resolved to ${DUMP_DIR}"
 fi
 
 # MAIN
