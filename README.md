@@ -235,7 +235,7 @@ These outputs are required to be set:
 
 * `VPCNetwork`: This must be set to the network CIDR used for the entire VPC
 
-* `RouteTableId`: This is the route table used by all primatives insiide the VPC
+* `RouteTableId`: This is the route table used by all primatives inside the VPC
 
 CloudFormation Defaults:
 
