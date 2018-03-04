@@ -32,6 +32,7 @@ rds_engine_type () {
 
     # We only support MySQL and PostgreSQL
     case ${engine} in
+        mysql) echo "mysql";;
         mariadb) echo "mysql";;
         postgres) echo "postgres";;
         *)
