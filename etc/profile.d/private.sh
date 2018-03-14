@@ -8,6 +8,6 @@
 if [[ -d "${MOON_PROFILE}/private" ]]; then
     _moonshell_source ${MOON_PROFILE}/private
 else
-    mkdir -p "${MOON_PROFILE}/private"
+    mkdir -p "${MOON_PROFILE}/private" 2>/dev/null || true
 fi
 

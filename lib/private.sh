@@ -10,6 +10,6 @@
 if [[ -d ${MOON_LIB}/private ]]; then
     _moonshell_source ${MOON_LIB}/private
 else
-    mkdir -p "${MOON_LIB}/private"
+    mkdir -p "${MOON_LIB}/private" 2>/dev/null || true
 fi
 
