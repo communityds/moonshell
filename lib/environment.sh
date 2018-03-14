@@ -11,13 +11,17 @@
 
 export MOON_VAR_ENVIRONMENT="${MOON_VAR}/environment"
 
-[[ ! -d "${MOON_VAR_ENVIRONMENT}" ]] && mkdir -p "${MOON_VAR_ENVIRONMENT}"
+[[ ! -d "${MOON_VAR_ENVIRONMENT}" ]] \
+    && mkdir -p "${MOON_VAR_ENVIRONMENT}" \
+    || true
 
 # Load all dynamically generated environment files
 #
-for env_file in $(find ${MOON_VAR_ENVIRONMENT} ${MOON_FIND_OPTS}); do
-    source ${env_file}
-done
+if [[ -d "${MOON_VAR_ENVIRONMENT}" ]]; then
+    for env_file in $(find ${MOON_VAR_ENVIRONMENT} ${MOON_FIND_OPTS}); do
+        source ${env_file}
+    done
+fi
 
 # Public Functions
 #
