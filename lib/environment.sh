@@ -12,7 +12,7 @@
 export MOON_VAR_ENVIRONMENT="${MOON_VAR}/environment"
 
 [[ ! -d "${MOON_VAR_ENVIRONMENT}" ]] \
-    && mkdir -p "${MOON_VAR_ENVIRONMENT}" \
+    && mkdir -p "${MOON_VAR_ENVIRONMENT}" 2>/dev/null \
     || true
 
 # Load all dynamically generated environment files
