@@ -2,6 +2,7 @@
 #
 # KMS FUNCTIONS
 #
+
 kms_list_keys () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
@@ -41,5 +42,20 @@ kms_list_keys_detail () {
             return 1
         fi
     done
+}
+
+kms_stack_key_id () {
+    local stack_name=$1
+
+    local kms_key_id="$(aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --query "Stacks[].Parameters[?starts_with(ParameterValue,'arn:aws:kms')].ParameterValue" \
+        --output text)"
+
+    [[ ${kms_key_id-} ]] \
+        && echo "${kms_key_id}" \
+        && return 0 \
+        || return 1
 }
 

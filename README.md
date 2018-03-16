@@ -242,3 +242,23 @@ CloudFormation Defaults:
 * `aws:cloudformation:stack-name`: CF gives us the stack-name for free and we
   use it to find the VPCId from the stack's name.
 
+### KMS
+
+We strongly advise the use of KMS to encrypt all data at rest. You can use KMS
+for encrypting EBS volumes attached to instances, RDS, and even for S3. It is
+unadvisable to statically set the KMS key as you should use a different key for
+every stack you run to ensure your data is completely isolated. The setup of
+KMS is beyond the scope of this document, but it should be defined in your
+template as a 'must have' parameter.
+
+Moonshell, specifically `s3_upload` and `s3_upload_multipart`, check for the
+presence of a parameter that starts with `arn:aws:kms` and uses this to set
+the encryption key used. If not present, no encryption is used. AWS does set,
+but use by default, their own KMS key, but using this is arguably defunct.
+
+To view all available KMS keys for your account:
+
+```
+aws kms list-aliases
+```
+
