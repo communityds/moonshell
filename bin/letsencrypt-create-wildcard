@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+#
+# Create a wildcard certificate from letsencrypt
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) DOMAIN_NAME [ACME_ARGS]"
+    echoerr
+    echoerr "Note: Specify the base domain name for the certificate; this"
+    echoerr "      script adds both '\$domain' and '*.\$domain'."
+    echoerr
+    echoerr "Example:"
+    echoerr "    $ $(basename $0) foo.example.com"
+    exit 0
+else
+    DOMAIN_NAME=$1
+    shift
+    ACME_ARGS="$*"
+fi
+
+KEY_BITS="4096"
+
+clean_exit () {
+    [[ $# == 0 ]] \
+        && local retr=0 \
+        || local retr=$1
+    local file
+
+    echoerr "INFO: Cleaning up temporary files"
+    for file in ${CERT_FILE} ${KEY_FILE} ${CA_FILE}; do
+        if [[ -f ${file} ]]; then
+            echoerr "INFO: Removing '${file}'"
+            rm -f ${file}
+        else
+            echoerr "INFO: Skipping non-existent file '${file}'"
+        fi
+    done
+
+    exit ${retr}
+}
+
+# Moonshell has a gitignore for this directory
+pushd $(dirname $0)/../ >/dev/null
+
+    echoerr "INFO: Creating temporary files"
+    CERT_FILE=$(mktemp)
+    KEY_FILE=$(mktemp)
+    CA_FILE=$(mktemp)
+
+    echoerr "INFO: CERT_FILE=${CERT_FILE}"
+    echoerr "INFO: KEY_FILE=${KEY_FILE}"
+    echoerr "INFO: CA_FILE=${CA_FILE}"
+
+    if [[ ! -f "./acme.sh/acme.sh" ]]; then
+        echoerr "INFO: Cloning acme"
+        git clone https://github.com/Neilpang/acme.sh acme.sh \
+            || clean_exit 1
+    fi
+
+    echoerr "INFO: Issuing certificate"
+    ./acme.sh/acme.sh --issue \
+        -d ${DOMAIN_NAME} \
+        -d *.${DOMAIN_NAME} \
+        --dns dns_aws \
+        --keylength ${KEY_BITS} \
+        --cert-file ${CERT_FILE} \
+        --key-file ${KEY_FILE} \
+        --ca-file ${CA_FILE} \
+        --fullchain-file /dev/null \
+        ${ACME_ARGS} \
+        || clean_exit 1
+
+    echoerr "INFO: Uploading to IAM"
+    iam-certificate-update ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
+
+    if [[ $? -gt 0 ]]; then
+        echoerr "WARNING: iam-certificate-update did not exit 0. Keeping temporary files."
+    else
+        clean_exit
+    fi
+
+popd >/dev/null

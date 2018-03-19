@@ -2,3 +2,4 @@ Gemfile.lock
 lib/private
 etc/profile.d/private
 etc/completion.d/private
+acme.sh/*
