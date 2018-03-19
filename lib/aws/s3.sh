@@ -256,8 +256,16 @@ s3_upload () {
     if [[ ${verb} = 'cp' ]]; then
         local filesize=$(stat -c '%s' ${source})
         if [[ ${filesize} -gt 5242880 ]]; then
-            s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options}
-            return $?
+            # If ${destination} has a trailing slash we have to append the
+            # source file else the file is created as the containing directory..
+            # This is only a bug for multi-part uploads and is a flaw in AWS
+            if [[ ${destination} =~ /$ ]]; then
+                s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options}
+                return $?
+            else
+                s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options}
+                return $?
+            fi
         fi
     fi
 
