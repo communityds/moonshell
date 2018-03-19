@@ -55,6 +55,11 @@ s3_download () {
     [[ -z ${s3_bucket_name-} ]] && return 1
 
     local s3_url="s3://${s3_bucket_name}"
+
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+
     echoerr "INFO: Downloading resources from ${s3_url}/"
     aws s3 ${verb} --region ${AWS_REGION} ${options-} ${s3_url}/${source-} ${destination}
     return $?
