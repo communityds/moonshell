@@ -45,6 +45,13 @@ clean_exit () {
 
 # Moonshell has a gitignore for this directory
 pushd $(dirname $0)/../ >/dev/null
+    if [[ ! -d "${HOME}/.acme.sh/${DOMAIN_NAME}" ]]; then
+        echoerr "WARNING: You have not administered this domain before"
+    elif [[ ! -f "${HOME}/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ]]; then
+        echoerr "WARNING: You are missing the domain's key '${HOME}/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key'"
+    else
+        echoerr "INFO: Found domain key '${HOME}/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key'"
+    fi
 
     echoerr "INFO: Creating temporary files"
     CERT_FILE=$(mktemp)
