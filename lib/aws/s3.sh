@@ -55,6 +55,11 @@ s3_download () {
     [[ -z ${s3_bucket_name-} ]] && return 1
 
     local s3_url="s3://${s3_bucket_name}"
+
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+
     echoerr "INFO: Downloading resources from ${s3_url}/"
     aws s3 ${verb} --region ${AWS_REGION} ${options-} ${s3_url}/${source-} ${destination}
     return $?
@@ -269,6 +274,10 @@ s3_upload () {
         fi
     fi
 
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+
     aws s3 ${verb} --region ${AWS_REGION} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
     return $?
 }
@@ -279,6 +288,11 @@ s3_upload_multipart () {
     local source=$(realpath ${2})
     local destination=${3}
     local options=${4-}
+
+    # KMS
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --server-side-encryption=aws:kms --ssekms-key-id ${kms_key_id}"
 
     # Maybe parameterise chunk size?
     local chunksize=5m
@@ -305,7 +319,8 @@ s3_upload_multipart () {
             --region ${AWS_REGION} \
             --bucket ${s3_bucket_name} \
             --key ${key} \
-            --metadata md5=${csum})
+            --metadata md5=${csum} \
+            ${options-})
         local upload_id=$(echo "${response}" | jq -r '.UploadId')
         if [[ -z "${upload_id}" ]]; then
             echoerr "ERROR: Unable to initiate multipart upload"
