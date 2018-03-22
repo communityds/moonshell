@@ -3,18 +3,14 @@
 # BASH COMPLETION FUNCTIONS
 #
 
+source ${MOON_LIB}/moonshell.sh
+
 export MOON_VAR_COMPLETE="${MOON_VAR}/complete"
 
-[[ ! -d "${MOON_VAR_COMPLETE}" ]] \
-    && mkdir -p "${MOON_VAR_COMPLETE}" 2>/dev/null \
-    || true
-
-# Load all dynamically generated completion files
-#
-if [[ -d "${MOON_VAR_COMPLETE}" ]]; then
-    for complete_file in $(find "${MOON_VAR_COMPLETE}" ${MOON_FIND_OPTS}); do
-        source ${complete_file}
-    done
+if [[ ! -d ${MOON_VAR_COMPLETE} ]] && [[ -w ${MOON_VAR} ]]; then
+    mkdir -p "${MOON_VAR_COMPLETE}" 2>/dev/null
+elif [[ -d ${MOON_VAR_COMPLETE} ]]; then
+    _moonshell_source ${MOON_VAR_COMPLETE}
 fi
 
 # Private Functions

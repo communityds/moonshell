@@ -7,9 +7,11 @@
 # the more preferred overlay_dir.
 #
 
+source ${MOON_LIB}/moonshell.sh
+
 if [[ -d ${MOON_LIB}/private ]]; then
     _moonshell_source ${MOON_LIB}/private
-else
-    mkdir -p "${MOON_LIB}/private" 2>/dev/null || true
+elif [[ -w ${MOON_LIB} ]]; then
+    mkdir -p "${MOON_LIB}/private" 2>/dev/null
 fi
 

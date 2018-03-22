@@ -7,7 +7,7 @@
 #
 if [[ -d "${MOON_PROFILE}/private" ]]; then
     _moonshell_source ${MOON_PROFILE}/private
-else
-    mkdir -p "${MOON_PROFILE}/private" 2>/dev/null || true
+elif [[ -w ${MOON_PROFILE} ]]; then
+    mkdir -p "${MOON_PROFILE}/private" 2>/dev/null
 fi
 
