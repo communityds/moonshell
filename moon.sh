@@ -28,7 +28,20 @@ export MOON_BIN="${MOON_ROOT}/bin"
 export MOON_ETC="${MOON_ROOT}/etc"
 export MOON_LIB="${MOON_ROOT}/lib"
 export MOON_USR="${MOON_ROOT}/usr"
-export MOON_VAR="${MOON_ROOT}/var"
+
+# Not all users on a system can write to their ${HOME}
+[[ -w ${HOME} ]] \
+    && export MOON_HOME="${HOME}/.moonshell" \
+    && mkdir -m 0700 -p ${MOON_HOME} \
+    || export MOON_HOME="${MOON_ROOT}"
+
+# MOON_VAR is used for persisting of ephemeral data such as state, completion
+# scripts, log and application output. It is primarily used by console users,
+# does not need to be writable by service users, but must be set and exist.
+export MOON_VAR="${MOON_HOME}/var"
+if [[ -w ${MOON_HOME} ]] && [[ ! -d ${MOON_VAR} ]]; then
+    mkdir ${MOON_VAR}
+fi
 
 export MOON_COMPLETION="${MOON_ETC}/completion.d"
 export MOON_PROFILE="${MOON_ETC}/profile.d"

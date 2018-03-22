@@ -9,18 +9,14 @@
 # date.
 #
 
+source ${MOON_LIB}/moonshell.sh
+
 export MOON_VAR_ENVIRONMENT="${MOON_VAR}/environment"
 
-[[ ! -d "${MOON_VAR_ENVIRONMENT}" ]] \
-    && mkdir -p "${MOON_VAR_ENVIRONMENT}" 2>/dev/null \
-    || true
-
-# Load all dynamically generated environment files
-#
-if [[ -d "${MOON_VAR_ENVIRONMENT}" ]]; then
-    for env_file in $(find ${MOON_VAR_ENVIRONMENT} ${MOON_FIND_OPTS}); do
-        source ${env_file}
-    done
+if [[ ! -d ${MOON_VAR_ENVIRONMENT} ]] && [[ -w ${MOON_VAR} ]]; then
+    mkdir -p "${MOON_VAR_ENVIRONMENT}" 2>/dev/null
+elif [[ -d ${MOON_VAR_ENVIRONMENT} ]]; then
+    _moonshell_source ${MOON_VAR_ENVIRONMENT}
 fi
 
 # Public Functions
