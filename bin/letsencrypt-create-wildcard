@@ -43,8 +43,7 @@ clean_exit () {
     exit ${retr}
 }
 
-# Moonshell has a gitignore for this directory
-pushd $(dirname $0)/../ >/dev/null
+pushd ${MOON_VAR} >/dev/null
     if [[ ! -d "${HOME}/.acme.sh/${DOMAIN_NAME}" ]]; then
         echoerr "WARNING: You have not administered this domain before"
     elif [[ ! -f "${HOME}/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ]]; then
