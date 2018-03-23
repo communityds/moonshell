@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# This script deletes server certificates from IAM
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+echoerr "INFO: Enumerating available server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates.." \
+    && exit 1
+
+echoerr "WARNING: The deletion process is irrecoverable. Select a certificate wisely!"
+echo "Choose a certificate to permanently delete:"
+IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+
+read -s -n1 -p "Are you sure you wish to permanently and irrecoverably delete '${IAM_CERT_NAME}'? (y/N)" CONFIRM
+echo
+[[ ! ${CONFIRM} == y ]] \
+    && echoerr "ERROR: Aborting on user request" \
+    && exit 1
+
+echoerr "INFO: Permanently deleting '${IAM_CERT_NAME}' in 7 seconds (Ctrl-C to cancel)"
+sleep 7
+
+aws iam delete-server-certificate \
+    --region ${AWS_REGION} \
+    --server-certificate-name ${IAM_CERT_NAME}
+
+[[ $? -gt 0 ]] \
+    && echoerr "ERROR: Failed to delete certificate" \
+    && exit 1 \
+    || echoerr "INFO: Successfully deleted '${IAM_CERT_NAME}'"
+

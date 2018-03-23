@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# This script uses provided input files to update or create an IAM server
+# certificate
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) CERT_FILE KEY_FILE [CA_FILE]"
+    exit 0
+else
+    CERT_FILE=$1
+    KEY_FILE=$2
+    CA_FILE=${3-}
+fi
+
+for cert in ${CERT_FILE} ${KEY_FILE} ${CA_FILE-}; do
+    [[ ! -f ${cert} ]] \
+        && echoerr "ERROR: Not a file '${cert}'" \
+        && exit 1
+done
+
+echoerr "INFO: Enumerating available server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates.." \
+    && exit 1
+
+echoerr "INFO: Selecting Certificate"
+echo "Choose a certificate to update:"
+IAM_CERT_NAME="$(choose create ${IAM_SERVER_CERTIFICATES[@]})"
+
+if [[ ${IAM_CERT_NAME} == "create" ]]; then
+    read -p "Input a new certificate name: " NEW_IAM_CERT_NAME
+    [[ ! ${NEW_IAM_CERT_NAME} =~ ^[a-z=,.@-]+$ ]] \
+        && echoerr "ERROR: Illegal characters used. Name must match regex: ^[a-z=,.@-]+$ " \
+        && exit 1 \
+        || IAM_CERT_NAME=${NEW_IAM_CERT_NAME}
+else
+    NOW=$(date +%s)
+    NEW_IAM_CERT_NAME="${IAM_CERT_NAME}-${NOW}"
+    echoerr "WARNING: Moving existing ${IAM_CERT_NAME} to ${NEW_IAM_CERT_NAME}"
+    aws iam update-server-certificate \
+        --server-certificate-name ${IAM_CERT_NAME} \
+        --new-server-certificate-name "${NEW_IAM_CERT_NAME}"
+fi
+
+echoerr "INFO: Uploading certificate material"
+aws iam upload-server-certificate \
+    --region ${AWS_REGION} \
+    --server-certificate-name ${IAM_CERT_NAME} \
+    --certificate-body file://$(realpath ${CERT_FILE}) \
+    --private-key file://$(realpath ${KEY_FILE}) \
+    $([[ ${CA_FILE-} ]] && echo "--certificate-chain file://$(realpath ${CA_FILE})") \
+    | jq '.'
+

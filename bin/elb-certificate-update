@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#
+# This script sets an ELB with a previously uploaded server certificate
+#
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit 0
+else
+    ENVIRONMENT=$1
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+ELB_PORT=443
+
+echoerr "INFO: Enumerating available server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates.." \
+    && exit 1
+
+echo "Choose a certificate to use:"
+IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+
+echoerr "INFO: Querying certificate ARN"
+IAM_CERT_ARN="$(aws iam list-server-certificates \
+    --region ${AWS_REGION} \
+    --query "ServerCertificateMetadataList[?ServerCertificateName=='${IAM_CERT_NAME}'].Arn" \
+    --output text)"
+echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
+
+echoerr "INFO: Selecting ELB to update"
+STACK_ELBS=($(stack_resource_type ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
+[[ ${#STACK_ELBS[@]} -gt 1 ]] \
+    && echo "Choose an ELB to update:" \
+    && ELB_NAME=$(choose ${STACK_ELBS[@]}) \
+    || ELB_NAME=${STACK_ELBS}
+
+echoerr "INFO: Setting ELB '${ELB_NAME}' with new certificate"
+aws elb set-load-balancer-listener-ssl-certificate \
+    --region ${AWS_REGION} \
+    --load-balancer-name ${ELB_NAME} \
+    --load-balancer-port ${ELB_PORT} \
+    --ssl-certificate-id ${IAM_CERT_ARN}
+
