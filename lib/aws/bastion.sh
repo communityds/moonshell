@@ -3,16 +3,35 @@
 # BASTION FUNCTIONS
 #
 bastion () {
-    # Only one bastion exists per AWS account inside a 'core' stack.
-    # The bastion host in ~/.ssh/config must be set accordingly
-    local bastion_hostname="bastion-${AWS_ACCOUNT_NAME}"
-    if [[ "$(grep ${bastion_hostname} ${HOME}/.ssh/config)" == "" ]]; then
-        echoerr "ERROR: You do not have configuration set for ${bastion_hostname} in ~/.ssh/config"
-        return 1
+    # $(facter virtual)
+    # VirtualBox:  virtualbox
+    # KVM/Libvirt: kvm
+    # AWS/Xen:     xenu|xenhvm
+    # Hosts:       physical
+    local virtual=$(facter virtual)
+
+    local bastion_hostname
+
+    if [[ ${virtual} =~ ^(virtualbox|physical)$ ]]; then
+        # Only one bastion exists per AWS account inside the 'core' stack.
+        # This host should either be set in `~/.ssh/config`,  `/etc/hosts`,
+        # or the preferred location of `/etc/ssh/ssh_config`.
+        bastion_hostname="bastion-${AWS_ACCOUNT_NAME}"
+    elif [[ ${virtual} =~ ^xen(u|hvm)$ ]]; then
+        # The 'easiest' way to define the domain of the core stack is to
+        # inspect the name of the smtp server, which should always exist and
+        # can only ever be an A record. This should never fail provided that
+        # a stack is alwys configured to have a central SMTP server, which is
+        # an ISM control.
+        local smtp_hostname=$(getent hosts smtp | awk '{print $2}')
+        local core_domain_suffix="${smtp_hostname#*.}"
+        bastion_hostname="bastion.${core_domain_suffix}"
     else
-        echo -n "${bastion_hostname}"
-        return 0
+        echoerr "ERROR: Unsupported virtual fact '${virtual}'"
+        return 1
     fi
+
+    echo -n "${bastion_hostname}"
 }
 
 bastion_exec () {
@@ -43,29 +62,32 @@ bastion_exec_utility () {
     bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
 }
 
-bastion_exec_vhost () {
-    # Some host entries are RR records, so will return multiple IPs
-    # Execute command on all resolved hosts for a specific domain.
-    local stack_name=$1
-    local target_host=$2
-    local site_fqdn=$3
-    shift 3
-    local cmd=$*
-
-    bastion_pdsh_host ${stack_name} ${target_host} "cd /var/www/vhost/${site_fqdn}; ${cmd[@]}"
-}
-
 bastion_pdsh_host () {
-    local stack_name=$1
-    local target_host=$2
-    local cmd=$3
-    local outfile=${4-}
+    local target_fqdn=$1
+    local cmd="$2"
+    local out_file=${3-}
 
-    local target_fqdn="${target_host}.${stack_name}.local"
+    [[ $(uname) == "Darwin" ]] \
+        && echoerr "ERROR: Unsupported OS 'Darwin'" \
+        && return 1
 
-    [[ ${outfile-} ]] \
-        && ssh ${SSH_OPTS} $(bastion) "export PDSH_SSH_ARGS='${SSH_OPTS}'; pdsh -M ssh -w \$(host ${target_fqdn} | awk '{print \$NF}' | paste -sd,) '${cmd}'" > ${outfile} \
-        || ssh ${SSH_OPTS} $(bastion) "export PDSH_SSH_ARGS='${SSH_OPTS}'; pdsh -M ssh -w \$(host ${target_fqdn} | awk '{print \$NF}' | paste -sd,) '${cmd}'"
+    local bastion_host=$(bastion)
+    local host_csv="$(bastion_exec "getent hosts ${target_fqdn}" | awk '{print $1}' | paste -sd,)"
+
+    [[ -z ${PDSH_SSH_ARGS-} ]] \
+        && export PDSH_SSH_ARGS="${SSH_OPTS} -J ${bastion_host}"
+
+    if [[ ${out_file-} ]]; then
+        if [[ ${host_csv} =~ , ]]; then
+            echoerr "WARNING: Capturing output from multiple hosts will result in unexpected data"
+        fi
+        # Because we are capturing raw command output we must use -N
+        pdsh -N -R ssh -w ${host_csv} "${cmd}" >${out_file}
+        return $?
+    else
+        pdsh -R ssh -w ${host_csv} "${cmd}"
+        return $?
+    fi
 }
 
 bastion_utility_host () {
