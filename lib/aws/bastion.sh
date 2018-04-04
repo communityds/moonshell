@@ -34,10 +34,42 @@ bastion () {
     echo -n "${bastion_hostname}"
 }
 
+bastion_admin_hostname () {
+    local stack_name=$1
+
+    # The preferred method for choosing an admin host is to export
+    # ADMIN_NODE_HOSTNAME. For legacy's sake and to provide more functionality,
+    # you can also define the `ssh_target_hostname` function more centrally and
+    # have it return the FQDN of the desired hostname.
+
+    if [[ -n ${ADMIN_NODE_HOSTNAME-} ]]; then
+        echo "${ADMIN_NODE_HOSTNAME}.${stack_name}.local"
+    elif $(type ssh_target_hostname &>/dev/null); then
+        echo "$(ssh_target_hostname ${stack_name})"
+    else
+        echoerr "INFO: Defaulting admin hostname to 'localhost'."
+        echoerr "INFO: To override this, 'export ADMIN_NODE_HOSTNAME' to a name of your choosing"
+        echo "localhost"
+    fi
+}
+
 bastion_exec () {
     local cmd=$1
 
     ssh ${SSH_OPTS} $(bastion) "${cmd}"
+}
+
+bastion_exec_admin () {
+    # Execute command on an admin host inside a stack via the bastion
+    local stack_name=$1
+    local cmd=$2
+    local outfile=${3-}
+
+    local target_host=$(bastion_admin_hostname ${stack_name})
+
+    bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
+
+    return $?
 }
 
 bastion_exec_host () {
@@ -50,16 +82,8 @@ bastion_exec_host () {
     [[ ${outfile-} ]] \
         && ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}" > ${outfile} \
         || ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}"
-}
 
-bastion_exec_utility () {
-    # Execute command on a utility host inside a stack via the bastion
-    local stack_name=$1
-    local cmd=$2
-    local outfile=${3-}
-    local target_host=$(bastion_utility_host ${stack_name})
-
-    bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
+    return $?
 }
 
 bastion_pdsh_host () {
@@ -90,25 +114,13 @@ bastion_pdsh_host () {
     fi
 }
 
-bastion_utility_host () {
-    local stack_name=$1
-
-    if $(type ssh_target_hostname &>/dev/null); then
-        echo "$(ssh_target_hostname ${stack_name})"
-    else
-        echoerr "INFO: Defaulting target hostname to 'localhost'."
-        echoerr "INFO: To override this define the function 'ssh_target_hostname' in ${MOON_LIB}/private"
-        echo "localhost"
-    fi
-}
-
 bastion_upload_file () {
     local stack_name=$1
     local upload_file=$2
 
     local bastion=$(bastion)
     local file_name="$(basename ${upload_file})"
-    local target_host=$(bastion_utility_host ${stack_name})
+    local target_host=$(bastion_admin_hostname ${stack_name})
 
     echoerr "INFO: Uploading ${file_name} to ${bastion}"
     rsync -e "ssh ${SSH_OPTS}" -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
@@ -116,4 +128,3 @@ bastion_upload_file () {
     echoerr "INFO: Copying ${file_name} to ${target_host}"
     bastion_exec "rsync -e 'ssh ${SSH_OPTS}' -vP '/tmp/${file_name}' '${target_host}:/tmp/${file_name}'"
 }
-
