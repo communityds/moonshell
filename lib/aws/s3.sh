@@ -310,7 +310,7 @@ s3_upload_multipart () {
     local key=${destination}
 
     # Set up temporary directory
-    local filesdir="$(mktemp --tmpdir -d s3upload.XXXXXX)"
+    local filesdir="$(mktemp -d s3upload.XXXXXX)"
     pushd ${filesdir} >/dev/null
 
         split -a 4 -b ${chunksize} ${source} s3part-
