@@ -259,7 +259,11 @@ s3_upload () {
 
     # If uploading a sufficiently large file, explicitly use the AWS multipart upload API
     if [[ ${verb} = 'cp' ]]; then
-        local filesize=$(stat -c '%s' ${source})
+        case $(uname) in
+            Darwin) local format_bytes="-f %z" ;;
+            Linux) local format_bytes="-c %s" ;;
+        esac
+        local filesize=$(stat ${format_bytes} ${source})
         if [[ ${filesize} -gt 5242880 ]]; then
             # If ${destination} has a trailing slash we have to append the
             # source file else the file is created as the containing directory..
