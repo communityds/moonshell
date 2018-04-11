@@ -158,10 +158,7 @@ s3_ls () {
     local stack_name=$1
     local location=${2-}
 
-    # '//' is not a valid path in s3 land
-    [[ ${location} =~ ^/$ ]] \
-        && echoerr "ERROR: Location can not start with a '/'" \
-        && return 1
+    [[ ${location} =~ ^/ ]] && location=${location#/}
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -169,6 +166,32 @@ s3_ls () {
     local s3_url="s3://${s3_bucket_name}/${location-}"
     echoerr "INFO: Listing objects in ${s3_url}"
     aws s3 ls --region ${AWS_REGION} ${s3_url}
+    return $?
+}
+
+s3_mv () {
+    local stack_name=$1
+    local src=$2
+    local dst=$3
+    shift 3
+    local options=$*
+
+    [[ ${src} =~ ^/ ]] && src=${src#/}
+    [[ ${dst} =~ ^/ ]] && dst=${dst#/}
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+
+    echoerr "INFO: Moving ${src} to ${dst}"
+    aws s3 mv \
+        --region ${AWS_REGION} \
+        s3://${s3_bucket_name}/${src} \
+        s3://${s3_bucket_name}/${dst} \
+        ${options-}
     return $?
 }
 
@@ -212,7 +235,7 @@ s3_rm () {
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
     [[ ${file_path} =~ ^/ ]] \
-        && file_path=${file_path:1}
+        && file_path=${file_path#/}
 
     aws s3 rm s3://${s3_bucket}/${file_path} ${options[@]-}
     return $?
