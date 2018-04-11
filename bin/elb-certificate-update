@@ -34,6 +34,15 @@ IAM_CERT_ARN="$(aws iam list-server-certificates \
     --output text)"
 echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
 
+echoerr "INFO: Outputting certificate details:"
+aws iam get-server-certificate \
+    --server-certificate-name ${IAM_CERT_NAME} \
+    --query "ServerCertificate.CertificateBody" \
+    --output text \
+    | openssl x509 -text -noout \
+    | \grep -E "Issuer:|Not Before|Not After|Subject:|DNS:" \
+    | sed -e 's/^ */  /g'
+
 echoerr "INFO: Selecting ELB to update"
 STACK_ELBS=($(stack_resource_type ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
 [[ ${#STACK_ELBS[@]} -gt 1 ]] \
