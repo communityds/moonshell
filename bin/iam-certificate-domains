@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# Display domains on an IAM server-certificate
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Enumerating available server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates" \
+    && exit 1
+
+echo "Choose a certificate to query:"
+IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+
+echoerr "INFO: Finding all DNS names on certificate: ${IAM_CERT_NAME}"
+DNS_NAMES=($(aws iam get-server-certificate \
+    --server-certificate-name ${IAM_CERT_NAME} \
+    --query "ServerCertificate.CertificateBody" \
+    --output text \
+    | openssl x509 -text -noout \
+    | grep DNS \
+    | sed -e 's/\,//g'))
+
+for dns_name in ${DNS_NAMES[@]}; do
+    echoerr ${dns_name}
+done
+
