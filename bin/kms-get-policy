@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# This script presents the user with a selectable list of available keys and
+# displays the IAM policy formatted with jq
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+echoerr "INFO Finding all key aliases"
+ALIASES=($(aws kms list-aliases \
+    --query "Aliases[].AliasName" \
+    --output text))
+
+KEY=$(choose ${ALIASES[@]})
+
+echoerr "INFO: Finding ID for key '${KEY}'"
+# The only place the alias is listed with the key id is in the output of
+# 'list-aliases'. We use the alias because people are humans and not UUID
+# parsing cyborgs.. yet..
+KEY_ID=$(aws kms list-aliases \
+    --query "Aliases[?AliasName=='${KEY}'].TargetKeyId" \
+    --output text)
+
+echoerr "INFO: Getting policy for key id '${KEY_ID}'"
+KEY_POLICY=$(aws kms get-key-policy \
+    --key-id ${KEY_ID} \
+    --policy-name default \
+    --query 'Policy')
+
+echoerr "INFO: Parsing policy"
+# The policy document is stored as an string with escaped quotes that is
+# encapsulated with quotes..
+echo -e ${KEY_POLICY} \
+    | sed \
+        -e 's/"{/{/g' \
+        -e 's/}"/}/' \
+        -e 's/\\//g' \
+    | jq '.'
+
