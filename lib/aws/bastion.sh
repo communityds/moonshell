@@ -8,7 +8,9 @@ bastion () {
     # KVM/Libvirt: kvm
     # AWS/Xen:     xenu|xenhvm
     # Hosts:       physical
-    local virtual=$(facter virtual)
+    [[ $(uname) == Darwin ]] \
+        && local virtual=physical \
+        || local virtual=$(facter virtual)
 
     local bastion_hostname
 
