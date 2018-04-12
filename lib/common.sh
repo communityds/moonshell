@@ -71,5 +71,9 @@ generate_password () {
     # 6.277 trillion pentillion pentillion
     # 6.277 billion hexillion hexillion
     # 6.277 quillion dodecillion
-    echo "$(uuidgen | sha256sum | base64 | head -c 32)"
+    which sha256sum &>/dev/null \
+        && local sha_cmd="sha256sum" \
+        || local sha_cmd="shasum -a 256"
+
+    echo "$(uuidgen | ${sha_cmd} | base64 | head -c 32)"
 }
