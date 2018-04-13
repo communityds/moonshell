@@ -40,7 +40,8 @@ s3_download () {
     local stack_name=$1
     local source=$2
     local destination=$3
-    local options=${4-}
+    shift 3
+    local options=$*
 
     # Remove / prefix, s3 does not like '//'
     local source=${source/#\//}
@@ -230,14 +231,14 @@ s3_rm () {
     local stack_name=$1
     local file_path=$2
     shift 2
-    local options=($*)
+    local options=$*
 
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
     [[ ${file_path} =~ ^/ ]] \
         && file_path=${file_path#/}
 
-    aws s3 rm s3://${s3_bucket}/${file_path} ${options[@]-}
+    aws s3 rm s3://${s3_bucket}/${file_path} ${options-}
     return $?
 }
 
@@ -265,7 +266,8 @@ s3_upload () {
     local stack_name=$1
     local source=$2
     local destination=$3
-    local options=${4-}
+    shift 3
+    local options=$*
 
     # Remove / prefix, s3 does not like '//'
     destination=${destination/#\//}
@@ -292,10 +294,10 @@ s3_upload () {
             # source file else the file is created as the containing directory..
             # This is only a bug for multi-part uploads and is a flaw in AWS
             if [[ ${destination} =~ /$ ]]; then
-                s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options}
+                s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options-}
                 return $?
             else
-                s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options}
+                s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
                 return $?
             fi
         fi
@@ -314,7 +316,8 @@ s3_upload_multipart () {
     local s3_bucket_name=${1}
     local source=$(realpath ${2})
     local destination=${3}
-    local options=${4-}
+    shift 3
+    local options=$*
 
     # KMS
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
