@@ -8,20 +8,18 @@ export MOON_FILE=false
 
 source ${MOON_SHELL}
 
-echoerr "INFO Finding all key aliases"
-ALIASES=($(aws kms list-aliases \
-    --query "Aliases[].AliasName" \
-    --output text))
+if [[ $# == 0 ]]; then
+    echoerr "INFO: Finding all key aliases"
+    ALIASES=($(aws kms list-aliases \
+        --query "Aliases[].AliasName" \
+        --output text))
 
-KEY=$(choose ${ALIASES[@]})
+    KEY=$(choose ${ALIASES[@]})
+else
+    KEY=$1
+fi
 
-echoerr "INFO: Finding ID for key '${KEY}'"
-# The only place the alias is listed with the key id is in the output of
-# 'list-aliases'. We use the alias because people are humans and not UUID
-# parsing cyborgs.. yet..
-KEY_ID=$(aws kms list-aliases \
-    --query "Aliases[?AliasName=='${KEY}'].TargetKeyId" \
-    --output text)
+KEY_ID=$(kms_id_from_key ${KEY})
 
 echoerr "INFO: Getting policy for key id '${KEY_ID}'"
 KEY_POLICY=$(aws kms get-key-policy \
