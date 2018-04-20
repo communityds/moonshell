@@ -66,6 +66,7 @@ echo "Choose a stack to dissociate ${SELF_STACK_NAME} from:"
 # We avoid using $(choose) here becase we want extra custom output
 for ((i = 0; i < ${#PEERING_CONNECTIONS[@]}; i += 1)); do
     echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
+        --region ${AWS_REGION} \
         --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
         --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
         --output text)"
@@ -83,6 +84,7 @@ if [[ ${choice} =~ ^[0-9]+$ ]]; then
     else
         VPC_PEERING_ID=${PEERING_CONNECTIONS[$choice]}
         TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
+            --region ${AWS_REGION} \
             --vpc-peering-connection-id ${VPC_PEERING_ID} \
             --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
             --output text
