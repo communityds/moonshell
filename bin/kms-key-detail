@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Output 'describe-key' for a key ID or alias
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) KEY_ID|KEY_ALIAS"
+    exit
+else
+    KEY=$1
+fi
+
+KEY_ID=$(kms_id_from_key ${KEY})
+
+if [[ ! ${KEY_ID} == ${KEY} ]] && [[ ! ${KEY} =~ ^alias ]]; then
+    KEY="alias/${KEY}"
+else
+    KEY="key/${KEY_ID}"
+fi
+
+echoerr "INFO: Describing key 'arn:aws:kms:${AWS_REGION}:$(sts_account_id):${KEY}'"
+aws kms describe-key \
+    --region ${AWS_REGION} \
+    --key-id ${KEY_ID} \
+    | jq '.'
+

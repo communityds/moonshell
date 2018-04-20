@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Either list all grants for a named key ID or key alias or only output grants
+# for a specified user. JSON output is piped through jq for human readability.
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) KEY_ID|KEY_ALIAS [USER_GRANTEE]"
+    exit
+else
+    KEY=$1
+    GRANTEE=${2-}
+fi
+
+KEY_ID=$(kms_id_from_key ${KEY})
+
+if [[ ${GRANTEE-} ]]; then
+    echoerr "INFO: Finding user grant for '${GRANTEE}' to key '${KEY_ID}'"
+    aws kms list-grants \
+        --key-id ${KEY_ID} \
+        --query "Grants[?GranteePrincipal=='arn:aws:iam::$(sts_account_id):user/${GRANTEE}']" \
+        | jq '.[]'
+else
+    echoerr "INFO: Listing all grants for key '${KEY_ID}'"
+    aws kms list-grants --key-id ${KEY_ID} \
+        | jq '.Grants'
+fi
+

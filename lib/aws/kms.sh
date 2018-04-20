@@ -3,17 +3,49 @@
 # KMS FUNCTIONS
 #
 
-kms_list_keys () {
+kms_id_from_key () {
+    local key=$1
+    local key_id
+
+    if [[ ${key} =~ ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$ ]]; then
+        key_id=${key}
+    else
+        [[ ! ${key} =~ ^alias ]] \
+            && key="alias/${key}" \
+            || true
+
+        key_id=$(aws kms list-aliases \
+            --query "Aliases[?AliasName=='${key}'].TargetKeyId" \
+            --output text)
+
+        [[ -z ${key_id-} ]] \
+            && echoerr "ERROR: Could not find ID for key alias: ${key}" \
+            && return 1 \
+            || true
+    fi
+
+    echo ${key_id}
+}
+
+kms_list_key_aliases () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
-        --query "Aliases[].AliasArn" \
+        --query "Aliases[].AliasName" \
+        --output text
+    return $?
+}
+
+kms_list_key_ids () {
+    aws kms list-keys \
+        --region ${AWS_REGION} \
+        --query "Keys[].KeyId" \
         --output text
     return $?
 }
 
 kms_list_keys_detail () {
     local key managed
-    local -a keys=($(kms_list_keys))
+    local -a keys=($(kms_list_key_ids))
     [[ -z ${keys[@]-} ]] \
         && echoerr "ERROR: No KMS keys found" \
         && return 1

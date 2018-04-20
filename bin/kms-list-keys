@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Output all KMS key aliases; all tooling handles use of aliases instead of IDs
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Listing all KMS key aliases"
+for kms_key in $(kms_list_key_aliases); do
+    echoerr "  * ${kms_key}"
+done

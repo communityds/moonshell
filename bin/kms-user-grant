@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Grant a user the ability to use a named KMS key for:
+#   * Decrypt
+#   * Encrypt
+#   * ReEncryptFrom
+#   * ReEncryptTo
+#   * DescribeKey
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) GRANTEE [KEY_ID|KEY_ALIAS]"
+    exit
+else
+    GRANTEE=$1
+    KEY=${2-}
+fi
+
+if ! aws iam get-user --user-name ${GRANTEE} &>/dev/null; then
+    echoerr "ERROR: User '${GRANTEE}' is not a recognised user in IAM"
+    exit 1
+else
+    echoerr "INFO: Found IAM user '${GRANTEE}'"
+fi
+
+if [[ -z ${KEY-} ]]; then
+    echoerr "INFO: Finding all key aliases"
+    ALIASES=($(aws kms list-aliases \
+        --query "Aliases[].AliasName" \
+        --output text))
+
+    KEY=$(choose ${ALIASES[@]})
+fi
+
+KEY_ID=$(kms_id_from_key ${KEY})
+
+echoerr "INFO: Creating grant for ${GRANTEE} to ${KEY_ID}"
+GRANT_ID=$(aws kms create-grant \
+    --key-id ${KEY_ID} \
+    --grantee-principal arn:aws:iam::$(sts_account_id):user/${GRANTEE} \
+    --name ${GRANTEE} \
+    --operations Decrypt Encrypt ReEncryptFrom ReEncryptTo DescribeKey \
+    --query "GrantId" \
+    --output text)
+
+if [[ ${GRANT_ID-} ]]; then
+    echoerr "INFO: Created grant with id: ${GRANT_ID}"
+else
+    echoerr "ERROR: Failed to create grant"
+    exit 1
+fi
+
+kms-list-grants ${KEY_ID} ${GRANTEE}
+

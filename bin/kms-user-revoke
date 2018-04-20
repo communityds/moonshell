@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Revoke a previously granted Grant
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) GRANTEE [KEY_ID|KEY_ALIAS]"
+    exit
+else
+    GRANTEE=$1
+    KEY=${2-}
+fi
+
+if ! aws iam get-user --user-name ${GRANTEE} &>/dev/null; then
+    echoerr "ERROR: User '${GRANTEE}' is not a recognised user in IAM"
+    exit 1
+else
+    echoerr "INFO: Found IAM user '${GRANTEE}'"
+fi
+
+if [[ -z ${KEY-} ]]; then
+    echoerr "INFO: Finding all key aliases"
+    ALIASES=($(aws kms list-aliases \
+        --query "Aliases[].AliasName" \
+        --output text))
+
+    KEY=$(choose ${ALIASES[@]})
+fi
+
+KEY_ID=$(kms_id_from_key ${KEY})
+
+echoerr "INFO: Confirming existing grant for ${GRANTEE}"
+GRANT="$(kms-list-grants ${KEY_ID} ${GRANTEE})"
+
+if [[ -n ${GRANT} ]]; then
+    GRANT_ID=$(echo ${GRANT} | jq '.GrantId' | tr -d \")
+
+    echoerr "INFO: Revoking grant for ${GRANTEE} to ${KEY_ID}"
+    aws kms revoke-grant \
+        --key-id ${KEY_ID} \
+        --grant-id ${GRANT_ID}
+else
+    echoerr "WARNING: No existing grant found for '${GRANTEE}' to key '${KEY_ID}'"
+    exit
+fi
+
+echoerr "INFO: Confirming grant revocation"
+if [[ ! $(kms-list-grants ${KEY_ID} ${GRANTEE}) == "" ]]; then
+    echoerr "ERROR: The grant failed to be revoked"
+    exit 1
+fi
+
+echoerr "INFO: Grant successfully revoked"
+
