@@ -14,7 +14,11 @@
 source $(dirname $0)/../moon.sh
 
 usage () {
-    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [STACK_NAME]"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev"
+    echoerr "  $ $(basename $0) staging core-staging"
     exit
 }
 
@@ -25,6 +29,7 @@ if [[ $# -lt 1 ]]; then
     usage
 else
     export ENVIRONMENT=$1
+    export TARGET_STACK_NAME=${2-}
     export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 fi
 
@@ -62,44 +67,49 @@ if [[ -z ${PEERING_CONNECTIONS[@]-} ]]; then
 fi
 
 echoerr
-echo "Choose a stack to dissociate ${SELF_STACK_NAME} from:"
-# We avoid using $(choose) here becase we want extra custom output
-for ((i = 0; i < ${#PEERING_CONNECTIONS[@]}; i += 1)); do
-    echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
-        --region ${AWS_REGION} \
-        --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
-        --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
-        --output text)"
-done
-if [[ ${#PEERING_CONNECTIONS[@]} -lt 2 ]]; then
-    echo -n "Choice [0]: "
-else
-    echo -n "Choice [0-$((${#PEERING_CONNECTIONS[@]} - 1))]: "
-fi
-read choice
-if [[ ${choice} =~ ^[0-9]+$ ]]; then
-    if [[ -z ${PEERING_CONNECTIONS[$choice]} ]]; then
-        echoerr "ERROR: Choice '${choice}' is invalid."
-        exit 1
-    else
-        VPC_PEERING_ID=${PEERING_CONNECTIONS[$choice]}
-        TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
+if [[ -z ${TARGET_STACK_NAME-} ]]; then
+    echo "Choose a stack to dissociate ${SELF_STACK_NAME} from:"
+    # We avoid using $(choose) here becase we want extra custom output
+    for ((i = 0; i < ${#PEERING_CONNECTIONS[@]}; i += 1)); do
+        echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
             --region ${AWS_REGION} \
-            --vpc-peering-connection-id ${VPC_PEERING_ID} \
-            --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
-            --output text
-        )
+            --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
+            --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
+            --output text)"
+    done
+    if [[ ${#PEERING_CONNECTIONS[@]} -lt 2 ]]; then
+        echo -n "Choice [0]: "
+    else
+        echo -n "Choice [0-$((${#PEERING_CONNECTIONS[@]} - 1))]: "
+    fi
+    read choice
+    if [[ ${choice} =~ ^[0-9]+$ ]]; then
+        if [[ -z ${PEERING_CONNECTIONS[$choice]} ]]; then
+            echoerr "ERROR: Choice '${choice}' is invalid."
+            exit 1
+        else
+            VPC_PEERING_ID=${PEERING_CONNECTIONS[$choice]}
+            TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
+                --region ${AWS_REGION} \
+                --vpc-peering-connection-id ${VPC_PEERING_ID} \
+                --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
+                --output text
+            )
+        fi
+    else
+        echoerr "ERROR: Choice '${choice}' is not numeric"
+        exit 1
     fi
 else
-    echoerr "ERROR: Choice '${choice}' is not numeric"
-    exit 1
+    TARGET_VPC_ID=$(stack_value_output ${TARGET_STACK_NAME} VPCId)
 fi
 
 # Find target StackName, Network and Route table
 echoerr "INFO: Setting ${TARGET_VPC_ID} variables"
-TARGET_APP_NAME=$(stack_name_from_vpc_id ${TARGET_VPC_ID})
-TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_APP_NAME} VPCNetwork)
-TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_APP_NAME} RouteTableId)
+[[ -z ${TARGET_STACK_NAME-} ]] \
+    && TARGET_STACK_NAME=$(stack_name_from_vpc_id ${TARGET_VPC_ID})
+TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
+TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
 
 echoerr "INFO: Removing routes from ${SELF_STACK_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
@@ -110,7 +120,7 @@ aws ec2 delete-route \
     >/dev/null \
     || true
 
-echoerr "INFO: Removing routes from ${TARGET_APP_NAME}"
+echoerr "INFO: Removing routes from ${TARGET_STACK_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
     --region ${AWS_REGION} \
