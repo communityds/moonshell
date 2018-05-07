@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# This is the autocomplete file for moonshell
+#
 #
 
 _stack_list () {
