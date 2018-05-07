@@ -18,6 +18,15 @@ stack_list_all () {
         | sort
 }
 
+stack_list_all_parents () {
+    aws cloudformation list-stacks \
+        --region ${AWS_REGION} \
+        --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
+        --query "StackSummaries[?not_null(TemplateDescription)].StackName" \
+        | jq -r '.[]' \
+        | sort
+}
+
 stack_list_others () {
     # List every stack in an account, except the one we are administering..
     local stack_name=$1

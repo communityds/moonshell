@@ -80,6 +80,14 @@ _moonshell_source ${MOON_PROFILE}
 
 
 #
+# COMPLETE
+#
+# Bash has great functionality, via simple functions, to make options to
+# scripts and functions tab completable; which aids productivity and ease of
+# use.
+_moonshell_source ${MOON_COMPLETION}
+
+#
 # PATH MODIFICATION
 #
 [[ -z ${MOON_PATH_PRE-} ]] && export MOON_PATH_PRE="${PATH}"
