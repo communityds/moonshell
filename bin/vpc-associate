@@ -16,7 +16,11 @@
 source $(dirname $0)/../moon.sh
 
 usage () {
-    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [STACK_NAME]"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev"
+    echoerr "  $ $(basename $0) staging core-staging"
     exit
 }
 
@@ -27,6 +31,7 @@ if [[ $# -lt 1 ]]; then
     usage
 else
     export ENVIRONMENT=$1
+    export TARGET_STACK_NAME=${2-}
     export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 fi
 
@@ -41,9 +46,11 @@ CORE_STACK_PREFIX="core"
 #
 # MAIN
 #
-echoerr "INFO: Finding non-${SELF_STACK_NAME} VPCs"
-TARGET_STACKS=($(stack_list_others ${SELF_STACK_NAME}))
-TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
+if [[ -z ${TARGET_STACK_NAME-} ]]; then
+    echoerr "INFO: Finding non-${SELF_STACK_NAME} VPCs"
+    TARGET_STACKS=($(stack_list_others ${SELF_STACK_NAME}))
+    TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
+fi
 
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
 SELF_VPC_ID=$(stack_resource_type ${SELF_STACK_NAME} "AWS::EC2::VPC")
