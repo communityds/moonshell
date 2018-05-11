@@ -77,3 +77,17 @@ generate_password () {
 
     echo "$(uuidgen | ${sha_cmd} | base64 | head -c 32)"
 }
+
+matches () {
+    [ $# -lt 2 ] \
+        && echoerr "Usage: ${FUNCNAME[0]} \$MATCH_ITEM \${BASH_ARRAY[@]}" \
+        && echoerr "Returns 0 if match_item matches any element of the array, 1 if not." \
+        && return 1
+
+    local i
+    for i in "${@:2}"; do
+        [[ "$i" =~ "$1" ]] && return 0
+    done
+    return 1
+}
+
