@@ -91,7 +91,6 @@ stack_resource_type () {
         --output text))
 
     if [[ -z ${resource_names[@]-} ]]; then
-        echoerr "WARNING: No resources of type ${resource_type} found"
         return 1
     else
         echo ${resource_names[@]}
