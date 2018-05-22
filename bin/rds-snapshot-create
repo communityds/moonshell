@@ -17,16 +17,38 @@ source $(dirname $0)/../moon.sh
 DEFAULT_SNAPSHOT_NAME="manual-$(date +%Y-%m-%d-%H-%M)"
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT [SNAPSHOT_NAME]"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [OPTIONS]"
     echoerr
-    echoerr "DEFAULT_SNAPSHOT_NAME=${DEFAULT_SNAPSHOT_NAME}"
+    echoerr "Options:"
+    echoerr "  -s SNAPSHOT_NAME  Default: '\$STACK_NAME-manual-\$(date +%Y-%m-%d-%H-%M)'"
     exit 0
 else
     ENVIRONMENT=$1
     STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-    [[ ${2-} ]] \
-        && SNAPSHOT_NAME=$2 \
-        || SNAPSHOT_NAME=${DEFAULT_SNAPSHOT_NAME}
+fi
+
+while getopts ':s:t:' OPT; do
+    case "${OPT}" in
+        s) SNAPSHOT_NAME="${OPTARG}" ;;
+        \?)
+            echoerr "ERROR: Unexpected option -${OPTARG}";
+            usage
+        ;;
+        :)
+            echoerr "ERROR: Option -${OPTARG} requires an argument."
+            usage
+        ;;
+    esac
+done
+
+if [[ -z ${SNAPSHOT_NAME-} ]]; then
+    SNAPSHOT_NAME="$STACK_NAME-manual-$(date +%Y-%m-%d-%H-%M)"
+elif [[ ${SNAPSHOT_NAME} =~ "--" ]] || [[ ${SNAPSHOT_NAME} =~ \-$ ]]; then
+    echoerr "ERROR: SNAPSHOT_NAME violates the hyphen rule"
+    exit 1
+elif [[ ! ${SNAPSHOT_NAME} =~ ^[a-z][a-z0-9\-]+$ ]]; then
+    echoerr "ERROR: SNAPSHOT_NAME contains illegal characters"
+    exit 1
 fi
 
 rds_snapshot_create ${STACK_NAME} ${SNAPSHOT_NAME}
