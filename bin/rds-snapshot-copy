@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+#
+# Copy an existing automated RDS snapshot.
+#
+
+source $(dirname $0)/../moon.sh
+
+# From `aws rds copy-db-snapshot help`:
+#
+#  o Cannot be null, empty, or blank
+#  o Must contain from 1 to 255 alphanumeric characters or hyphens
+#  o First character must be a letter
+#  o Cannot end with a hyphen or contain two consecutive hyphens
+#
+# Even though AWS use colons in their automated snapshots they do not permit
+# users to define a snapshot name with them..
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT [OPTIONS]"
+    echoerr
+    echoerr "Options:"
+    echoerr "  -s SOURCE_SNAPSHOT   Default: Choose from a list of existing snapshots"
+    echoerr "  -t TARGET_SNAPSHOT   Default: '\$STACK_NAME-copy-\$(date +%Y-%m-%d-%H-%M)'"
+    exit 0
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+fi
+
+while getopts ':s:t:' OPT; do
+    case "${OPT}" in
+        s)
+            SOURCE_SNAPSHOT="${OPTARG}"
+        ;;
+        t)
+            TARGET_SNAPSHOT="${OPTARG}"
+        ;;
+        # Handle erroneous input
+        \?)
+            echoerr "ERROR: Unexpected option -${OPTARG}";
+            usage
+        ;;
+        :)
+            echoerr "ERROR: Option -${OPTARG} requires an argument."
+            usage
+        ;;
+    esac
+done
+
+[[ -z ${SOURCE_SNAPSHOT-} ]] \
+    && SOURCE_SNAPSHOT=$(choose $(rds_snapshot_list ${STACK_NAME}))
+
+if [[ -z ${TARGET_SNAPSHOT-} ]]; then
+    TARGET_SNAPSHOT="$STACK_NAME-copy-$(date +%Y-%m-%d-%H-%M)"
+elif [[ ${TARGET_SNAPSHOT} =~ "--" ]] || [[ ${TARGET_SNAPSHOT} =~ \-$ ]]; then
+    echoerr "ERROR: TARGET_SNAPSHOT violates the hyphen rule"
+    exit 1
+elif [[ ! ${TARGET_SNAPSHOT} =~ ^[a-z][a-z0-9\-]+$ ]]; then
+    echoerr "ERROR: TARGET_SNAPSHOT contains illegal characters"
+    exit 1
+fi
+
+rds_snapshot_copy ${SOURCE_SNAPSHOT} ${TARGET_SNAPSHOT}
+
