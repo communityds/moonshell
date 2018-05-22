@@ -301,6 +301,26 @@ rds_snapshot_create () {
     return $?
 }
 
+rds_snapshot_copy () {
+    local source_snapshot_id=$1
+    local target_snapshot_id=$2
+
+    # It is possible to use different keys for RDS, so programmatically find it
+    local kms_key_id=$(aws rds describe-db-snapshots \
+        --region ${AWS_REGION} \
+        --db-snapshot-identifier ${source_snapshot_id} \
+        --query "DBSnapshots[].KmsKeyId" \
+        --output text)
+
+    aws rds copy-db-snapshot \
+        --region ${AWS_REGION} \
+        --source-db-snapshot-identifier ${source_snapshot_id} \
+        --target-db-snapshot-identifier ${target_snapshot_id} \
+        --kms-key-id ${kms_key_id}\
+        --copy-tags \
+        | jq '.'
+}
+
 rds_snapshot_delete () {
     local snapshot_id=$1
 
@@ -339,6 +359,30 @@ rds_snapshot_list () {
 rds_stack_resources () {
     # Enumerate all RDS resources in the stack and return an array
     local stack_name=$1
-    stack_resource_type ${stack_name} "AWS::RDS::DBInstance"
-    return $?
+    local db_instances=($(stack_resource_type ${stack_name} "AWS::RDS::DBInstance"))
+
+    if [[ -z ${db_instances[@]-} ]]; then
+        echoerr "WARNING: No RDS instances found in stack '${stack_name}', testing for nested stacks"
+        # The nested stack name is always appended to ${stack_name} with a hyphen
+        local nested_stacks=($(stack_list_all | grep "^${stack_name}-"))
+        if [[ ${#nested_stacks[@]} -gt 0 ]]; then
+            local nested_stack
+            for nested_stack in ${nested_stacks[@]}; do
+                db_instances=($(stack_resource_type ${nested_stack} "AWS::RDS::DBInstance"))
+                if [[ ${#db_instances[@]} -gt 0 ]]; then
+                    echoerr "INFO: Found DBInstance in nested stack '${nested_stack}'"
+                    break
+                fi
+            done
+            if [[ -z ${db_instances[@]-} ]]; then
+                echoerr "ERROR: No DBInstances found in nested stacks"
+                return 1
+            fi
+        else
+            echoerr "ERROR: No nested stacks found"
+            return 1
+        fi
+    fi
+
+    echo ${db_instances[@]}
 }
