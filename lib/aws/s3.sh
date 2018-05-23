@@ -294,10 +294,10 @@ s3_upload () {
             # source file else the file is created as the containing directory..
             # This is only a bug for multi-part uploads and is a flaw in AWS
             if [[ ${destination} =~ /$ ]]; then
-                s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options-}
+                s3_upload_multipart ${stack_name} ${source} ${destination}$(basename ${source}) ${options-}
                 return $?
             else
-                s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
+                s3_upload_multipart ${stack_name} ${source} ${destination} ${options-}
                 return $?
             fi
         fi
@@ -313,11 +313,13 @@ s3_upload () {
 
 s3_upload_multipart () {
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
-    local s3_bucket_name=${1}
+    local stack_name=$1
     local source=$(realpath ${2})
     local destination=${3}
     shift 3
     local options=$*
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
 
     # KMS
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
