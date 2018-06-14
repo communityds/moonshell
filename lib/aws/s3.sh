@@ -101,9 +101,11 @@ s3_get_delete_markers () {
     # DeleteMarkers and return VersionIds as an array
     local s3_bucket_name=$1
 
+    echoerr "INFO: Gathering first 1000 objects"
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
+        --max-items 1000 \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" \
         | jq -c '.'
 
