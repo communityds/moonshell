@@ -3,6 +3,11 @@
 # SIMPLE STORAGE SERVICE (S3) FUNCTIONS
 #
 s3_delete_objects () {
+    # Sample JSON input:
+    # [{
+    #   "VersionId":"nkfayP3f3lLFmrBanFSNl4pc8ytT8ZY4",
+    #   "Key":"dummy-location/file.name"
+    # }]
     local s3_bucket_name=$1
     local json=$2
 
@@ -80,6 +85,7 @@ s3_get_versions () {
     # TODO: We can oly delete a maximum of 1000 objects at any one time.
     # we need a way to handle this more intelligently instead of relying
     # on the user to run this several times..
+    echoerr "INFO: Gathering first 1000 objects"
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
@@ -87,7 +93,7 @@ s3_get_versions () {
         --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" \
         | jq -c '.'
 
-    return $?
+    return ${PIPESTATUS[0]}
 }
 
 s3_get_delete_markers () {
@@ -101,7 +107,7 @@ s3_get_delete_markers () {
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" \
         | jq -c '.'
 
-    return $?
+    return ${PIPESTATUS[0]}
 }
 
 s3_get_file_version () {
