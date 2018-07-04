@@ -12,6 +12,8 @@ export MOON_FILE=false
 
 source ${MOON_SHELL}
 
+GRANTS="Decrypt Encrypt ReEncryptFrom ReEncryptTo DescribeKey GenerateDataKey GenerateDataKeyWithoutPlaintext"
+
 if [[ $# -lt 1 ]]; then
     echoerr "Usage: $(basename $0) GRANTEE [KEY_ID|KEY_ALIAS]"
     exit
@@ -43,7 +45,7 @@ GRANT_ID=$(aws kms create-grant \
     --key-id ${KEY_ID} \
     --grantee-principal arn:aws:iam::$(sts_account_id):user/${GRANTEE} \
     --name ${GRANTEE} \
-    --operations Decrypt Encrypt ReEncryptFrom ReEncryptTo DescribeKey \
+    --operations ${GRANTS} \
     --query "GrantId" \
     --output text)
 
