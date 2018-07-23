@@ -269,62 +269,85 @@ s3_upload () {
     shift 3
     local options=$*
 
-    # Remove / prefix, s3 does not like '//'
-    destination=${destination/#\//}
-
-    [[ ${source} =~ /$ ]] \
-        && local verb=sync \
-        || local verb=cp
-
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
 
-    local s3_url="s3://${s3_bucket_name}"
-    echoerr "INFO: Uploading resources to ${s3_url}/"
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+
+    if [[ ${source} =~ /$ ]]; then
+        [[ ${kms_key_id-} ]] \
+            && options="${options-} --sse aws:kms --sse-kms-key-id ${kms_key_id}"
+
+        s3_upload_path ${s3_bucket_name} ${source} ${destination} ${options-}
+    else
+        [[ ${kms_key_id-} ]] \
+            && options="${options-} --server-side-encryption aws:kms --ssekms-key-id ${kms_key_id}"
+
+        s3_upload_file ${s3_bucket_name} ${source} ${destination} ${options-}
+    fi
+
+}
+
+s3_upload_file () {
+    local s3_bucket_name=$1
+    local source=$2
+    local s3_url=$3
+    shift 3
+    local options=$*
 
     # If uploading a sufficiently large file, explicitly use the AWS multipart upload API
-    if [[ ${verb} = 'cp' ]]; then
-        case $(uname) in
-            Darwin) local format_bytes="-f %z" ;;
-            Linux) local format_bytes="-c %s" ;;
-        esac
-        local filesize=$(stat ${format_bytes} ${source})
-        if [[ ${filesize} -gt 5242880 ]]; then
-            # If ${destination} has a trailing slash we have to append the
-            # source file else the file is created as the containing directory..
-            # This is only a bug for multi-part uploads and is a flaw in AWS
-            if [[ ${destination} =~ /$ ]]; then
-                s3_upload_multipart ${stack_name} ${source} ${destination}$(basename ${source}) ${options-}
-                return $?
-            else
-                s3_upload_multipart ${stack_name} ${source} ${destination} ${options-}
-                return $?
-            fi
+    case $(uname) in
+        Darwin) local format_bytes="-f %z" ;;
+        Linux) local format_bytes="-c %s" ;;
+    esac
+
+    local filesize=$(stat ${format_bytes} ${source})
+    if [[ ${filesize} -gt 5242880 ]]; then
+        # If ${destination} has a trailing slash we have to append the
+        # source file else the file is created as the containing directory..
+        # This is only a bug for multi-part uploads and is a flaw in AWS
+        if [[ ${destination} =~ /$ ]]; then
+            s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options-}
+            return $?
+        else
+            s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
+            return $?
         fi
     fi
 
-    local kms_key_id="$(kms_stack_key_id ${stack_name})"
-    [[ ${kms_key_id-} ]] \
-        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    aws s3api put-object \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key ${destination} \
+        --body ${source} \
+        ${options-}
+}
 
-    aws s3 ${verb} --region ${AWS_REGION} ${options-} ${source} s3://${s3_bucket_name}/${destination-}
-    return $?
+s3_upload_path () {
+    local s3_bucket_name=$1
+    local source=$2
+    local destination=$3
+    shift 3
+    local options=$*
+
+    [[ ! ${source} =~ /$ ]] && local source="${source}/"
+
+    # Remove / prefix, s3 does not like '//'
+    destination=${destination/#\//}
+
+    local s3_url="s3://${s3_bucket_name}/${destination-}"
+
+    echoerr "INFO: Uploading resources to ${s3_url}/"
+    aws s3 sync --region ${AWS_REGION} ${options-} ${source} ${s3_url}
 }
 
 s3_upload_multipart () {
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
-    local stack_name=$1
+    local s3_bucket_name=$1
     local source=$(realpath ${2})
     local destination=${3}
     shift 3
     local options=$*
-
-    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-
-    # KMS
-    local kms_key_id="$(kms_stack_key_id ${stack_name})"
-    [[ ${kms_key_id-} ]] \
-        && options="${options-} --server-side-encryption=aws:kms --ssekms-key-id ${kms_key_id}"
 
     # Maybe parameterise chunk size?
     local chunksize=5m
@@ -333,9 +356,8 @@ s3_upload_multipart () {
     local -a files
     local -a etags
 
-    # Checksum and key for the file upload
+    # Checksum for the file upload
     local csum="$(openssl md5 -binary ${source} | base64)"
-    local key=${destination}
 
     # Set up temporary directory
     local filesdir="$(mktemp -d -t s3upload.XXXXXX)"
@@ -350,7 +372,7 @@ s3_upload_multipart () {
         local response=$(aws s3api create-multipart-upload \
             --region ${AWS_REGION} \
             --bucket ${s3_bucket_name} \
-            --key ${key} \
+            --key ${destination} \
             --metadata md5=${csum} \
             ${options-})
         local upload_id=$(echo "${response}" | jq -r '.UploadId')
@@ -367,7 +389,7 @@ s3_upload_multipart () {
         for index in $(seq ${num_parts}); do
             echoerr "INFO: uploading part ${index} of ${num_parts}..."
             local file=${files[$index]};
-            local etag=$(_s3_upload_multipart_part ${s3_bucket_name} ${key} ${index} ${file} "${upload_id}")
+            local etag=$(_s3_upload_multipart_part ${s3_bucket_name} ${destination} ${index} ${file} "${upload_id}")
             if [[ -z "${etag}" ]]; then
                 echoerr "ERROR: Upload failed on part ${index} of ${num_parts}"
                 popd >/dev/null
@@ -393,7 +415,7 @@ s3_upload_multipart () {
             --region ${AWS_REGION} \
             --multipart-upload "file://${fileparts}" \
             --bucket ${s3_bucket_name} \
-            --key ${key} \
+            --key ${destination} \
             --upload-id "${upload_id}")
 
         local location=$(echo "${response}" | jq -r '.Location')
