@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# Add a user to the currently configured account
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT"
+    exit
+else
+    # This bashism lowers the case of $1
+    IAM_USER=${1,,}
+fi
+
+if ! iam_user_exists ${IAM_USER}; then
+    echoerr "ERROR: User '${IAM_USER}' does not exist"
+    exit 1
+fi
+
+read -s -n1 -p "Are you sure you wish to permanently delete user '${IAM_USER}'? (y/N) " delete_them
+echoerr
+[[ ! ${delete_them} =~ y ]] \
+    && echoerr "ERROR: Cancelling on user input" \
+    && exit 0
+
+KMS_ALIASES=($(kms_list_key_aliases_custom))
+if [[ ${KMS_ALIASES[@]-} ]]; then
+    for kms_alias in ${KMS_ALIASES[@]}; do
+        echoerr "INFO: Revoking grants from ${kms_alias} (if they exist)"
+        kms-user-revoke ${IAM_USER} ${kms_alias}
+    done
+fi
+
+echoerr "INFO: Deleting user's access keys"
+ACCESS_KEYS=($(iam_access_keys ${IAM_USER}))
+
+if [[ ${ACCESS_KEYS[@]-} ]]; then
+    for access_key in ${ACCESS_KEYS[@]}; do
+        echoerr "INFO: Deleting access key id '${access_key}' for '${IAM_USER}'"
+        aws iam delete-access-key \
+            --user-name ${IAM_USER} \
+            --access-key-id ${access_key}
+    done
+fi
+
+echoerr "INFO: Permanently deleting user account '${IAM_USER}'"
+aws iam delete-user --user-name ${IAM_USER}
+
+status=$?
+
+[[ ${status} -eq 0 ]] \
+    && echoerr "INFO: Successfully deleted user '${IAM_USER}'" \
+    || echoerr "ERROR: Failed to delete user '${IAM_USER}'" \
+
+exit ${status}
+

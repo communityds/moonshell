@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Add a user to the currently configured account
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT"
+    exit
+else
+    # This bashism lowers the case of $1
+    IAM_USER=${1,,}
+fi
+
+# Sanitise input
+#
+# AWS accepts mixed case alpha-numeric with "=,.@-" symbols, but the username
+# is case insensitive. Usernames with capital letters are a trap, so we force
+# lower case. Usernames with '=' and ',' are also a trap, so we made the
+# decision to only permit names that can also be email addresses.
+#
+# See: aws iam create-user help
+if [[ ! ${IAM_USER} =~ ^[a-z0-9\@\.\-]+$ ]]; then
+    echoerr "ERROR: Username contains illegal characters"
+    exit 1
+fi
+
+if iam_user_exists ${IAM_USER}; then
+    echoerr "INFO: User already exists"
+    exit 0
+else
+    USER_ARN=$(iam_user_arn ${IAM_USER})
+fi
+
+echoerr "INFO: Creating user account '${IAM_USER}'"
+aws iam create-user --user-name ${IAM_USER}
+
+echoerr "INFO: Creating API key and secret for '${IAM_USER}'"
+aws iam create-access-key \
+    --user-name ${IAM_USER} \
+    --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"
+
