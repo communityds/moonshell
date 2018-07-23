@@ -9,10 +9,8 @@ export MOON_FILE=false
 source ${MOON_SHELL}
 
 if [[ $# == 0 ]]; then
-    echoerr "INFO: Finding all key aliases"
-    ALIASES=($(aws kms list-aliases \
-        --query "Aliases[].AliasName" \
-        --output text))
+    echoerr "INFO: Finding custom key aliases"
+    ALIASES=($(kms_list_key_aliases_custom))
 
     KEY=$(choose ${ALIASES[@]})
 else

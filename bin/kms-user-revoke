@@ -23,10 +23,8 @@ else
 fi
 
 if [[ -z ${KEY-} ]]; then
-    echoerr "INFO: Finding all key aliases"
-    ALIASES=($(aws kms list-aliases \
-        --query "Aliases[].AliasName" \
-        --output text))
+    echoerr "INFO: Finding custom key aliases"
+    ALIASES=($(kms_list_key_aliases_custom))
 
     KEY=$(choose ${ALIASES[@]})
 fi
