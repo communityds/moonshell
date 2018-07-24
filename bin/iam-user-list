@@ -7,5 +7,8 @@ export MOON_FILE=false
 
 source $(dirname $0)/../moon.sh
 
-echo $(iam_users)
+echoerr "INFO: Listing all IAM users"
+for user in $(iam_users); do
+    echoerr "  * ${user}"
+done
 

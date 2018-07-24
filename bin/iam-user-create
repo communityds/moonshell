@@ -28,18 +28,16 @@ if [[ ! ${IAM_USER} =~ ^[a-z0-9\@\.\-]+$ ]]; then
     exit 1
 fi
 
-if iam_user_exists ${IAM_USER}; then
-    echoerr "INFO: User already exists"
+if _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User already exists, exiting"
     exit 0
 else
     USER_ARN=$(iam_user_arn ${IAM_USER})
 fi
 
 echoerr "INFO: Creating user account '${IAM_USER}'"
-aws iam create-user --user-name ${IAM_USER}
+iam_user_create ${IAM_USER}
 
 echoerr "INFO: Creating API key and secret for '${IAM_USER}'"
-aws iam create-access-key \
-    --user-name ${IAM_USER} \
-    --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"
+iam_access_key_create ${IAM_USER}
 

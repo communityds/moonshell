@@ -26,17 +26,38 @@ echoerr
     && echoerr "ERROR: Cancelling on user input" \
     && exit 0
 
+# Key Management System
+#
+echoerr "INFO: Removing user grants from all KMS keys"
 KMS_ALIASES=($(kms_list_key_aliases_custom))
 if [[ ${KMS_ALIASES[@]-} ]]; then
     for kms_alias in ${KMS_ALIASES[@]}; do
         echoerr "INFO: Revoking grants from ${kms_alias} (if they exist)"
         kms-user-revoke ${IAM_USER} ${kms_alias}
     done
+else
+    echoerr "INFO: No KMS keys found"
 fi
 
-echoerr "INFO: Deleting user's access keys"
-ACCESS_KEYS=($(iam_access_keys ${IAM_USER}))
+# Groups
+#
+echoerr "INFO: Removing user from groups"
+IAM_GROUPS=($(iam_user_group_list ${IAM_USER}))
+if [[ ${IAM_GROUPS[@]-} ]]; then
+    for group in ${IAM_GROUPS[@]}; do
+        echoerr "INFO: Removing user from group '${group}'"
+        aws iam remove-user-from-group \
+            --group-name ${group} \
+            --user-name ${IAM_USER}
+    done
+else
+    echoerr "INFO: User is not a member of any groups"
+fi
 
+# Access Keys
+#
+echoerr "INFO: Deleting user's access keys"
+ACCESS_KEYS=($(iam_access_key_list ${IAM_USER}))
 if [[ ${ACCESS_KEYS[@]-} ]]; then
     for access_key in ${ACCESS_KEYS[@]}; do
         echoerr "INFO: Deleting access key id '${access_key}' for '${IAM_USER}'"
@@ -44,8 +65,12 @@ if [[ ${ACCESS_KEYS[@]-} ]]; then
             --user-name ${IAM_USER} \
             --access-key-id ${access_key}
     done
+else
+    echoerr "INFO: User has no access keys"
 fi
 
+# Delete.Them.
+#
 echoerr "INFO: Permanently deleting user account '${IAM_USER}'"
 aws iam delete-user --user-name ${IAM_USER}
 
