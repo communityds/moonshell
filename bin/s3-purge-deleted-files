@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Over time versioned S3 buckets will accumulate detritus which costs money and
+# is just plain messy. This script purges files that are deleted.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "This script purges every deleted/obsoleted item from the stack's S3 bucket"
+    echoerr
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+fi
+
+SLEEP=7
+S3_BUCKET_NAME=$(s3_stack_bucket_name ${STACK_NAME})
+OLD_FILE_JSON=$(s3_get_delete_markers ${S3_BUCKET_NAME})
+# If there are no deleted files then the previous command will output "None"
+# Because scripts are run with set -eu, jq will fail to parse "None" and the
+# script will exit 1
+OBJECTS=$(echo ${OLD_FILE_JSON} | jq '.' | grep -c "VersionId")
+
+echo "You are about to irrecoverably delete ${OBJECTS} objects from ${STACK_NAME}'s S3 bucket that are not 'latest'."
+read -n 1 -p "Do you wish to continue? (y/N): " yolo
+echoerr
+[[ ! ${yolo} =~ ^[yY]$ ]] \
+    && echo "INFO: Aborting." \
+    && exit 0
+
+echoerr "INFO: Deletion of ${OBJECTS} objects from '${S3_BUCKET_NAME}' will commence in ${SLEEP} seconds (ctrl-C to cancel)"
+sleep ${SLEEP}
+s3_delete_objects ${S3_BUCKET_NAME} ${OLD_FILE_JSON}
+
+echoerr "INFO: Deletion complete. Have a nice day :)"
+
