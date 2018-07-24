@@ -6,18 +6,34 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 2 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT DATABASE [OUT_FILE]"
+    echoerr "Usage: $(basename $0) ENVIRONMENT DATABASE [OPTIONS]"
+    echoerr
+    echoerr "Options:"
+    echoerr "  -o OUT_FILE    Absolute path of output file inclusive of gz suffix"
+    echoerr "  -O \"OPTIONS\"   Extra options to parse when executing dump command"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ rds-dump-db dev my_schema"
+    echoerr "  $ rds-dump-db staging your_schema -o ~/dump.sql.gz"
+    echoerr "  $ rds-dump-db production their_schema -O \"--exclude-table=foo\""
     exit 0
 else
     ENVIRONMENT=$1
     STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     DATABASE=$2
-    [[ ${3-} ]] \
-        && OUT_FILE=$3 \
-        || OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}_$(date +%s).sql.gz"
+    shift 2
 fi
 
-rds_dump_db ${STACK_NAME} ${DATABASE} ${OUT_FILE}
+OUT_FILE="/tmp/${STACK_NAME}_${DATABASE}_$(date +%s).sql.gz"
+OPTIONS=""
+while getopts ':o:O:' OPT; do
+    case "${OPT}" in
+        o) OUT_FILE="$(realpath ${OPTARG})" ;;
+        O) OPTIONS="${OPTARG}" ;;
+    esac
+done
+
+rds_dump_db ${STACK_NAME} ${DATABASE} "${OUT_FILE}" "${OPTIONS-}"
 
 echoerr "INFO: DB dump saved as ${OUT_FILE}"
 
