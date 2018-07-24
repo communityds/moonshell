@@ -33,6 +33,6 @@ echoerr "INFO: Adding '${IAM_USER}' to group '${IAM_GROUP}'"
 iam_user_group_add ${IAM_USER} ${IAM_GROUP}
 
 [[ $? == 0 ]] \
-    && echoerr "INFO: Done"
+    && echoerr "INFO: Done" \
     || echoerr "ERROR: Failed"
 

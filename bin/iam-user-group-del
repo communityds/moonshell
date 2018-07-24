@@ -29,6 +29,6 @@ echoerr "INFO: Removing '${IAM_USER}' from group '${IAM_GROUP}'"
 iam_user_group_del ${IAM_USER} ${IAM_GROUP}
 
 [[ $? == 0 ]] \
-    && echoerr "INFO: Done"
+    && echoerr "INFO: Done" \
     || echoerr "ERROR: Failed"
 
