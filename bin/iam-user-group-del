@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# List users
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) IAM_USER [IAM_GROUP]"
+    exit 0
+else
+    IAM_USER=$1
+    IAM_GROUP=${2-}
+fi
+
+if [[ -z ${IAM_GROUP-} ]]; then
+    echoerr "Choose a group to add '${IAM_USER}' to:"
+    IAM_GROUP=$(choose $(iam_groups))
+fi
+
+if ! contains ${IAM_GROUP} $(iam_user_group_list ${IAM_USER}); then
+    echoerr "ERROR: User '${IAM_USER}' is not a member of group '${IAM_GROUP}'"
+    exit 1
+fi
+
+echoerr "INFO: Removing '${IAM_USER}' from group '${IAM_GROUP}'"
+iam_user_group_del ${IAM_USER} ${IAM_GROUP}
+
+[[ $? == 0 ]] \
+    && echoerr "INFO: Done"
+    || echoerr "ERROR: Failed"
+

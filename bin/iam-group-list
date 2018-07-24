@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# List groups
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Listing all IAM groups"
+for group in $(iam_groups); do
+    echoerr "  * ${group}"
+done
+
