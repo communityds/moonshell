@@ -7,6 +7,7 @@ rds_dump_db () {
     local stack_name=$1
     local database=$2
     local out_file=$3
+    local options=${4-}
 
     local instance=$(rds_instance_select ${stack_name})
     [[ -z ${instance-} ]] && return 1
@@ -14,7 +15,7 @@ rds_dump_db () {
     local engine=$(rds_engine_type ${stack_name} ${instance})
     [[ -z ${engine-} ]] && return 1
 
-    rds_${engine}_dump_db ${stack_name} ${database} ${out_file}
+    rds_${engine}_dump_db ${stack_name} ${database} "${out_file}" "${options-}"
     return $?
 }
 
@@ -82,9 +83,10 @@ rds_mysql_dump_db () {
     local stack_name=$1
     local database=$2
     local out_file=$3
+    local options=${4-}
 
     local last_line
-    local mysql_opts="--complete-insert --disable-keys --single-transaction"
+    local mysql_opts="--complete-insert --disable-keys --single-transaction ${options-}"
 
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
@@ -154,7 +156,8 @@ rds_postgres_dump_db () {
     local stack_name=$1
     local database=$2
     local out_file=$3
-    local pg_opts="--no-privileges --if-exists --clean --no-owner"
+    local options=${4-}
+    local pg_opts="--no-privileges --if-exists --clean --no-owner ${options-}"
 
     rds_postgres_grant ${stack_name} ${database}
 
