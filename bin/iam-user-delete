@@ -69,6 +69,68 @@ else
     echoerr "INFO: User has no access keys"
 fi
 
+# Policies
+#
+echoerr "INFO: Detaching user from policies"
+POLICIES=($(iam_user_policies ${IAM_USER}))
+if [[ ${POLICIES[@]-} ]]; then
+    for aws_policy in ${AWS_POLICIES[@]}; do
+        echoerr "WARNING: Detaching policy: ${policy}"
+        aws iam detach-user-policy \
+            --user-name ${IAM_USER} \
+            --policy-arn ${policy}
+    done
+else
+    echoerr "INFO: User is not attached to any policies"
+fi
+
+# SSC
+#
+echoerr "INFO: Deleting service specific credentials"
+SSC=($(iam_user_ssc ${IAM_USER}))
+if [[ ${SSC[@]-} ]]; then
+    for ssc in ${SSC[@]}; do
+        echoerr "WARNING: Deleting service specific credential: ${ssc}"
+        aws iam delete-service-specific-credential \
+            --user-name ${IAM_USER} \
+            --service-specific-credential-id ${_ssc}
+    done
+else
+    echoerr "INFO: No service specific credentials found"
+fi
+
+# SSH Keys
+#
+echoerr "INFO: Deactivating SSH public keys"
+SSH_KEYS=($(iam_user_ssh_keys ${IAM_USER}))
+if [[ ${SSH_KEYS[@]-} ]]; then
+    for ssh_key in ${SSH_KEYS[@]}; do
+        echoerr "WARNING: Deleting SSH key: ${ssh_key}"
+        aws iam deactivate-mfa-device \
+            --user-name ${IAM_USER} \
+            --ssh-public-key-id ${ssh_key}
+    done
+else
+    echoerr "INFO: No SSH public keys found"
+fi
+
+# MFA
+#
+echoerr "INFO: Discovering MFA devices"
+MFA=($(iam_user_mfa_devices ${IAM_USER}))
+if [[ ${MFA[@]-} ]]; then
+    for mfa in ${MFA[@]}; do
+        echoerr "WARNING: Deleting MFA device: ${mfa}"
+        iaws iam deactivate-mfa-device \
+            --user-name ${IAM_USER} \
+            --serial-number ${mfa}
+    done
+else
+    echoerr "INFO: No MFA devices found"
+fi
+
+
+
 # Delete.Them.
 #
 echoerr "INFO: Permanently deleting user account '${IAM_USER}'"
