@@ -238,6 +238,13 @@ rds_postgres_restore_db () {
     echoerr "INFO: Uploading ${in_file} to ${bastion}"
     bastion_upload_file ${stack_name} ${in_file}
 
+    echoerr "INFO: Attempting to kill active connections"
+    bastion_exec_admin ${stack_name} \
+        "'psql -e -c \"SELECT pid, pg_terminate_backend(pid) \
+            FROM pg_stat_activity \
+            WHERE datname = current_database() \
+                AND pid <> pg_backend_pid();\" '"
+
     echoerr "INFO: Dropping DB"
     bastion_exec_admin ${stack_name} \
         "'psql -e -c \"DROP DATABASE IF EXISTS ${database}\"'"
