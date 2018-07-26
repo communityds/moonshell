@@ -11,10 +11,8 @@ _iam_test_group () {
         && return 1
 
     if contains ${iam_group} $(iam_groups); then
-        echoerr "INFO: Found group '${iam_group}'"
         return 0
     else
-        echoerr "WARNING: Could not find group '${iam_group}'"
         return 1
     fi
 }
@@ -27,10 +25,8 @@ _iam_test_user () {
         && return 1
 
     if contains ${iam_user} $(iam_users); then
-        echoerr "INFO: Found user '${iam_user}'"
         return 0
     else
-        echoerr "WARNING: Could not find user '${iam_user}'"
         return 1
     fi
 }
@@ -38,9 +34,27 @@ _iam_test_user () {
 iam_access_key_create () {
     local iam_user=$1
 
-    aws iam create-access-key \
+    if _iam_test_user ${iam_user-}; then
+        echoerr "INFO: Creating API key and secret for '${iam_user}'"
+        aws iam create-access-key \
+            --user-name ${iam_user} \
+            --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"
+    fi
+}
+
+iam_access_key_delete () {
+    local iam_user=$1
+    local access_key=$2
+
+    if ! _iam_test_user ${iam_user-}; then
+        return 1
+    elif [[ -z ${access_key-} ]]; then
+        return 1
+    fi
+
+    aws iam delete-access-key \
         --user-name ${iam_user} \
-        --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"
+        --access-key-id ${access_key}
 }
 
 iam_access_key_list () {
@@ -50,13 +64,10 @@ iam_access_key_list () {
         return 1
     fi
 
-    echoerr "INFO: Listing all access keys for '${iam_user}'"
     aws iam list-access-keys \
         --user-name ${iam_user} \
         --query "AccessKeyMetadata[].AccessKeyId" \
         --output text
-
-    return $?
 }
 
 iam_groups () {
@@ -68,18 +79,17 @@ iam_groups () {
 iam_user_arn () {
     local iam_user=$1
 
-    local user_arn=$(aws iam get-user \
+    aws iam get-user \
         --user-name ${iam_user} \
         --query "User.Arn" \
-        --output text 2>/dev/null)
-
-    echo ${user_arn}
+        --output text
 }
 
 iam_user_create () {
     local iam_user=$1
 
-    if _iam_test_user ${iam_user-}; then
+    if ! _iam_test_user ${iam_user-}; then
+        echoerr "INFO: Creating user '${iam_user}'"
         aws iam create-user --user-name ${iam_user}
     fi
 
@@ -131,6 +141,42 @@ iam_user_group_list () {
         --output text
 
     return $?
+}
+
+iam_user_mfa_devices () {
+    local iam_user=$1
+
+    aws iam list-mfa-devices \
+        --user-name ${iam_user} \
+        --query 'MFADevices[].SerialNumber' \
+        --output text
+}
+
+iam_user_policies () {
+    local iam_user=$1
+
+    aws iam list-attached-user-policies \
+        --user-name ${iam_user} \
+        --query 'AttachedPolicies[].PolicyArn' \
+        --output text
+}
+
+iam_user_ssc () {
+    local iam_user=$1
+
+    aws iam list-service-specific-credentials \
+        --user-name ${iam_user} \
+        --query 'ServiceSpecificCredentials[].ServiceSpecificCredentialId' \
+        --output text
+}
+
+iam_user_ssh_keys () {
+    local iam_user=$1
+
+    aws iam list-ssh-public-keys \
+        --user-name ${iam_user} \
+        --query 'SSHPublicKeys[].SSHPublicKeyId' \
+        --output text
 }
 
 iam_users () {
