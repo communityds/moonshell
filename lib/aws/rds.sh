@@ -109,7 +109,7 @@ rds_mysql_list_dbs () {
     instance=$2
 
     bastion_exec_admin ${stack_name} \
-        "'mysql -BNe \"SHOW DATABASES;\"'"
+        "'mysql -BNe \"SHOW DATABASES;\" '"
 }
 
 rds_mysql_restore_db () {
@@ -204,7 +204,7 @@ rds_postgres_list_dbs () {
     local stack_name=$1
 
     local databases=($(bastion_exec_admin ${stack_name} \
-        "'psql -tAc \"select datname from pg_DATABASE;\"'"))
+        "'psql -tAc \"select datname from pg_DATABASE;\" '"))
     [[ -z ${databases[@]-} ]] && return 1
 
     for database in ${databases[@]-}; do
