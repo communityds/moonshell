@@ -238,6 +238,14 @@ rds_postgres_restore_db () {
     echoerr "INFO: Uploading ${in_file} to ${bastion}"
     bastion_upload_file ${stack_name} ${in_file}
 
+    echoerr "INFO: Dropping DB"
+    bastion_exec_admin ${stack_name} \
+        "'psql -e -c \"DROP DATABASE IF EXISTS ${database}\"'"
+
+    echoerr "INFO: Creating DB"
+    bastion_exec_admin ${stack_name} \
+        "'psql -e -c \"CREATE DATABASE ${database}\"'"
+
     echoerr "INFO: Restoring DB to ${database}:"
     bastion_exec_admin ${stack_name} \
         "'zcat /tmp/${upload_file} | psql ${pg_opts} -d ${database}'"
