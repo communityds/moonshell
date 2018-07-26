@@ -15,11 +15,9 @@ else
     KEY=${2-}
 fi
 
-if ! aws iam get-user --user-name ${GRANTEE} &>/dev/null; then
-    echoerr "ERROR: User '${GRANTEE}' is not a recognised user in IAM"
+if ! _iam_test_user ${GRANTEE} &>/dev/null; then
+    echoerr "ERROR: User '${GRANTEE}' does not exist"
     exit 1
-else
-    echoerr "INFO: Found IAM user '${GRANTEE}'"
 fi
 
 if [[ -z ${KEY-} ]]; then
