@@ -15,6 +15,7 @@ kms_id_from_key () {
             || true
 
         key_id=$(aws kms list-aliases \
+            --region ${AWS_REGION} \
             --query "Aliases[?AliasName=='${key}'].TargetKeyId" \
             --output text)
 
