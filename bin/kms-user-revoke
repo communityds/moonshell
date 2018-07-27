@@ -15,18 +15,14 @@ else
     KEY=${2-}
 fi
 
-if ! aws iam get-user --user-name ${GRANTEE} &>/dev/null; then
-    echoerr "ERROR: User '${GRANTEE}' is not a recognised user in IAM"
+if ! _iam_test_user ${GRANTEE} &>/dev/null; then
+    echoerr "ERROR: User '${GRANTEE}' does not exist"
     exit 1
-else
-    echoerr "INFO: Found IAM user '${GRANTEE}'"
 fi
 
 if [[ -z ${KEY-} ]]; then
-    echoerr "INFO: Finding all key aliases"
-    ALIASES=($(aws kms list-aliases \
-        --query "Aliases[].AliasName" \
-        --output text))
+    echoerr "INFO: Finding custom key aliases"
+    ALIASES=($(kms_list_key_aliases_custom))
 
     KEY=$(choose ${ALIASES[@]})
 fi

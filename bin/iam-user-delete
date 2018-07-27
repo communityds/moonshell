@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+#
+# Add a user to the currently configured account
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT"
+    exit
+else
+    # This bashism lowers the case of $1
+    IAM_USER=${1,,}
+fi
+
+if ! iam_user_exists ${IAM_USER}; then
+    echoerr "ERROR: User '${IAM_USER}' does not exist"
+    exit 1
+fi
+
+read -s -n1 -p "Are you sure you wish to permanently delete user '${IAM_USER}'? (y/N) " delete_them
+echoerr
+[[ ! ${delete_them} =~ y ]] \
+    && echoerr "ERROR: Cancelling on user input" \
+    && exit 0
+
+# Key Management System
+#
+echoerr "INFO: Removing user grants from all KMS keys"
+KMS_ALIASES=($(kms_list_key_aliases_custom))
+if [[ ${KMS_ALIASES[@]-} ]]; then
+    for kms_alias in ${KMS_ALIASES[@]}; do
+        echoerr "INFO: Revoking grants from ${kms_alias} (if they exist)"
+        kms-user-revoke ${IAM_USER} ${kms_alias}
+    done
+else
+    echoerr "INFO: No KMS keys found"
+fi
+
+# Groups
+#
+echoerr "INFO: Removing user from groups"
+IAM_GROUPS=($(iam_user_group_list ${IAM_USER}))
+if [[ ${IAM_GROUPS[@]-} ]]; then
+    for group in ${IAM_GROUPS[@]}; do
+        echoerr "INFO: Removing user from group '${group}'"
+        aws iam remove-user-from-group \
+            --group-name ${group} \
+            --user-name ${IAM_USER}
+    done
+else
+    echoerr "INFO: User is not a member of any groups"
+fi
+
+# Access Keys
+#
+echoerr "INFO: Deleting user's access keys"
+ACCESS_KEYS=($(iam_access_key_list ${IAM_USER}))
+if [[ ${ACCESS_KEYS[@]-} ]]; then
+    for access_key in ${ACCESS_KEYS[@]}; do
+        echoerr "INFO: Deleting access key id '${access_key}' for '${IAM_USER}'"
+        aws iam delete-access-key \
+            --user-name ${IAM_USER} \
+            --access-key-id ${access_key}
+    done
+else
+    echoerr "INFO: User has no access keys"
+fi
+
+# Policies
+#
+echoerr "INFO: Detaching user from policies"
+POLICIES=($(iam_user_policies ${IAM_USER}))
+if [[ ${POLICIES[@]-} ]]; then
+    for aws_policy in ${AWS_POLICIES[@]}; do
+        echoerr "WARNING: Detaching policy: ${policy}"
+        aws iam detach-user-policy \
+            --user-name ${IAM_USER} \
+            --policy-arn ${policy}
+    done
+else
+    echoerr "INFO: User is not attached to any policies"
+fi
+
+# SSC
+#
+echoerr "INFO: Deleting service specific credentials"
+SSC=($(iam_user_ssc ${IAM_USER}))
+if [[ ${SSC[@]-} ]]; then
+    for ssc in ${SSC[@]}; do
+        echoerr "WARNING: Deleting service specific credential: ${ssc}"
+        aws iam delete-service-specific-credential \
+            --user-name ${IAM_USER} \
+            --service-specific-credential-id ${_ssc}
+    done
+else
+    echoerr "INFO: No service specific credentials found"
+fi
+
+# SSH Keys
+#
+echoerr "INFO: Deactivating SSH public keys"
+SSH_KEYS=($(iam_user_ssh_keys ${IAM_USER}))
+if [[ ${SSH_KEYS[@]-} ]]; then
+    for ssh_key in ${SSH_KEYS[@]}; do
+        echoerr "WARNING: Deleting SSH key: ${ssh_key}"
+        aws iam deactivate-mfa-device \
+            --user-name ${IAM_USER} \
+            --ssh-public-key-id ${ssh_key}
+    done
+else
+    echoerr "INFO: No SSH public keys found"
+fi
+
+# MFA
+#
+echoerr "INFO: Discovering MFA devices"
+MFA=($(iam_user_mfa_devices ${IAM_USER}))
+if [[ ${MFA[@]-} ]]; then
+    for mfa in ${MFA[@]}; do
+        echoerr "WARNING: Deleting MFA device: ${mfa}"
+        iaws iam deactivate-mfa-device \
+            --user-name ${IAM_USER} \
+            --serial-number ${mfa}
+    done
+else
+    echoerr "INFO: No MFA devices found"
+fi
+
+
+
+# Delete.Them.
+#
+echoerr "INFO: Permanently deleting user account '${IAM_USER}'"
+aws iam delete-user --user-name ${IAM_USER}
+
+status=$?
+
+[[ ${status} -eq 0 ]] \
+    && echoerr "INFO: Successfully deleted user '${IAM_USER}'" \
+    || echoerr "ERROR: Failed to delete user '${IAM_USER}'" \
+
+exit ${status}
+

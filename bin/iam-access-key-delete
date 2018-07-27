@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# Create access key and secret for a user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT [ACCESS_KEY_ID]"
+    exit
+else
+    # This bashism lowers the case of $1
+    IAM_USER=${1,,}
+    ACCESS_KEY=${2-}
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User '${IAM_USER}' does not exist"
+    exit 0
+fi
+
+ACCESS_KEYS=($(iam_access_key_list ${IAM_USER}))
+
+if [[ -z ${ACCESS_KEY-} ]]; then
+
+    # Table output makes it easier for the user to confirm the key to delete
+    aws iam list-access-keys \
+        --user-name ${IAM_USER} \
+        --query "AccessKeyMetadata[]" \
+        --output table
+
+    if [[ ${ACCESS_KEYS[@]-} ]]; then
+        echoerr "WARNING: Key deletion is permanent and irrecoverable"
+        echo "Choose a key to delete:"
+        ACCESS_KEY=$(choose ${ACCESS_KEYS[@]})
+    else
+        echoerr "INFO: No access keys found for user '${IAM_USER}'"
+        exit 0
+    fi
+elif ! contains ${ACCESS_KEY} ${ACCESS_KEYS[@]}; then
+    echoerr "ERROR: Access key '${ACCESS_KEY}' does not exist for user '${IAM_USER}'"
+    exit 1
+fi
+
+echoerr "WARNING: Deleting access key '${ACCESS_KEY}' for user '${IAM_USER}'"
+iam_access_key_delete ${IAM_USER} ${ACCESS_KEY}
+
+[[ $? -gt 0 ]] \
+    && echoerr "ERROR: Failed to delete key" \
+    && exit 1 \
+    || echoerr "INFO: Key successfully deleted"
+

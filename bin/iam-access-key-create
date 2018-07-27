@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# Create access key and secret for a user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT"
+    exit
+else
+    # This bashism lowers the case of $1
+    IAM_USER=${1,,}
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User '${IAM_USER}' does not exist"
+    exit 0
+fi
+
+iam_access_key_create ${IAM_USER}
+

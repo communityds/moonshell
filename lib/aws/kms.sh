@@ -35,6 +35,14 @@ kms_list_key_aliases () {
     return $?
 }
 
+kms_list_key_aliases_custom () {
+    # Display all non-default KMS keys
+    aws kms list-aliases \
+        --region ${AWS_REGION} \
+        | jq -r '.Aliases[] | select(.AliasName | startswith("alias/aws") | not ) | .AliasName'
+    return $?
+}
+
 kms_list_key_ids () {
     aws kms list-keys \
         --region ${AWS_REGION} \
