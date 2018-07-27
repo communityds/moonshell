@@ -42,6 +42,7 @@ KEY_ID=$(kms_id_from_key ${KEY})
 
 echoerr "INFO: Creating grant for ${GRANTEE} to ${KEY_ID}"
 GRANT_ID=$(aws kms create-grant \
+    --region ${AWS_REGION} \
     --key-id ${KEY_ID} \
     --grantee-principal arn:aws:iam::$(sts_account_id):user/${GRANTEE} \
     --name ${GRANTEE} \

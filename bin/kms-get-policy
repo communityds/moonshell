@@ -21,6 +21,7 @@ KEY_ID=$(kms_id_from_key ${KEY})
 
 echoerr "INFO: Getting policy for key id '${KEY_ID}'"
 KEY_POLICY=$(aws kms get-key-policy \
+    --region ${AWS_REGION} \
     --key-id ${KEY_ID} \
     --policy-name default \
     --query 'Policy')

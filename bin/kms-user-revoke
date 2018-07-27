@@ -37,6 +37,7 @@ if [[ -n ${GRANT} ]]; then
 
     echoerr "INFO: Revoking grant for ${GRANTEE} to ${KEY_ID}"
     aws kms revoke-grant \
+        --region ${AWS_REGION} \
         --key-id ${KEY_ID} \
         --grant-id ${GRANT_ID}
 else
