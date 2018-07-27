@@ -121,7 +121,7 @@ MFA=($(iam_user_mfa_devices ${IAM_USER}))
 if [[ ${MFA[@]-} ]]; then
     for mfa in ${MFA[@]}; do
         echoerr "WARNING: Deleting MFA device: ${mfa}"
-        iaws iam deactivate-mfa-device \
+        aws iam deactivate-mfa-device \
             --user-name ${IAM_USER} \
             --serial-number ${mfa}
     done
