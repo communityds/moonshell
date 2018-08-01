@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# List all server certificates
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Listing all server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates" \
+    && exit 1
+
+for cert in ${IAM_SERVER_CERTIFICATES[@]}; do
+    echo ${cert}
+done
+
