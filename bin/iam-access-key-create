@@ -11,8 +11,7 @@ if [[ $# -lt 1 ]]; then
     echoerr "Usage: $(basename $0) USER_ACCOUNT"
     exit
 else
-    # This bashism lowers the case of $1
-    IAM_USER=${1,,}
+    IAM_USER=$(echo -n ${1} | tr [:upper:] [:lower:])
 fi
 
 if ! _iam_test_user ${IAM_USER}; then
