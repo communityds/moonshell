@@ -71,7 +71,7 @@ overlay_dir () {
     if [[ -d ${dir}/bin ]]; then
         overlay_path_prepend "$(realpath ${dir}/bin)"
     elif [[ ! -d ${dir} ]]; then
-        echoerr "ERROR: '${dir}' does not exist or is not a directory" \
+        echoerr "ERROR: '${dir}' does not exist or is not a directory"
         return 1
     fi
 
