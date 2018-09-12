@@ -39,7 +39,7 @@ ami_deregister () {
     echoerr "WARNING: Deleting ${ami_id} and ${snapshot_id} in ${wait} seconds. Ctrl-C to cancel"
     sleep ${wait}
 
-    aws ec2 deregister-image --image-id ${ami_id} \
+    aws ec2 deregister-image --region ${AWS_REGION} --image-id ${ami_id} \
         && aws ec2 delete-snapshot --region ${AWS_REGION} --snapshot-id ${snapshot_id} \
         || echoerr "ERROR: Failed to deregister ${ami_id}. ${snapshot_id} is preserved"
 }
