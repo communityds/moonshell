@@ -40,7 +40,7 @@ VERBOSE=
 
 # pipe delimited string of AMIs to build - CLASSES="foo|bar|baz"
 # foo.json, bar.json and baz.json must exist in the packer directory.
-CLASSES="$(find packer/ -name '*.json' -exec basename -s .json '{}' \;)"
+CLASSES="$(find packer/ -name '*.json' -exec basename -s .json '{}' \; | sort)"
 
 BUILD_ROOT="${PWD}"
 
