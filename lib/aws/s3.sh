@@ -25,7 +25,7 @@ s3_delete_objects () {
         | tee ${tmp_file} &>/dev/null
 
     # See `aws s3api delete-objects help` for limits.
-    if [[ $(grep -c VersionId ${tmp_file}) -gt 999 ]]; then
+    if [[ $(grep -c VersionId ${tmp_file}) -gt 1000 ]]; then
         echoerr "ERROR: Too many objects to delete"
         return 1
     fi
