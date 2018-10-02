@@ -3,7 +3,6 @@
 alias l='ls -lha'
 alias ll='ls -lh'
 alias vi=vim
-alias ssh='ssh -XA'
 alias wget='wget -c'
 
 alias gerp=grep
