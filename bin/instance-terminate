@@ -15,14 +15,27 @@ source $(dirname $0)/../moon.sh
     && exit \
     || INSTANCES=($@)
 
-for instance in ${INSTANCES[@]}; do
-    if [[ ${instance} =~ ^i-[a-f0-9]*$ ]]; then
-        echoerr "INFO: Terminating instance '${instance}'"
+for instance_id in ${INSTANCES[@]}; do
+    if [[ ${instance_id} =~ ^i-[a-f0-9]*$ ]]; then
+        ELB_JSON=$(aws elb describe-load-balancers --region ${AWS_REGION})
+
+        ELB_NAME=$(echo $ELB_JSON \
+            | jq -r ".LoadBalancerDescriptions[] | select(.Instances[].InstanceId == \"${instance_id}\") | .LoadBalancerName")
+
+        if [[ ${ELB_NAME-} ]]; then
+            echoerr "INFO: Deregistering '${instance_id}' from ELB '${ELB_NAME}'"
+            aws elb deregister-instances-from-load-balancer \
+                --region ${AWS_REGION} \
+                --load-balancer-name ${ELB_NAME} \
+                --instances ${instance_id}
+        fi
+
+        echoerr "INFO: Terminating instance '${instance_id}'"
         aws autoscaling terminate-instance-in-auto-scaling-group \
             --region ${AWS_REGION} \
             --no-should-decrement-desired-capacity \
-            --instance-id ${instance}
+            --instance-id ${instance_id}
     else
-        echoerr "ERROR: Instance ID '${instance}' is invalid"
+        echoerr "ERROR: Instance ID '${instance_id}' is invalid"
     fi
 done
