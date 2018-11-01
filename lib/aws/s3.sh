@@ -86,12 +86,14 @@ s3_get_versions () {
     # we need a way to handle this more intelligently instead of relying
     # on the user to run this several times..
     echoerr "INFO: Gathering first 1000 objects"
+    # --max-items appears to be broken, but we should try to reduece load on
+    # the AWS API anyway.
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --max-items 1000 \
         --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" \
-        | jq -c '.'
+        | jq -c '[limit (1000; .[] | select(.VersionId))]'
 
     return ${PIPESTATUS[0]}
 }
@@ -102,12 +104,14 @@ s3_get_delete_markers () {
     local s3_bucket_name=$1
 
     echoerr "INFO: Gathering first 1000 objects"
+    # --max-items appears to be broken, but we should try to reduece load on
+    # the AWS API anyway.
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --max-items 1000 \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" \
-        | jq -c '.'
+        | jq -c '[limit (1000; .[] | select(.VersionId))]'
 
     return ${PIPESTATUS[0]}
 }
