@@ -102,6 +102,14 @@ if [[ -z ${TARGET_STACK_NAME-} ]]; then
     fi
 else
     TARGET_VPC_ID=$(stack_value_output ${TARGET_STACK_NAME} VPCId)
+    VPC_PEERING_ID=$(aws ec2 describe-vpc-peering-connections \
+        --region ${AWS_REGION} \
+        --filters \
+            Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
+            Name=accepter-vpc-info.vpc-id,Values=${TARGET_VPC_ID} \
+            Name=status-code,Values=active,pending-acceptance,provisioning \
+        --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
+        --output text)
 fi
 
 # Find target StackName, Network and Route table
