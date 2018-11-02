@@ -47,7 +47,7 @@ rds_instance_select () {
     # If there are multiple RDS resources, prompt for selection and return
     # selection as a string
     local stack_name=$1
-    local i db
+    local instance replica
     local -a instances=($(rds_stack_resources ${stack_name}))
 
     if [[ ${instances[@]-} ]]; then
@@ -55,9 +55,23 @@ rds_instance_select () {
             echo ${instances}
             return 0
         else
-            echoerr "Select a DB instance:"
-            choose ${instances[@]}
-            return $?
+            # At this point in time we don't have a need to support finding a
+            # replica, so are purely concerned only with finding the master.
+            # if the slave is required, then this needs some `choose` action,
+            # but that will impact the user experience for rds-dump-db et al.
+            for instance in ${instances[@]}; do
+                replica=$(aws rds describe-db-instances \
+                    --region ${AWS_REGION} \
+                    --db-instance-identifier ${instance} \
+                    --query "DBInstances[].ReadReplicaDBInstanceIdentifiers" \
+                    --output text)
+                if [[ ${replica-} ]]; then
+                    echo ${instance}
+                    return 0
+                fi
+            done
+            echoerr "ERROR: Could not find a master DB instance"
+            return 1
         fi
     else
         echoerr "ERROR: No RDS instances found in stack '${stack_name}'"
@@ -357,6 +371,37 @@ rds_snapshot_list () {
 rds_stack_resources () {
     # Enumerate all RDS resources in the stack and return an array
     local stack_name=$1
-    stack_resource_type ${stack_name} "AWS::RDS::DBInstance"
-    return $?
+
+    local -a stack_status_ok=($(stack_status_ok))
+
+    local stack_id=$(aws cloudformation list-stacks \
+        --region ${AWS_REGION} \
+        --stack-status-filter ${stack_status_ok[@]} \
+        --query "StackSummaries[?StackName=='${stack_name}'].StackId" \
+        --output text)
+
+    # Nested stacks are so hot right now.
+    local nested_stacks=($(aws cloudformation list-stacks \
+        --region ${AWS_REGION} \
+        --stack-status-filter ${stack_status_ok[@]} \
+        --query "StackSummaries[?ParentId=='${stack_id}'].StackName" \
+        --output text))
+
+    if [[ ${#nested_stacks[@]} -gt 0 ]]; then
+        local nested_stack
+        local -a db_instance_test
+
+        for nested_stack in ${stack_name} ${nested_stacks[@]}; do
+            # squelch 'warning' output from testing a stack that does not have a DBInstance
+            db_instance_test=($(stack_resource_type ${nested_stack} "AWS::RDS::DBInstance" 2>/dev/null))
+            if [[ ${#db_instance_test[@]} -gt 0 ]]; then
+                echo ${db_instance_test[@]}
+                return 0
+            fi
+        done
+        return 1
+    else
+        stack_resource_type ${stack_name} "AWS::RDS::DBInstance"
+        return $?
+    fi
 }

@@ -99,6 +99,16 @@ stack_resource_type () {
     fi
 }
 
+stack_status_ok () {
+    local -a status_complete=(
+        UPDATE_COMPLETE
+        CREATE_COMPLETE
+        ROLLBACK_COMPLETE
+        UPDATE_ROLLBACK_COMPLETE
+    )
+    echo ${status_complete[@]}
+}
+
 stack_value () {
     # Return the ${resource_id} as string for the {Input,Parameter,Output} of a
     # named ${resource}
