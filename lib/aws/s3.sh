@@ -313,26 +313,25 @@ s3_upload_file () {
         Linux) local format_bytes="-c %s" ;;
     esac
 
+    # If ${destination} has a trailing slash we have to append the source
+    # file else the file is created as the containing directory..
+    # Yes, AWS lets you create a file called "foo/", even if a dir called
+    # "foo/" already exists.. :thumbsup:
+    [[ ${destination} =~ /$ ]] \
+        && destination="${destination}$(basename ${source})" \
+        || destination="${destination}"
+
     local filesize=$(stat ${format_bytes} ${source})
     if [[ ${filesize} -gt 5242880 ]]; then
-        # If ${destination} has a trailing slash we have to append the
-        # source file else the file is created as the containing directory..
-        # This is only a bug for multi-part uploads and is a flaw in AWS
-        if [[ ${destination} =~ /$ ]]; then
-            s3_upload_multipart ${s3_bucket_name} ${source} ${destination}$(basename ${source}) ${options-}
-            return $?
-        else
-            s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
-            return $?
-        fi
+        s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
+    else
+        aws s3api put-object \
+            --region ${AWS_REGION} \
+            --bucket ${s3_bucket_name} \
+            --key ${destination} \
+            --body ${source} \
+            ${options-}
     fi
-
-    aws s3api put-object \
-        --region ${AWS_REGION} \
-        --bucket ${s3_bucket_name} \
-        --key ${destination} \
-        --body ${source} \
-        ${options-}
 }
 
 s3_upload_path () {
