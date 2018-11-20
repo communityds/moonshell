@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# There are other slowquery.log files available, but there is no apparent way
+# to enumerate the logs available, so we default to the first, and most
+# current, one.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT [DUMP_FILE]"
+    echoerr
+    echoerr "Options:"
+    echoerr "  DUMP_FILE   Default: '/tmp/\$STACK_NAME.slowlog'"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev /tmp"
+    echoerr "  $ $(basename $0) staging /home/${USER}"
+    echoerr "  $ $(basename $0) uat"
+    exit 0
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    DUMP_FILE=${2:-/tmp/$STACK_NAME.slowlog}
+fi
+
+echoerr "INFO: Downloading slowlog to '${DUMP_FILE}'"
+
+rds_slowlog ${STACK_NAME} ${DUMP_FILE}
+
+echoerr "INFO: Slowlog saved as '${DUMP_FILE}'"
+
