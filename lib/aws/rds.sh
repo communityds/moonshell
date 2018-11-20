@@ -310,6 +310,29 @@ rds_restore_db () {
     return $?
 }
 
+rds_slowlog () {
+    local stack_name=$1
+    local dump_file=$2
+
+    local instance=$(rds_instance_select ${stack_name})
+    [[ ${instance-} ]] \
+        && echoerr "INFO: Found DB instance '${instance}'" \
+        || return 1
+
+    # There are other slowquery.log files available, but there is no apparent
+    # way to enumerate the logs available, so we default to the first, and most
+    # current, one.
+    aws rds download-db-log-file-portion \
+        --region ${AWS_REGION} \
+        --db-instance-identifier ${instance} \
+        --starting-token 0 \
+        --log-file-name slowquery/mysql-slowquery.log \
+        --output text \
+        > ${dump_file}
+
+    return $?
+}
+
 rds_snapshot_create () {
     local stack_name=$1
     local snapshot_id=$2
