@@ -113,7 +113,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # "bastion-${AWS_ACCOUNT_NAME}"
     #
     [[ -z ${AWS_ACCOUNT_NAME-} ]] \
-        && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset. aws-creds?" \
+        && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset." \
         && exit 1
 
     # AWS_REGION must be set by the end user through a means of their choosing;
