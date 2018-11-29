@@ -313,6 +313,11 @@ rds_restore_db () {
 rds_slowlog () {
     local stack_name=$1
     local dump_file=$2
+    local index=${3-}
+
+    [[ ${index-} ]] \
+        && local suffix=".${index}" \
+        || local suffix=""
 
     local instance=$(rds_instance_select ${stack_name})
     [[ ${instance-} ]] \
@@ -326,7 +331,7 @@ rds_slowlog () {
         --region ${AWS_REGION} \
         --db-instance-identifier ${instance} \
         --starting-token 0 \
-        --log-file-name slowquery/mysql-slowquery.log \
+        --log-file-name slowquery/mysql-slowquery.log${suffix-} \
         --output text \
         > ${dump_file}
 
