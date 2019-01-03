@@ -7,18 +7,28 @@ export MOON_FILE=false
 
 source ${MOON_SHELL}
 
-echoerr "INFO: Enumerating available server certificates"
-IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
-    --query "ServerCertificateMetadataList[].ServerCertificateName" \
-    --output text))
+if [[ $# -gt 0 ]]; then
+    IAM_CERT_NAME=$1
 
-[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
-    && echoerr "ERROR: Could not find any server certificates.." \
-    && exit 1
+    echoerr "INFO: Testing '${IAM_CERT_NAME}'"
+    if ! aws iam get-server-certificate --server-certificate-name ${IAM_CERT_NAME} &>/dev/null; then
+        echoerr "FATAL: Certificate '${IAM_CERT_NAME}' can not be found"
+        exit 255
+    fi
+else
+    echoerr "INFO: Enumerating available server certificates"
+    IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+        --query "ServerCertificateMetadataList[].ServerCertificateName" \
+        --output text))
 
-echoerr "WARNING: The deletion process is irrecoverable. Select a certificate wisely!"
-echo "Choose a certificate to permanently delete:"
-IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+    [[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+        && echoerr "ERROR: Could not find any server certificates.." \
+        && exit 1
+
+    echoerr "WARNING: The deletion process is irrecoverable. Select a certificate wisely!"
+    echo "Choose a certificate to permanently delete:"
+    IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+fi
 
 read -s -n1 -p "Are you sure you wish to permanently and irrecoverably delete '${IAM_CERT_NAME}'? (y/N)" CONFIRM
 echo
