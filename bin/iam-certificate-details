@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Display domains on an IAM server-certificate
+#
+
+export MOON_FILE=false
+
+source ${MOON_SHELL}
+
+if [[ $# == 0 ]]; then
+    echoerr "Usage: $(basename $0) IAM_CERT_NAME"
+    exit
+else
+    IAM_CERT_NAME=$1
+fi
+
+echoerr "INFO: Testing '${IAM_CERT_NAME}'"
+if ! aws iam get-server-certificate --server-certificate-name ${IAM_CERT_NAME} &>/dev/null; then
+    echoerr "FATAL: Certificate '${IAM_CERT_NAME}' can not be found"
+    exit 255
+fi
+
+echoerr "INFO: Parsing certificate body"
+aws iam get-server-certificate \
+    --server-certificate-name ${IAM_CERT_NAME} \
+    --query "ServerCertificate.CertificateBody" \
+    --output text \
+    | openssl x509 -text -noout \
+    | \grep -E "Issuer:|Not Before|Not After|Subject:|DNS:" \
+    | sed -e 's/^ */  /g'
+
