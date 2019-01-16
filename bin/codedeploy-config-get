@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    ENVIRONMENT=$1
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+echoerr "INFO: Setting variables"
+CURRENT_DEPLOYMENT_CONFIG=$(aws deploy get-deployment-group \
+    --region ${AWS_REGION} \
+    --application-name ${STACK_NAME} \
+    --deployment-group-name ${STACK_NAME} \
+    --query 'deploymentGroupInfo.deploymentConfigName' \
+    --output text)
+
+echo ${CURRENT_DEPLOYMENT_CONFIG}

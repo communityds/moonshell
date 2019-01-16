@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source ${MOON_SHELL}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT [NEW_DEPLOYMENT_CONFIG]"
+    exit
+else
+    ENVIRONMENT=$1
+    NEW_DEPLOYMENT_CONFIG=${2-}
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+echoerr "INFO: Setting variables"
+CURRENT_DEPLOYMENT_CONFIG=$(aws deploy get-deployment-group \
+    --region ${AWS_REGION} \
+    --application-name ${STACK_NAME} \
+    --deployment-group-name ${STACK_NAME} \
+    --query 'deploymentGroupInfo.deploymentConfigName' \
+    --output text)
+
+DEPLOYMENT_CONFIGS=($(aws deploy list-deployment-configs \
+    --region ${AWS_REGION} \
+    --query 'deploymentConfigsList[]' \
+    --output text))
+DEPLOYMENT_CONFIGS=(${DEPLOYMENT_CONFIGS[@]/$CURRENT_DEPLOYMENT_CONFIG/})
+
+echoerr "INFO: Current config: ${CURRENT_DEPLOYMENT_CONFIG}"
+if [[ ${NEW_DEPLOYMENT_CONFIG-} ]]; then
+    if ! contains ${NEW_DEPLOYMENT_CONFIG} ${DEPLOYMENT_CONFIGS[@]}; then
+        echoerr "ERROR: Config '${NEW_DEPLOYMENT_CONFIG}' is not a valid deployment config"
+        echoerr "INFO: You may only use one of the following:"
+        for deployment_config in ${DEPLOYMENT_CONFIGS[@]}; do
+            echoerr "  * ${deployment_config}"
+        done
+        exit 1
+    fi
+else
+    echo "Choose a new deployment config:"
+    NEW_DEPLOYMENT_CONFIG=$(choose ${DEPLOYMENT_CONFIGS[@]})
+fi
+
+echoerr "INFO: Setting deployment config to '${NEW_DEPLOYMENT_CONFIG}'"
+aws deploy update-deployment-group \
+    --region ${AWS_REGION} \
+    --application-name ${STACK_NAME} \
+    --current-deployment-group-name ${STACK_NAME} \
+    --deployment-config-name ${NEW_DEPLOYMENT_CONFIG}
+
