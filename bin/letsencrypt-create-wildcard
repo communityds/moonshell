@@ -8,13 +8,13 @@ export MOON_FILE=false
 source ${MOON_SHELL}
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) DOMAIN_NAME [ACME_ARGS]"
+    echoerr "Usage: $(basename $0) DOMAIN_SUFFIX [ACME_ARGS]"
     echoerr
     echoerr "Note: Specify the base domain name for the certificate; this"
     echoerr "      script adds both '\$domain' and '*.\$domain'."
     echoerr
     echoerr "Example:"
-    echoerr "    $ $(basename $0) foo.example.com"
+    echoerr "    $ $(basename $0) example.com"
     exit 0
 else
     DOMAIN_NAME=$1
