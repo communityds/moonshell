@@ -11,8 +11,6 @@ node {
     git_clone()
     setup()
     test()
-    copy()
-    output()
 }
 
 def git_clone () {
