@@ -25,6 +25,7 @@ vpcpc = client.describe_vpc_peering_connections.vpc_peering_connections
 
 vpcpc.each do |pc|
   next unless pc.status.code == 'active'
+
   tags = pc.tags
   tags.each do |tag|
     src = tag.value.tr('-', '_') if tag.key == 'source_stack'
