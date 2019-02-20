@@ -42,19 +42,3 @@ def test () {
     }
 }
 
-def copy () {
-    stage('Copy') {
-        def DESTINATION = "${env.JENKINS_HOME}/artifacts/moonshell/${env.BRANCH_NAME}"
-        sh("mkdir -p '${DESTINATION}'")
-        sh("rsync -rvC '${env.WORKSPACE}/' '${DESTINATION}/' --delete-before --exclude='cds@tmp'")
-    }
-}
-
-def output () {
-    stage('Output') {
-        def DESTINATION = "${env.JENKINS_HOME}/artifacts/moonshell/${env.BRANCH_NAME}"
-        sh("git rev-parse HEAD | tr -d '\\n' > '${DESTINATION}/commit'")
-        def GIT_COMMIT = readFile "${DESTINATION}/commit"
-        echo "GIT_COMMIT=${GIT_COMMIT}"
-    }
-}
