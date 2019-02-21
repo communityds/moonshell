@@ -11,7 +11,7 @@
 # Copyright: Phil Ingram (pingramdotau@gmaildotcom)
 #
 
-[[ ${DEBUG-} ]] && set -x
+[[ ${DEBUG-} == true ]] && set -x
 
 
 #
