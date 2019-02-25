@@ -80,12 +80,28 @@ verify_class_file () {
 
 install_packer () {
     pushd ${PACKER_DIR} >/dev/null
-    [[ ! -f "${PACKER_FILE}" ]] \
-        && wget -q -c ${PACKER_URL} \
-        && unzip -x ${PACKER_FILE}
-    [[ ! -x "./packer" ]] \
-        && log "ERROR: Packer failed to extract cleanly or is not executable" \
-        && exit 1
+        local lock_file="packer.lock"
+        (
+            flock -e 200
+
+            local packer_version=$(./packer --version 2>/dev/null || true)
+
+            if [[ ${packer_version} == ${PACKER_VER} ]]; then
+                log "INFO: Packer is current"
+            else
+                log "INFO: Updating Packer"
+
+                [[ ! -f "${PACKER_FILE}" ]] \
+                    && log "INFO: Downloading from '${PACKER_URL}'" \
+                    && wget -q -c ${PACKER_URL} \
+                    && log "INFO: Extracting packer" \
+                    && unzip -x ${PACKER_FILE}
+
+                [[ ! $(./packer --version 2>/dev/null || true) == ${PACKER_VER} ]] \
+                    && log "ERROR: Packer failed to update to version '${PACKER_VER}'" \
+                    && exit 1
+            fi
+        ) 200>${lock_file}
     popd >/dev/null
 }
 
