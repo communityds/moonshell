@@ -29,14 +29,18 @@ def test () {
     stage('Testing') {
         sh('printenv | sort')
 
-        parallel markdownlint: {
-            sh('mdl -v $(find . -name "*.md")')
-        }, rubocop: {
-            sh('rubocop -D')
-        }, bashate: {
-            // lint all files with a bash shebang
-            sh('bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" .)')
-        }
+        parallel (
+            markdownlint: {
+                sh('mdl -v $(find . -name "*.md")')
+            },
+            rubocop: {
+                sh('rubocop -D')
+            },
+            bashate: {
+                // lint all files with a bash shebang
+                sh('bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" .)')
+            }
+        )
     }
 }
 
