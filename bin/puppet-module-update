@@ -10,8 +10,14 @@
 
 source ${MOON_SHELL}
 
-# We must be in the root of the repo else ../moon.sh would not have been sourced
-pushd "${PWD}/puppet" >/dev/null
-    # if ./r10k.yaml is present, r10k will auto load it.
-    r10k puppetfile install -v info --force
-popd >/dev/null
+LOCK_FILE=${MOON_VAR}/r10k.lock
+
+(
+    echoerr "INFO: Testing for flock on ${LOCK_FILE}"
+    flock 202
+
+    pushd puppet/ >/dev/null
+        # if ./r10k.yaml is present, r10k will auto load it.
+        r10k puppetfile install -v info --force
+    popd >/dev/null
+) 202>${LOCK_FILE}
