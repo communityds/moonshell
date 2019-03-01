@@ -13,7 +13,7 @@ source ${MOON_SHELL}
 LOCK_FILE=${MOON_VAR}/r10k.lock
 
 (
-    [[ ! $(uname) == ^Darwin$ ]] \
+    [[ ! $(uname) == Darwin ]] \
         && echoerr "INFO: Testing for flock on ${LOCK_FILE}" \
         && flock 202
 
