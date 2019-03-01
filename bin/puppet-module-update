@@ -13,8 +13,9 @@ source ${MOON_SHELL}
 LOCK_FILE=${MOON_VAR}/r10k.lock
 
 (
-    echoerr "INFO: Testing for flock on ${LOCK_FILE}"
-    flock 202
+    [[ ! $(uname) == ^Darwin$ ]] \
+        && echoerr "INFO: Testing for flock on ${LOCK_FILE}" \
+        && flock 202
 
     pushd puppet/ >/dev/null
         # if ./r10k.yaml is present, r10k will auto load it.
