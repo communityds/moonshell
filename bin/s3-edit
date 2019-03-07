@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Download a named file from S3, edit it, show the diff, then upload it again
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT FILE_PATH"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev domain-artefacts/site.cfg"
+    exit
+else
+    ENVIRONMENT=$1
+    # Strip any / prefix
+    FILE_PATH=${2#/}
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+[[ -z ${EDITOR-} ]] \
+    && export EDITOR=vim
+
+SRC_FILE=$(mktemp)
+DST_FILE=$(mktemp)
+
+s3_download ${STACK_NAME} ${FILE_PATH} ${SRC_FILE}
+cp ${SRC_FILE} ${DST_FILE}
+
+while true; do
+    echoerr "INFO: Editing '${DST_FILE}' with '${EDITOR}'"
+    ${EDITOR} ${DST_FILE}
+
+    echoerr "INFO: Outputting diff"
+    if diff -u ${SRC_FILE} ${DST_FILE}; then
+        echoerr "INFO: No change detected, cleaning up"
+        rm -vf ${SRC_FILE} ${DST_FILE}
+        exit
+    fi
+
+    if [[ "${FILE_PATH}" =~ \.php$ ]] && which php &>/dev/null; then
+        echoerr "INFO: Testing change with 'php -l'"
+        if php -l ${DST_FILE}; then
+            break
+        fi
+    elif [[ "${FILE_PATH}" =~ \.sh$ ]] && which bashate &>/dev/null; then
+        echoerr "INFO: Testing change with 'bashate'"
+        if bashate -v -i E006,E042 ${DST_FILE}; then
+            break
+        fi
+    else
+        break
+    fi
+
+    read -s -p "There was an issue linting '${DST_FILE}'. Press enter to re-edit, Ctrl-C to cancel"
+    echoerr
+done
+
+read -n1 -p "Do you wish to save and upload this change to '${FILE_PATH}'? (y/N)"
+echoerr
+if [[ ${REPLY} =~ ^[yY]$ ]]; then
+    s3_upload ${STACK_NAME} ${DST_FILE} ${FILE_PATH}
+else
+    echoerr "ERROR: Cancelling on user input"
+fi
+
+read -s -p "Press enter to clean up temporary files, Ctrl-C to cancel"
+echoerr
+rm -vf ${SRC_FILE} ${DST_FILE}
+
