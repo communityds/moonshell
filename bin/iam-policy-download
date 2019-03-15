@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Download a JSON customer policy
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -gt 0 ]]; then
+    POLICY_NAME=$1
+fi
+
+AWS_ACCOUNT_ID=$(sts_account_id)
+IAM_POLICIES=($(iam-policy-list))
+
+if [[ ${POLICY_NAME-} ]]; then
+    if ! contains ${POLICY_NAME} ${IAM_POLICIES[@]}; then
+        echoerr "ERROR: '${POLICY_NAME}' is not a valid policy name"
+    fi
+else
+    POLICY_NAME=$(choose ${IAM_POLICIES[@]})
+fi
+
+POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
+
+echoerr "INFO: Acquiring policy document for '${POLICY_ARN}'"
+POLICY_JSON=$(aws iam get-policy \
+    --policy-arn ${POLICY_ARN})
+
+VERSION_ID=$(echo ${POLICY_JSON} | jq -r '.Policy.DefaultVersionId')
+
+echoerr "INFO: Downloading version '${VERSION_ID}' of policy '${POLICY_ARN}'"
+aws iam get-policy-version \
+    --policy-arn ${POLICY_ARN} \
+    --version-id ${VERSION_ID}
+

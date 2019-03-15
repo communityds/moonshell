@@ -76,6 +76,20 @@ iam_groups () {
         --output text
 }
 
+iam_policy_list_aws () {
+    aws iam list-policies \
+        --scope AWS \
+        --query "Policies[].PolicyName" \
+        | jq -r '. | sort | .[]'
+}
+
+iam_policy_list_customer () {
+    aws iam list-policies \
+        --scope Local \
+        --query "Policies[].PolicyName" \
+        | jq -r '. | sort | .[]'
+}
+
 iam_user_arn () {
     local iam_user=$1
 
