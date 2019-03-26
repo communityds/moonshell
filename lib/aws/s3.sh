@@ -2,6 +2,32 @@
 #
 # SIMPLE STORAGE SERVICE (S3) FUNCTIONS
 #
+s3_cp () {
+    local stack_name=$1
+    local src=$2
+    local dst=$3
+    shift 3
+    local options=$*
+
+    [[ ${src} =~ ^/ ]] && src=${src#/}
+    [[ ${dst} =~ ^/ ]] && dst=${dst#/}
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    local kms_key_id="$(kms_stack_key_id ${stack_name})"
+    [[ ${kms_key_id-} ]] \
+        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+
+    echoerr "INFO: Copying '${src}' to '${dst}'"
+    aws s3 cp \
+        --region ${AWS_REGION} \
+        s3://${s3_bucket_name}/${src} \
+        s3://${s3_bucket_name}/${dst} \
+        ${options-}
+    return $?
+}
+
 s3_delete_objects () {
     # Sample JSON input:
     # [{
@@ -199,7 +225,7 @@ s3_mv () {
     [[ ${kms_key_id-} ]] \
         && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
 
-    echoerr "INFO: Moving ${src} to ${dst}"
+    echoerr "INFO: Moving '${src}' to '${dst}'"
     aws s3 mv \
         --region ${AWS_REGION} \
         s3://${s3_bucket_name}/${src} \

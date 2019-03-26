@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 3 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT REMOTE_SOURCE REMOTE_DESTINATION [AWSCLI_OPTIONS]"
+    exit 0
+else
+    ENVIRONMENT=$1
+    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    SOURCE=$2
+    DESTINATION=$3
+    shift 3
+    OPTIONS=$*
+fi
+
+s3_cp ${STACK_NAME} ${SOURCE} ${DESTINATION} ${OPTIONS-}
+
+echoerr "INFO: Complete"
