@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Set or update the value of a key on a stack's VPC
+#
+# Custom tags are set on the VPC and not on the stack because all tags set on
+# a stack propagate to all child objects, which isn't the intent of this
+# script. But, as each stack has a VPC and it's what is used for peering
+# between stacks, it make logical sense to store tags here, such as the git
+# commit hash of the last release to the stack.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 3 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT KEY VALUE"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev"
+    exit
+else
+    ENVIRONMENT=$1
+    TAG_KEY=$2
+    TAG_VALUE=$3
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
+TAG_KEYS=($(vpc-tag-list ${ENVIRONMENT}))
+
+if [[ -z ${TAG_KEYS-} ]]; then
+    # A VPC should have, at very least, an aws:cloudformation:stack-name tag,
+    # so an absence of tags is fatal
+    echoerr "FATAL: No keys found for VPC '${VPD_ID}'"
+    exit 255
+elif contains ${TAG_KEY} ${TAG_KEYS[@]}; then
+    echoerr "INFO: Updating tag '${TAG_KEY}' for VPC '${VPC_ID}'"
+else
+    echoerr "INFO: Setting tag '${TAG_KEY}' for VPC '${VPC_ID}'"
+fi
+
+aws ec2 create-tags \
+    --region ${AWS_REGION} \
+    --resources ${VPC_ID} \
+    --tags Key=${TAG_KEY},Value=${TAG_VALUE}
+

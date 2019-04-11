@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# List the tag keys on a stack's VPC
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev"
+    exit
+else
+    ENVIRONMENT=$1
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
+
+TAG_KEYS=($(aws ec2 describe-tags \
+    --region ${AWS_REGION} \
+    --filters Name=resource-id,Values=${VPC_ID} \
+    --query "Tags[].Key" \
+    --output text))
+
+for key in ${TAG_KEYS[@]}; do
+    echo ${key}
+done
+
