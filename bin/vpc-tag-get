@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# Return the value of a key set on a stack's VPC
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT KEY"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev"
+    exit
+else
+    ENVIRONMENT=$1
+    TAG_KEY=$2
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+TAG_KEYS=($(vpc-tag-list ${ENVIRONMENT}))
+VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
+
+if ! contains ${TAG_KEY} ${TAG_KEYS[@]}; then
+    echoerr "ERROR: Key '${TAG_KEY}' not present"
+    exit 1
+fi
+
+# A VPC should have, at very least, an aws:cloudformation:stack-name tag,
+# so an absence of tags is fatal
+if [[ -z ${TAG_KEYS-} ]]; then
+    echoerr "FATAL: No keys found for VPC '${VPD_ID}'"
+    exit 255
+fi
+
+aws ec2 describe-tags \
+    --region ${AWS_REGION} \
+    --filters Name=resource-id,Values=${VPC_ID} \
+    --query "Tags[?Key=='${TAG_KEY}'].Value" \
+    --output text
+

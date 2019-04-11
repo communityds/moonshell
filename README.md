@@ -233,14 +233,18 @@ These outputs are required to be set:
   domains are, like the 10.0.0.0/8 network range, unusable on the internet, so
   it further reinforces that DNS is local to the host you are on.
 
-* `VPCNetwork`: This must be set to the network CIDR used for the entire VPC
-
 * `RouteTableId`: This is the route table used by all primatives inside the VPC
+
+* `VPCId`: This can be programmatically found from knowing the stack name, but
+  having it as an output helps users and some scripts.
+
+* `VPCNetwork`: This must be set to the network CIDR used for the entire VPC
 
 CloudFormation Defaults:
 
 * `aws:cloudformation:stack-name`: CF gives us the stack-name for free and we
-  use it to find the VPCId from the stack's name.
+  use it to find the VPCId from the stack's name when other methods aren't
+  available.
 
 ### KMS
 
