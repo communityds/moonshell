@@ -38,8 +38,8 @@ IAM_CERT_NAME="$(choose create ${IAM_SERVER_CERTIFICATES[@]})"
 
 if [[ ${IAM_CERT_NAME} == "create" ]]; then
     read -p "Input a new certificate name: " NEW_IAM_CERT_NAME
-    [[ ! ${NEW_IAM_CERT_NAME} =~ ^[a-z=,.@-]+$ ]] \
-        && echoerr "ERROR: Illegal characters used. Name must match regex: ^[a-z=,.@-]+$ " \
+    [[ ! ${NEW_IAM_CERT_NAME} =~ ^[a-z0-9=,.@-]+$ ]] \
+        && echoerr "ERROR: Illegal characters used. Name must match regex: ^[a-z0-9=,.@-]+$ " \
         && exit 1 \
         || IAM_CERT_NAME=${NEW_IAM_CERT_NAME}
 else
