@@ -105,7 +105,7 @@ rds_mysql_dump_db () {
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
     bastion_exec_admin ${stack_name} \
-        "'mysqldump ${mysql_opts} ${database} | gzip -c'" \
+        "mysqldump ${mysql_opts} ${database} | gzip -c" \
         ${out_file}
 
     last_line="$(zcat ${out_file} | tail -1 | sed -e 's/^-- //')"
@@ -123,7 +123,7 @@ rds_mysql_list_dbs () {
     instance=$2
 
     bastion_exec_admin ${stack_name} \
-        "'mysql -BNe \"SHOW DATABASES;\" '"
+        "mysql -BNe \"SHOW DATABASES;\""
 }
 
 rds_mysql_restore_db () {
@@ -139,13 +139,13 @@ rds_mysql_restore_db () {
 
     echoerr "INFO: Recreating database: ${database}"
     bastion_exec_admin ${stack_name} \
-        "'mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\"'"
+        "mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\""
 
     echoerr "INFO: Restoring database from /tmp/${upload_file}"
     bastion_exec_admin ${stack_name} \
-        "'zcat /tmp/${upload_file} \
+        "zcat /tmp/${upload_file} \
             | mysql ${mysql_opts} ${database}; \
-            rm -f /tmp/${upload_file}'"
+            rm -f /tmp/${upload_file}"
 
     echoerr "INFO: Removing uploaded files"
     bastion_exec "rm -f /tmp/${upload_file}"
@@ -178,26 +178,13 @@ rds_postgres_dump_db () {
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
     bastion_exec_admin ${stack_name} \
-        "'pg_dump -Fp ${pg_opts} ${database}'" \
+        "pg_dump -Fp ${pg_opts} ${database} \
+            | sed \
+                -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
+                -e '/^COMMENT ON EXTENSION citext IS/d' \
+                -e '/^COMMENT ON EXTENSION \"uuid-ossp\" IS/d' \
+            | gzip -c" \
         ${out_file}
-
-    if [[ $(uname) =~ ^Darwin$ ]]; then
-        sed -i -e '/^COMMENT ON EXTENSION plpgsql IS/d' ${out_file}
-        sed -i -e '/^COMMENT ON EXTENSION citext IS/d' ${out_file}
-        sed -i -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' ${out_file}
-    else
-        sed -i \
-            -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
-            -e '/^COMMENT ON EXTENSION citext IS/d' \
-            -e '/^COMMENT ON EXTENSION "uuid-ossp" IS/d' \
-            ${out_file}
-    fi
-
-    # Because we had to sed the sql, we couldn't pipe directly to gzip, so we
-    # must do shoddy things to make the system work. AWS have been removed from
-    # my Christmas card list..
-    local janky_file=$(echo -n ${out_file} | sed -e 's/\.gz$//')
-    mv ${out_file} ${janky_file} && gzip ${janky_file}
 
     rds_postgres_revoke ${stack_name} ${database}
 }
@@ -208,17 +195,17 @@ rds_postgres_grant () {
     local database=$2
     echoerr "INFO: Granting ownership of ${database} to postgres"
     bastion_exec_admin ${stack_name} \
-        "'psql -d ${database} -c \"
+        "psql -d ${database} -c \"
             GRANT ${database}_app TO postgres;
             GRANT ${database}_client TO postgres;
-        \" || true'"
+        \" || true"
 }
 
 rds_postgres_list_dbs () {
     local stack_name=$1
 
     local databases=($(bastion_exec_admin ${stack_name} \
-        "'psql -tAc \"select datname from pg_DATABASE;\" '"))
+        "psql -tAc \"select datname from pg_DATABASE;\""))
     [[ -z ${databases[@]-} ]] && return 1
 
     for database in ${databases[@]-}; do
@@ -254,22 +241,19 @@ rds_postgres_restore_db () {
 
     echoerr "INFO: Attempting to kill active connections"
     bastion_exec_admin ${stack_name} \
-        "'psql -e -c \"SELECT pid, pg_terminate_backend(pid) \
+        "psql -e -c \"\
+            SELECT pg_terminate_backend(pid) \
             FROM pg_stat_activity \
-            WHERE datname = current_database() \
-                AND pid <> pg_backend_pid();\" '"
+            WHERE datname = '${database}';\""
 
-    echoerr "INFO: Dropping DB"
+    echoerr "INFO: Recreating DB"
     bastion_exec_admin ${stack_name} \
-        "'psql -e -c \"DROP DATABASE IF EXISTS ${database}\"'"
-
-    echoerr "INFO: Creating DB"
-    bastion_exec_admin ${stack_name} \
-        "'psql -e -c \"CREATE DATABASE ${database}\"'"
+        "psql -e -c \"DROP DATABASE IF EXISTS ${database}\" \
+            && psql -e -c \"CREATE DATABASE ${database}\""
 
     echoerr "INFO: Restoring DB to ${database}:"
     bastion_exec_admin ${stack_name} \
-        "'zcat /tmp/${upload_file} | psql ${pg_opts} -d ${database}'"
+        "zcat /tmp/${upload_file} | psql ${pg_opts} -d ${database}"
 
     rds_postgres_revoke ${stack_name} ${database}
 
@@ -286,10 +270,10 @@ rds_postgres_revoke () {
     local database=$2
     echoerr "INFO: Revoking ownership of ${database} from postgres"
     bastion_exec_admin ${stack_name} \
-        "'psql -d ${database} -c \"
+        "psql -d ${database} -c \"
             REVOKE ${database}_app FROM postgres;
             REVOKE ${database}_client FROM postgres;
-        \" || true'"
+        \" || true"
 }
 
 rds_restore_db () {

@@ -266,10 +266,27 @@ To view all available KMS keys for your account:
 aws kms list-aliases
 ```
 
-### Jump Host / Bastion
+### SSH with a Jump Host / Bastion
 
 Connecting directly to your application servers via SSH is plain madness, poor
 practice and a violation of several security frameworks. Use a jump host!
+
+To get the most out of your jump host you should use either ProxyCommand
+or ProxyJump; for example, if you have foo bastion and use the bar.local and
+baz.local domains for your cloud servers:
+
+```
+Host bastion-foo
+  Hostname bastion-foo.example.com
+  StrictHostKeyChecking yes
+  ForwardX11 no
+
+host *.bar.local
+  ProxyJump bastion-foo
+
+host *.baz.local
+  ProxyCommand ssh bastion-foo nc -w 120s %h
+```
 
 Depending on the application you are hosting you may choose to have a dedicated
 and separated 'admin' node from where you can perform your needed admin
@@ -285,7 +302,7 @@ prepended to the internal domain name of the stack:
 export ADMIN_NODE_HOSTNAME=
 ```
 
-Or, create a function that returns the FQDN of the admin node, for example:
+Or, create a function which returns the FQDN of the admin node, for example:
 
 ```
 ssh_target_hostname () {

@@ -67,23 +67,22 @@ bastion_exec_admin () {
     local cmd=$2
     local outfile=${3-}
 
-    local target_host=$(bastion_admin_hostname ${stack_name})
+    local target_hostname=$(bastion_admin_hostname ${stack_name})
 
-    bastion_exec_host ${stack_name} ${target_host} "${cmd}" ${outfile-}
+    bastion_exec_host ${target_hostname} "${cmd}" ${outfile-}
 
     return $?
 }
 
 bastion_exec_host () {
     # Execute a command on a single host
-    local stack_name=$1
-    local target_host=$2
-    local cmd=$3
-    local outfile=${4-}
+    local target_hostname=$1
+    local cmd=$2
+    local outfile=${3-}
 
     [[ ${outfile-} ]] \
-        && ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}" > ${outfile} \
-        || ssh ${SSH_OPTS} $(bastion) "ssh ${SSH_OPTS} ${target_host} ${cmd}"
+        && ssh ${SSH_OPTS} ${target_hostname} "${cmd}" > ${outfile} \
+        || ssh ${SSH_OPTS} ${target_hostname} "${cmd}"
 
     return $?
 }
@@ -122,11 +121,11 @@ bastion_upload_file () {
 
     local bastion=$(bastion)
     local file_name="$(basename ${upload_file})"
-    local target_host=$(bastion_admin_hostname ${stack_name})
+    local target_hostname=$(bastion_admin_hostname ${stack_name})
 
     echoerr "INFO: Uploading ${file_name} to ${bastion}"
     rsync -e "ssh ${SSH_OPTS}" -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
 
     echoerr "INFO: Copying ${file_name} to ${target_host}"
-    bastion_exec "rsync -e 'ssh ${SSH_OPTS}' -vP '/tmp/${file_name}' '${target_host}:/tmp/${file_name}'"
+    bastion_exec "rsync -e 'ssh ${SSH_OPTS}' -vP '/tmp/${file_name}' '${target_hostname}:/tmp/${file_name}'"
 }
