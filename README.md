@@ -48,9 +48,9 @@ Everything starts with `./moon.sh`. When sourced it:
 bundle install
 ```
 
-To get the most out of Moonshell you have to source it from either your
-`~/.bashrc` or `~/.bash_profile`, which ever is best for your choice of
-operating system.
+To get the most out of Moonshell you have to source it during login. You can
+add the following to your `~/.bashrc` or `~/.bash_profile`, which ever is best
+for your choice of operating system.
 
 Sample:
 
