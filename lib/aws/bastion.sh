@@ -126,6 +126,6 @@ bastion_upload_file () {
     echoerr "INFO: Uploading ${file_name} to ${bastion}"
     rsync -e "ssh ${SSH_OPTS}" -vP "${upload_file}" "${bastion}:/tmp/${file_name}"
 
-    echoerr "INFO: Copying ${file_name} to ${target_host}"
+    echoerr "INFO: Copying ${file_name} to ${target_hostname}"
     bastion_exec "rsync -e 'ssh ${SSH_OPTS}' -vP '/tmp/${file_name}' '${target_hostname}:/tmp/${file_name}'"
 }
