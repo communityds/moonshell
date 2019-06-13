@@ -17,8 +17,13 @@ LOCK_FILE=${MOON_VAR}/r10k.lock
         && echoerr "INFO: Testing for flock on ${LOCK_FILE}" \
         && flock 202
 
+    BUNDLE_EXEC=""
+    if [[ -f Gemfile ]] && [[ -d .bundle ]]; then
+        BUNDLE_EXEC="bundle exec --gemfile=../Gemfile"
+    fi
+
     pushd puppet/ >/dev/null
         # if ./r10k.yaml is present, r10k will auto load it.
-        r10k puppetfile install -v info --force
+        ${BUNDLE_EXEC} r10k puppetfile install -v info --force
     popd >/dev/null
 ) 202>${LOCK_FILE}
