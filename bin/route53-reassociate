@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
-# Permit discovered VPCs to query the named VPC
-# SG/IPTABLES rules still must be set to permit traffic to/from instances
-# between VPCs.
+# If the route53 association between two stacks has become corrupted, then this
+# script will redo the association. It is only needed in rare occasions.
 #
 
 source $(dirname $0)/../moon.sh
@@ -10,19 +9,21 @@ source $(dirname $0)/../moon.sh
 #
 # Intro
 #
-[[ $# -lt 1 ]] \
-    && echoerr "Usage $(basename $0) ENVIRONMENT" \
-    && exit \
-    || ENVIRONMENT="$1"
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage $(basename $0) ENVIRONMENT TARGET_STACK_NAME"
+    exit
+else
+    ENVIRONMENT=$1
+    TARGET_STACK_NAME=${2}
+fi
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 
+TARGET_VPC_ID=$(vpc_id_from_stack_name ${TARGET_STACK_NAME})
 
-#
-# Main
-#
 SELF_VPC_ID=$(vpc_id_from_stack_name ${STACK_NAME})
 echoerr "INFO: ${STACK_NAME} VPC_ID: ${SELF_VPC_ID}"
+
 HOSTED_ZONE=$(stack_resource_id ${STACK_NAME} InternalRoute53HostedZone)
 echoerr "INFO: ${STACK_NAME} InternalRoute53HostedZone: ${HOSTED_ZONE}"
 
@@ -33,57 +34,24 @@ SELF_DOMAIN_NAME=$(aws route53 list-hosted-zones \
     | sed 's/\.$//')
 echoerr "INFO: Hosted zone domain name: ${SELF_DOMAIN_NAME}"
 
-
-declare -a ASSOCIATED_VPCS
-ASSOCIATED_VPCS=($(aws ec2 describe-vpc-peering-connections \
-    --region ${AWS_REGION} \
-    --filters \
-        Name=accepter-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
-        Name=status-code,Values=active,pending-acceptance,provisioning \
-    --query "VpcPeeringConnections[].RequesterVpcInfo.VpcId" \
-    --output text))
-ASSOCIATED_VPCS+=($(aws ec2 describe-vpc-peering-connections \
+CLIENT_VPCS=($(aws ec2 describe-vpc-peering-connections \
     --filters \
         Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
         Name=status-code,Values=active,pending-acceptance,provisioning \
     --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
     --output text))
 
-if [[ ${ASSOCIATED_VPCS[@]-} ]]; then
-    # Ensure we are part of this array, else we will be dissociated later, which
-    # will result in sadness..
-    if ! contains ${SELF_VPC_ID} ${ASSOCIATED_VPCS[@]-}; then
-        ASSOCIATED_VPCS+=(${SELF_VPC_ID})
-    fi
-    echoerr "INFO: Associated VPCs: $(echo ${ASSOCIATED_VPCS[@]} | tr ' ' ,)"
-else
-    echoerr "WARNING: There are no VPC associations for stack '${STACK_NAME}'"
+if ! contains ${TARGET_VPC_ID} ${CLIENT_VPCS[@]}; then
+    echoerr "ERROR: VPC '${TARGET_VPC_ID}' is not associated with target '${TARGET_VPC_ID}'"
     exit 1
 fi
 
-declare -a CURRENT_ROUTE53_ASSOCIATIONS
-CURRENT_ROUTE53_ASSOCIATIONS=($(aws route53 get-hosted-zone \
-    --region ${AWS_REGION} \
-    --id ${HOSTED_ZONE} \
-    --query "VPCs[*].VPCId" \
-    --output text))
-echoerr "INFO: Current Route53 associations: $(echo ${CURRENT_ROUTE53_ASSOCIATIONS[@]} | tr ' ' ,)"
+read -s -n1 -p "Press the any key to route53 reassociate '${TARGET_VPC_ID}' to '${SELF_VPC_ID}'"
+echoerr
 
-for vpc in ${CURRENT_ROUTE53_ASSOCIATIONS[@]}; do
-    if ! contains ${vpc} ${ASSOCIATED_VPCS[@]}; then
-        route53_vpc_dissociate ${HOSTED_ZONE} ${vpc}
-        # Pop the VPC from the array
-        CURRENT_ROUTE53_ASSOCIATIONS=("${CURRENT_ROUTE53_ASSOCIATIONS[@]/$vpc}")
-    fi
-done
+route53_vpc_dissociate ${HOSTED_ZONE} ${TARGET_VPC_ID}
 
-for vpc in ${ASSOCIATED_VPCS[@]}; do
-    if ! contains ${vpc} ${CURRENT_ROUTE53_ASSOCIATIONS[@]}; then
-        route53_vpc_associate ${HOSTED_ZONE} ${vpc}
-        # Push the new VPC in to the current list
-        CURRENT_ROUTE53_ASSOCIATIONS+=(${vpc})
-    fi
-done
-echoerr "INFO: VPCs associated with the ${HOSTED_ZONE} hosted zone: $(echo ${CURRENT_ROUTE53_ASSOCIATIONS[@]} | tr ' ' ,)"
+route53_vpc_associate ${HOSTED_ZONE} ${TARGET_VPC_ID}
 
 echoerr "INFO: Reassociation complete"
+
