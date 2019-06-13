@@ -116,12 +116,10 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
         && echoerr "ERROR: 'AWS_ACCOUNT_NAME' is unset." \
         && exit 1
 
-    # AWS_REGION must be set by the end user through a means of their choosing;
-    # such as by using the bin/aws-creds ruby script. NOTE: `bundle install` is
-    # not automatic.
+    # AWS_REGION is required by the majority of AWS cli commands, so we should
+    # set a default.
     [[ -z ${AWS_REGION-} ]] \
-        && echoerr "ERROR: 'AWS_REGION' is unset." \
-        && exit 1
+        && export AWS_REGION="ap-southeast-2"
 
     # Most scripts in bin/ build off of ${APP_NAME} which is programatically
     # set from `Moonfile.rb` below. For those that don't need APP_NAME, i.e.
