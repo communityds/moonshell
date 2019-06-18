@@ -39,10 +39,17 @@ echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
 
 echoerr "INFO: Selecting ELB to update"
 STACK_ELBS=($(stack_resource_type ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
-[[ ${#STACK_ELBS[@]} -gt 1 ]] \
+HTTPS_ELBS=($(aws elb describe-load-balancers \
+    --region ${AWS_REGION} \
+    --load-balancer-names ${STACK_ELBS[@]} \
+    | jq -r ".LoadBalancerDescriptions[] \
+        | select(.ListenerDescriptions[].Listener.Protocol == \"HTTPS\") \
+        | .LoadBalancerName"))
+
+[[ ${#HTTPS_ELBS[@]} -gt 1 ]] \
     && echo "Choose an ELB to update:" \
-    && ELB_NAME=$(choose ${STACK_ELBS[@]}) \
-    || ELB_NAME=${STACK_ELBS}
+    && ELB_NAME=$(choose ${HTTPS_ELBS[@]}) \
+    || ELB_NAME=${HTTPS_ELBS}
 
 echoerr "INFO: Setting ELB '${ELB_NAME}' with new certificate"
 aws elb set-load-balancer-listener-ssl-certificate \
