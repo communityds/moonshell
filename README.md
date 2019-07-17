@@ -316,3 +316,19 @@ ssh_target_hostname () {
 }
 ```
 
+### S3 Bucket
+
+Every stack which has an S3 bucket should have versioning enabled and be
+configured with a KMS key. All relevant `s3_` functions try to detect existence
+of KMS in the stack and insert appropriate switches when required.
+
+The discovery of the stack's S3 bucket name requires a heavy API call to list
+stack resources. Because this call has a low requests-per-minute threshold, and
+we do not handle retries, the S3 bucket name should be defined once at the top
+of a script and it will be used thereafter. We assume this variable is
+`S3_BUCKET`
+
+```
+export S3_BUCKET="$(s3_stack_bucket_name ${STACK_NAME})"
+```
+

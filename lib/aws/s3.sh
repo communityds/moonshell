@@ -281,9 +281,12 @@ s3_rm () {
 }
 
 s3_stack_bucket_name () {
-    # From the AWS::S3::Buckets defined in a stack, if there are multiple
-    # buckets, prompt for selection and return a string of a single S3 bucket
     local stack_name=$1
+
+    if [[ ${S3_BUCKET-} ]]; then
+        echo ${S3_BUCKET}
+        return 0
+    fi
 
     local -a s3_buckets=($(stack_resource_type ${stack_name} "AWS::S3::Bucket"))
 
