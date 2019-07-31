@@ -31,10 +31,10 @@ def test () {
 
         parallel (
             markdownlint: {
-                sh('mdl -v $(find . -name "*.md")')
+                sh('bundle exec mdl -v $(find . -name "*.md")')
             },
             rubocop: {
-                sh('rubocop -D')
+                sh('bundle exec rubocop -D')
             },
             bashate: {
                 // lint all files with a bash shebang
