@@ -3,3 +3,5 @@ Lint/ScriptPermission:
   Enabled: false
 Style/FrozenStringLiteralComment:
   Enabled: false
+Style/StderrPuts:
+  Enabled: false

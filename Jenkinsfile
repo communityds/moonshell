@@ -31,14 +31,14 @@ def test () {
 
         parallel (
             markdownlint: {
-                sh('mdl -v $(find . -name "*.md")')
+                sh('bundle exec mdl -v $(find . -name "*.md" -not -path "./vendor*")')
             },
             rubocop: {
-                sh('rubocop -D')
+                sh('bundle exec rubocop -D')
             },
             bashate: {
                 // lint all files with a bash shebang
-                sh('bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" .)')
+                sh('bashate -v -i E006,E042 $(grep -slIR "#\\!/.*bash$" . | grep -v "^./vendor")')
             }
         )
     }
