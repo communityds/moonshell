@@ -178,12 +178,7 @@ rds_postgres_dump_db () {
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
     bastion_exec_admin ${stack_name} \
-        "pg_dump -Fp ${pg_opts} ${database} \
-            | sed \
-                -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
-                -e '/^COMMENT ON EXTENSION citext IS/d' \
-                -e '/^COMMENT ON EXTENSION \"uuid-ossp\" IS/d' \
-            | gzip -c" \
+        "pg_dump -Fp ${pg_opts} ${database} | gzip -c" \
         ${out_file}
 
     rds_postgres_revoke ${stack_name} ${database}
@@ -253,7 +248,12 @@ rds_postgres_restore_db () {
 
     echoerr "INFO: Restoring DB to ${database}:"
     bastion_exec_admin ${stack_name} \
-        "zcat /tmp/${upload_file} | psql ${pg_opts} -d ${database}"
+        "zcat /tmp/${upload_file} \
+            | sed \
+                -e '/^COMMENT ON EXTENSION plpgsql IS/d' \
+                -e '/^COMMENT ON EXTENSION citext IS/d' \
+                -e '/^COMMENT ON EXTENSION \"uuid-ossp\" IS/d' \
+            | psql ${pg_opts} -d ${database}"
 
     rds_postgres_revoke ${stack_name} ${database}
 
