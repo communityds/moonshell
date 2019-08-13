@@ -91,3 +91,19 @@ matches () {
     return 1
 }
 
+pipe_failure () {
+    # Return true if a non-zero exit code was found
+    #
+    # if pipe_failure ${PIPESTATUS[@]}; then handle_error; fi
+    local -a pipestatus=($@)
+    local status
+
+    for status in ${pipestatus[@]}; do
+        if [[ ${status} -ne 0 ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
