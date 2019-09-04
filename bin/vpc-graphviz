@@ -11,7 +11,7 @@
 require 'aws-sdk'
 
 if ENV['AWS_ACCESS_KEY_ID'].nil?
-  STDERR.puts 'ERROR: AWS_ACCESS_KEY_ID is unset, aws-creds?'
+  STDERR.puts 'ERROR: AWS_ACCESS_KEY_ID is unset'
   exit 1
 end
 
