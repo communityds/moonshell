@@ -18,6 +18,11 @@ else
 fi
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+
+[[ -z ${S3_BUCKET-} ]] \
+    && echoerr "ERROR: Could not find S3_BUCKET for environment '${ENVIRONMENT}' using '${AWS_ACCOUNT_NAME}' credentials" \
+    && exit 1
 
 [[ -z ${EDITOR-} ]] \
     && export EDITOR=vim
@@ -25,7 +30,12 @@ STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 SRC_FILE=$(mktemp)
 DST_FILE=$(mktemp)
 
-s3_download ${STACK_NAME} ${FILE_PATH} ${SRC_FILE}
+# Override the default to exit on non-zero. A file a person wishes to edit may
+# not exist yet
+set +e
+s3_download ${STACK_NAME} ${FILE_PATH} ${SRC_FILE} &>/dev/null
+set -e
+
 cp ${SRC_FILE} ${DST_FILE}
 
 while true; do
