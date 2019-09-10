@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source ${MOON_SHELL}
+
+overlay_dir "$(dirname $0)/../"
+
+BASENAME=$(basename $0)
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT PARAMETER"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ stack-parameter-get dev AppAMI"
+    echoerr "  $ stack-output-get staging HostedZoneId"
+    exit
+else
+    export ENVIRONMENT=$1
+    export PARAMETER=$2
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+COMPONENTS=(output parameter)
+COMPONENT=$(echo ${BASENAME} | sed -e 's/stack-//' -e 's/-get//')
+
+if ! contains ${COMPONENT} ${COMPONENTS[@]}; then
+    echoerr "FATAL: Unsupported option '${COMPONENT}'"
+    exit 255
+fi
+
+stack_value_${COMPONENT} ${STACK_NAME} ${PARAMETER}
+
