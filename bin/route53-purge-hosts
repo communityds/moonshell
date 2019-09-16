@@ -24,7 +24,7 @@ if [[ $# -lt 1 ]]; then
 else
     [[ $1 =~ \. ]] \
         && DOMAIN_SUFFIX=$1 \
-        && ENVIRONMENT=$1
+        || ENVIRONMENT=$1
 fi
 
 TYPES=("A" "CNAME")
