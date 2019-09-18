@@ -6,7 +6,7 @@ vpc_id_from_stack_name () {
     # Find the VPCId for ${stack_name}
     local stack_name=$1
 
-    stack_resource_type ${stack_name} "AWS::EC2::VPC"
+    stack_resource_type_id ${stack_name} "AWS::EC2::VPC"
     return $?
 }
 

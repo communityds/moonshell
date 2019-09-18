@@ -288,7 +288,7 @@ s3_stack_bucket_name () {
         return 0
     fi
 
-    local -a s3_buckets=($(stack_resource_type ${stack_name} "AWS::S3::Bucket"))
+    local -a s3_buckets=($(stack_resource_type_id ${stack_name} "AWS::S3::Bucket"))
 
     if [[ -z ${s3_buckets[@]-} ]]; then
         echoerr "ERROR: No S3 buckets found in stack '${stack_name}'"

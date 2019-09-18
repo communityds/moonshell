@@ -78,7 +78,7 @@ stack_resource_id () {
     fi
 }
 
-stack_resource_type () {
+stack_resource_type_id () {
     # Return an array of resource_ids of type ${resource_type}. This is handy for
     # if a stack has multiple AWS::S3::Buckets or AWS::RDS::DBInstances.
     local stack_name=$1
