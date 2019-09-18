@@ -79,15 +79,34 @@ stack_resource_id () {
 }
 
 stack_resource_type_id () {
-    # Return an array of resource_ids of type ${resource_type}. This is handy for
-    # if a stack has multiple AWS::S3::Buckets or AWS::RDS::DBInstances.
+    # Return an array of resource ids of type ${resource_type}.
+    local stack_name=$1
+    local resource_type=$2
+
+    local -a resource_ids=($(aws cloudformation list-stack-resources \
+        --region ${AWS_REGION} \
+        --stack-name "${stack_name}" \
+        --query "StackResourceSummaries[?ResourceType=='${resource_type}'].PhysicalResourceId" \
+        --output text))
+
+    if [[ -z ${resource_ids[@]-} ]]; then
+        echoerr "WARNING: No resources of type ${resource_type} found"
+        return 1
+    else
+        echo ${resource_ids[@]}
+        return 0
+    fi
+}
+
+stack_resource_type_name () {
+    # Return an array of resource names of type ${resource_type}.
     local stack_name=$1
     local resource_type=$2
 
     local -a resource_names=($(aws cloudformation list-stack-resources \
         --region ${AWS_REGION} \
         --stack-name "${stack_name}" \
-        --query "StackResourceSummaries[?ResourceType=='${resource_type}'].PhysicalResourceId" \
+        --query "StackResourceSummaries[?ResourceType=='${resource_type}'].LogicalResourceId" \
         --output text))
 
     if [[ -z ${resource_names[@]-} ]]; then
