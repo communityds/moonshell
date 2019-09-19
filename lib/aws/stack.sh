@@ -97,6 +97,8 @@ stack_resource_type_id () {
         return 0
     fi
 }
+# TODO: Remove this once all the things have been updated to not need it.
+alias stack_resource_type=stack_resource_type_id
 
 stack_resource_type_name () {
     # Return an array of resource names of type ${resource_type}.
