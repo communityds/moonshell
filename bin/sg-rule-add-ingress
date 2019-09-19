@@ -72,8 +72,6 @@ if ! echo ${CIDR} | grep -qP "${OCTET}\.${OCTET}\.${OCTET}\.${OCTET}\/${VLSM}$";
     exit 1
 fi
 
-echo "${SG_ID} ${PROTOCOL} ${PORT} ${CIDR}"
-
 echoerr "INFO: Modifying ${DIRECTION} rule in '${SG_ID}'"
 aws ec2 ${ACTION}-security-group-${DIRECTION} \
     --region ${AWS_REGION} \
