@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 #
-# Create a new ingress or egress rule.
+# Add or delete an ingress or egress rule.
 #
-# We do not support specifying a source-security-group-id, as that is something
-# which should be done via a template modification and adds too much complexity
-# to this simple little script.
+# We do not support specifying a source or destination security-group-id, as
+# that is something which should be done via a template modification.
 #
 
 source $(dirname $0)/../moon.sh
 
 BASENAME=$(basename $0)
+case ${BASENAME%-*} in
+    *-add) ACTION=authorize;;
+    *-delete) ACTION=revoke;;
+    *)
+        echoerr "FATAL: Unsupported usage"
+        exit 255
+    ;;
+esac
+DIRECTION=${BASENAME##*-}
 
 if [[ $# -lt 5 ]]; then
     echoerr "Usage: ${BASENAME} ENVIRONMENT SG_NAME|SG_ID PROTOCOL PORT CIDR"
@@ -66,10 +74,8 @@ fi
 
 echo "${SG_ID} ${PROTOCOL} ${PORT} ${CIDR}"
 
-DIRECTION=${BASENAME##*-}
-
-echoerr "INFO: Creating ${DIRECTION} rule in '${SG_ID}'"
-aws ec2 authorize-security-group-${DIRECTION} \
+echoerr "INFO: Modifying ${DIRECTION} rule in '${SG_ID}'"
+aws ec2 ${ACTION}-security-group-${DIRECTION} \
     --region ${AWS_REGION} \
     --group-id ${SG_ID} \
     --port ${PORT} \
