@@ -23,9 +23,9 @@ if [[ $# -lt 5 ]]; then
     echoerr "Usage: ${BASENAME} ENVIRONMENT SG_NAME|SG_ID PROTOCOL PORT CIDR"
     echoerr
     echoerr "Example:"
-    echoerr "  $ ${BASENAME} dev MySecurityGroup tcp 443 10.1.2.0/24"
+    echoerr "  $ ${BASENAME} production MyOGSecurityGroup tcp 443 10.1.2.0/24"
     echoerr "  $ ${BASENAME} staging AnotherSecurityGroup icmp -1 54.123.54.123/32"
-    echoerr "  $ ${BASENAME} production YetAnotherSecurityGroup udp 1-65535 10.0.0.0/8"
+    echoerr "  $ ${BASENAME} dev BoomAnotherSecurityGroup udp 1-65535 10.0.0.0/8"
     exit 0
 else
     ENVIRONMENT=$1
@@ -72,6 +72,10 @@ if ! echo ${CIDR} | grep -qP "${OCTET}\.${OCTET}\.${OCTET}\.${OCTET}\/${VLSM}$";
     exit 1
 fi
 
+
+#
+# Main
+#
 echoerr "INFO: Modifying ${DIRECTION} rule in '${SG_ID}'"
 aws ec2 ${ACTION}-security-group-${DIRECTION} \
     --region ${AWS_REGION} \
