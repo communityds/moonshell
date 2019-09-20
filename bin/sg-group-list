@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit 0
+else
+    ENVIRONMENT=$1
+fi
+
+export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+echoerr "INFO: Finding all security group names in '${STACK_NAME}'"
+SECURITY_GROUPS=($(sg_group_list ${STACK_NAME}))
+
+for security_group in ${SECURITY_GROUPS[@]}; do
+    echo ${security_group}
+done
+

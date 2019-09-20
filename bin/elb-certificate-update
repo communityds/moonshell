@@ -38,7 +38,7 @@ IAM_CERT_ARN="$(aws iam list-server-certificates \
 echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
 
 echoerr "INFO: Selecting ELB to update"
-STACK_ELBS=($(stack_resource_type ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
+STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
 HTTPS_ELBS=($(aws elb describe-load-balancers \
     --region ${AWS_REGION} \
     --load-balancer-names ${STACK_ELBS[@]} \

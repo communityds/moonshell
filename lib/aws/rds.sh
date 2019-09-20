@@ -405,7 +405,7 @@ rds_stack_resources () {
 
         for nested_stack in ${stack_name} ${nested_stacks[@]}; do
             # squelch 'warning' output from testing a stack that does not have a DBInstance
-            db_instance_test=($(stack_resource_type ${nested_stack} "AWS::RDS::DBInstance" 2>/dev/null))
+            db_instance_test=($(stack_resource_type_id ${nested_stack} "AWS::RDS::DBInstance" 2>/dev/null))
             if [[ ${#db_instance_test[@]} -gt 0 ]]; then
                 echo ${db_instance_test[@]}
                 return 0
@@ -413,7 +413,7 @@ rds_stack_resources () {
         done
         return 1
     else
-        stack_resource_type ${stack_name} "AWS::RDS::DBInstance"
+        stack_resource_type_id ${stack_name} "AWS::RDS::DBInstance"
         return $?
     fi
 }

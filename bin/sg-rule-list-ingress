@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+BASENAME=$(basename $0)
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT SG_NAME|SG_ID"
+    exit 0
+else
+    ENVIRONMENT=$1
+    SG=$2
+fi
+
+export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+if [[ ${SG} =~ ^sg- ]]; then
+    SG_ID=${SG}
+else
+    SG_ID=$(stack_resource_id ${STACK_NAME} ${SG})
+fi
+
+SG_OUTPUT="$(aws ec2 describe-security-groups \
+    --region ${AWS_REGION} \
+    --group-ids ${SG_ID})"
+
+DIRECTION=${BASENAME##*-}
+
+case ${DIRECTION} in
+    ingress) PERMISSIONS="IpPermissions" ;;
+    egress) PERMISSIONS="IpPermissionsEgress" ;;
+    *)
+        echoerr "FATAL: Unsupported method '${DIRECTION}'"
+        exit 255
+    ;;
+esac
+
+echoerr "INFO: Listing ${DIRECTION} rules for security group '${SG_ID}'"
+echo ${SG_OUTPUT} \
+    | jq "[.SecurityGroups[].${PERMISSIONS}[] | {\"FromPort\": .FromPort, \"ToPort\": .ToPort, \"IpProtocol\": .IpProtocol, \"IpRanges\": .IpRanges, \"UserIdGroupPairs\": .UserIdGroupPairs} ]"
+

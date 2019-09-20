@@ -54,7 +54,7 @@ PEERING_STATUS_CODES=(\
 # MAIN
 #
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
-SELF_VPC_ID=$(stack_resource_type ${SELF_STACK_NAME} "AWS::EC2::VPC")
+SELF_VPC_ID=$(stack_resource_type_id ${SELF_STACK_NAME} "AWS::EC2::VPC")
 SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
 SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
 
