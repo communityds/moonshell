@@ -121,6 +121,10 @@ overlay_path_prepend () {
     fi
 }
 
+overlay_self () {
+    overlay_dir $(dirname $0)/../
+}
+
 overlay_source_dir () {
     local find_opts=${MOON_FIND_OPTS:--mindepth 1 -maxdepth 1}
 
