@@ -118,6 +118,51 @@ matches () {
     return 1
 }
 
+prompt_boolean () {
+    local question="$1"
+    local default=${2-yes}
+
+    [[ ! ${default} =~ ^yes|no$ ]] \
+        && echoerr "WARNING: Invalid default '${default}'" \
+        && echoerr "INFO: Assuming default of 'yes'" \
+        && default=yes
+
+    [[ ${default} == yes ]] \
+        && default_options="Y/n" \
+        || default_options="y/N"
+
+    read -n1 -p "${question} (${default_options}): "
+
+    if [[ -z ${REPLY} ]]; then
+        # if the default is yes, return true. if the default is no, return true
+        return 0
+    elif [[ ${REPLY-} =~ y|Y ]]; then
+        echoerr
+        [[ ${default} == yes ]] \
+            && return 0 \
+            || return 1
+    elif [[ ${REPLY} =~ n|N ]]; then
+        echoerr
+        [[ ${default} == no ]] \
+            && return 0 \
+            || return 1
+    else
+        echoerr "WARNING: Invalid option '${REPLY}'"
+        echoerr "INFO: Assuming '${default}'"
+        return 0
+    fi
+}
+
+prompt_no () {
+    prompt_boolean "${1}" no
+    return $?
+}
+
+prompt_yes () {
+    prompt_boolean "${1}" yes
+    return $?
+}
+
 pipe_failure () {
     # Return true if a non-zero exit code was found
     #
