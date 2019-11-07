@@ -41,22 +41,49 @@ choose () {
     done
 
     [[ ${#items[@]} -lt 2 ]] \
-        && echoerr -n "Choice [0]: " \
-        || echoerr -n "Choice [0-$((${#items[@]} - 1))]: "
+        && read -p "Choice [0]: " \
+        || read -p "Choice [0-$((${#items[@]} - 1))]: "
 
-    read choice
-
-    if [[ ${choice-} =~ ^[0-9]+$ ]]; then
-        if [[ -z ${items[$choice]-} ]]; then
-            echoerr "ERROR: Choice '${choice}' is invalid."
+    if [[ ${REPLY-} =~ ^[0-9]+$ ]]; then
+        if [[ -z ${items[$REPLY]-} ]]; then
+            echoerr "ERROR: Choice '${REPLY}' is invalid."
             return 1
         else
-            echo "${items[$choice]}"
+            echo "${items[$REPLY]}"
             return 0
         fi
     else
-        echoerr "ERROR: Choice '${choice-}' is not numeric"
+        echoerr "ERROR: Choice '${REPLY-}' is not numeric"
         return 1
+    fi
+}
+
+choose_default () {
+    # ARGV[0] is the default value to be returned.
+    # It does not have to exist in the array, that is the user's choice..
+    local default=$1
+    shift
+    local -a items=($@)
+    local count choice
+
+    for ((count = 0; count < ${#items[@]}; count += 1)); do
+        echoerr "  ${count}: ${items[$count]}"
+    done
+
+    [[ ${#items[@]} -lt 2 ]] \
+        && read -p "Choice [0] (default: ${default}): " \
+        || read -p "Choice [0-$((${#items[@]} - 1))] (default: ${default}): "
+
+    if [[ ${REPLY-} =~ ^[0-9]+$ ]]; then
+        if [[ -z ${items[$REPLY]-} ]]; then
+            echoerr "ERROR: Choice '${REPLY}' is invalid."
+            return 1
+        else
+            echo "${items[$REPLY]}"
+            return 0
+        fi
+    else
+        echo "${default}"
     fi
 }
 
