@@ -70,8 +70,11 @@ rds_instance_select () {
                     return 0
                 fi
             done
-            echoerr "ERROR: Could not find a master DB instance"
-            return 1
+
+            # If there are multiple DBs in a stack then we need user help.
+            instance=$(choose ${instances[@]})
+            echo ${instance}
+            return 0
         fi
     else
         echoerr "ERROR: No RDS instances found in stack '${stack_name}'"
