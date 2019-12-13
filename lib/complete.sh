@@ -22,10 +22,14 @@ fi
 # array of git repos.
 #
 _complete_path () {
-    [[ -z ${1-} ]] \
-        && echoerr "Usage: ${FUNCNAME[0]} REPOS_ROOT" \
-        && return \
-        || local path="$1"
+    if [[ -z ${1-} ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} REPOS_ROOT [EXTRA_OPTIONS]"
+        return
+    else
+        local path="$1"
+        shift
+        local -a extra_options=(${@-})
+    fi
 
     local environment completion_f dir repos
 
@@ -38,7 +42,7 @@ _complete_path () {
         [[ -d "${dir}/.git" ]] && repos+=($(basename ${dir}))
     done
 
-    _complete_function "${environment}" ${repos[@]}
+    _complete_function "${environment}" ${repos[@]} ${extra_options[@]-}
     source "${MOON_VAR_COMPLETE}/${environment}.sh"
 }
 
