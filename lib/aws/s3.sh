@@ -4,13 +4,10 @@
 #
 s3_cp () {
     local stack_name=$1
-    local src=$2
-    local dst=$3
+    local src="$(s3_path_sanitise ${2})"
+    local dst="$(s3_path_sanitise ${3})"
     shift 3
     local options=$*
-
-    [[ ${src} =~ ^/ ]] && src=${src#/}
-    [[ ${dst} =~ ^/ ]] && dst=${dst#/}
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -22,8 +19,8 @@ s3_cp () {
     echoerr "INFO: Copying '${src}' to '${dst}'"
     aws s3 cp \
         --region ${AWS_REGION} \
-        s3://${s3_bucket_name}/${src} \
-        s3://${s3_bucket_name}/${dst} \
+        "s3://${s3_bucket_name}/${src}" \
+        "s3://${s3_bucket_name}/${dst}" \
         ${options-}
     return $?
 }
@@ -69,15 +66,15 @@ s3_delete_objects () {
 s3_download () {
     # Download a named object from ${s3_bucket_name}
     local stack_name=$1
-    local source=$2
-    local destination=$3
+    local source="$(s3_path_sanitise ${2-})" # Remote
+    local destination="$3" # Local
     shift 3
     local options=$*
 
     # Remove / prefix, s3 does not like '//'
     local source=${source/#\//}
 
-    if [[ ${source-} =~ /$ ]] || [[ -z ${source-} ]]; then
+    if [[ -z ${source-} ]] || [[ ${source} =~ /$ ]]; then
         local verb=sync
     else
         local verb=cp
@@ -93,7 +90,7 @@ s3_download () {
         && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
 
     echoerr "INFO: Downloading resources from ${s3_url}/"
-    aws s3 ${verb} --region ${AWS_REGION} ${options-} ${s3_url}/${source-} ${destination}
+    aws s3 ${verb} --region ${AWS_REGION} ${options-} "${s3_url}/${source-}" "${destination}"
     return $?
 }
 
@@ -195,9 +192,7 @@ s3_file_versions () {
 
 s3_ls () {
     local stack_name=$1
-    local location=${2-}
-
-    [[ ${location} =~ ^/ ]] && location=${location#/}
+    local location="$(s3_path_sanitise ${2-})"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -210,13 +205,10 @@ s3_ls () {
 
 s3_mv () {
     local stack_name=$1
-    local src=$2
-    local dst=$3
+    local src="$(s3_path_sanitise ${2})"
+    local dst="$(s3_path_sanitise ${3})"
     shift 3
     local options=$*
-
-    [[ ${src} =~ ^/ ]] && src=${src#/}
-    [[ ${dst} =~ ^/ ]] && dst=${dst#/}
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -225,13 +217,21 @@ s3_mv () {
     [[ ${kms_key_id-} ]] \
         && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
 
-    echoerr "INFO: Moving '${src}' to '${dst}'"
+    echoerr "INFO: Moving '${src-}' to '${dst-}'"
     aws s3 mv \
         --region ${AWS_REGION} \
-        s3://${s3_bucket_name}/${src} \
-        s3://${s3_bucket_name}/${dst} \
+        "s3://${s3_bucket_name}/${src-}" \
+        "s3://${s3_bucket_name}/${dst-}" \
         ${options-}
     return $?
+}
+
+s3_path_sanitise () {
+    # We must strip ^/ from all s3 paths
+    local s3_path="$*"
+
+    echo "${s3_path-}" \
+        | sed -e 's/^\/*//'
 }
 
 s3_purge_versions () {
@@ -267,16 +267,13 @@ s3_purge_versions () {
 
 s3_rm () {
     local stack_name=$1
-    local file_path=$2
+    local file_path="$(s3_path_sanitise ${2})"
     shift 2
     local options=$*
 
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
-    [[ ${file_path} =~ ^/ ]] \
-        && file_path=${file_path#/}
-
-    aws s3 rm s3://${s3_bucket}/${file_path} ${options-}
+    aws s3 rm "s3://${s3_bucket}/${file_path-}" ${options-}
     return $?
 }
 
@@ -305,8 +302,8 @@ s3_stack_bucket_name () {
 s3_upload () {
     # Upload a named object to ${s3_bucket_name}
     local stack_name=$1
-    local source=$2
-    local destination=$3
+    local source="$2" # Local
+    local destination="$(s3_path_sanitise ${3})" # Remote
     shift 3
     local options=$*
 
@@ -319,20 +316,20 @@ s3_upload () {
         [[ ${kms_key_id-} ]] \
             && options="${options-} --sse aws:kms --sse-kms-key-id ${kms_key_id}"
 
-        s3_upload_path ${s3_bucket_name} ${source} ${destination} ${options-}
+        s3_upload_path ${s3_bucket_name} "${source}" "${destination}" ${options-}
     else
         [[ ${kms_key_id-} ]] \
             && options="${options-} --server-side-encryption aws:kms --ssekms-key-id ${kms_key_id}"
 
-        s3_upload_file ${s3_bucket_name} ${source} ${destination} ${options-}
+        s3_upload_file ${s3_bucket_name} "${source}" "${destination}" ${options-}
     fi
 
 }
 
 s3_upload_file () {
-    local s3_bucket_name=$1
-    local source=$2
-    local s3_url=$3
+    local s3_bucket_name=${1}
+    local source="${2}"
+    local destination="$(s3_path_sanitise ${3})"
     shift 3
     local options=$*
 
@@ -346,46 +343,43 @@ s3_upload_file () {
     # file else the file is created as the containing directory..
     # Yes, AWS lets you create a file called "foo/", even if a dir called
     # "foo/" already exists.. :thumbsup:
-    [[ ${destination} =~ /$ ]] \
-        && destination="${destination}$(basename ${source})" \
-        || destination="${destination}"
+    if [[ -z ${destination-} ]] || [[ ${destination} =~ /$ ]]; then
+        destination="${destination-}$(basename ${source})"
+    fi
 
-    local filesize=$(stat ${format_bytes} ${source})
+    local filesize=$(stat ${format_bytes} "${source}")
     if [[ ${filesize} -gt 5242880 ]]; then
-        s3_upload_multipart ${s3_bucket_name} ${source} ${destination} ${options-}
+        s3_upload_multipart ${s3_bucket_name} "${source}" "${destination}" ${options-}
     else
         aws s3api put-object \
             --region ${AWS_REGION} \
             --bucket ${s3_bucket_name} \
-            --key ${destination} \
-            --body ${source} \
+            --key "${destination}" \
+            --body "${source}" \
             ${options-}
     fi
 }
 
 s3_upload_path () {
     local s3_bucket_name=$1
-    local source=$2
-    local destination=$3
+    local source="$2"
+    local destination="$(s3_path_sanitise ${3})"
     shift 3
     local options=$*
 
     [[ ! ${source} =~ /$ ]] && local source="${source}/"
 
-    # Remove / prefix, s3 does not like '//'
-    destination=${destination/#\//}
-
     local s3_url="s3://${s3_bucket_name}/${destination-}"
 
-    echoerr "INFO: Uploading resources to ${s3_url}/"
-    aws s3 sync --region ${AWS_REGION} ${options-} ${source} ${s3_url}
+    echoerr "INFO: Uploading resources to '${s3_url}'"
+    aws s3 sync --region ${AWS_REGION} ${options-} "${source}" "${s3_url}"
 }
 
 s3_upload_multipart () {
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
     local s3_bucket_name=$1
-    local source=$(realpath ${2})
-    local destination=${3}
+    local source="$(realpath ${2})"
+    local destination="$(s3_path_sanitise ${3})"
     shift 3
     local options=$*
 
@@ -412,7 +406,7 @@ s3_upload_multipart () {
         local response=$(aws s3api create-multipart-upload \
             --region ${AWS_REGION} \
             --bucket ${s3_bucket_name} \
-            --key ${destination} \
+            --key "${destination-}" \
             --metadata md5=${csum} \
             ${options-})
         local upload_id=$(echo "${response}" | jq -r '.UploadId')
@@ -429,7 +423,7 @@ s3_upload_multipart () {
         for index in $(seq ${num_parts}); do
             echoerr "INFO: uploading part ${index} of ${num_parts}..."
             local file=${files[$index]};
-            local etag=$(_s3_upload_multipart_part ${s3_bucket_name} ${destination} ${index} ${file} "${upload_id}")
+            local etag=$(_s3_upload_multipart_part ${s3_bucket_name} "${destination}" "${index}" "${file}" "${upload_id}")
             if [[ -z "${etag}" ]]; then
                 echoerr "ERROR: Upload failed on part ${index} of ${num_parts}"
                 popd >/dev/null
@@ -455,7 +449,7 @@ s3_upload_multipart () {
             --region ${AWS_REGION} \
             --multipart-upload "file://${fileparts}" \
             --bucket ${s3_bucket_name} \
-            --key ${destination} \
+            --key "${destination-}" \
             --upload-id "${upload_id}")
 
         local location=$(echo "${response}" | jq -r '.Location')
@@ -466,21 +460,22 @@ s3_upload_multipart () {
             return 1
         fi
 
-        echoerr "INFO: File successfully uploaded to ${location}"
+        echoerr "INFO: File successfully uploaded to '${location}'"
 
         popd >/dev/null
 
-    rm -rf ${filesdir}
+    rm -rf "${filesdir}"
 
     return 0
 }
 
 _s3_upload_multipart_part() {
     local s3_bucket_name=${1}
-    local key=${2}
-    local part=${3}
-    local file=${4}
-    local upload_id=${5}
+    local key="${2}"
+    local part="${3}"
+    local file="${4}"
+    local upload_id="${5}"
+
     local md5=$(openssl md5 -binary ${file} | base64)
     local response
     local etag
@@ -493,7 +488,7 @@ _s3_upload_multipart_part() {
             --bucket ${s3_bucket_name} \
             --key ${key} \
             --part-number ${part} \
-            --body ${file} \
+            --body "${file}" \
             --upload-id ${upload_id} \
             --content-md5 ${md5})
         etag=$(echo $response | jq -r '.ETag')

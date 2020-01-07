@@ -11,14 +11,9 @@ if [[ $# -lt 1 ]]; then
 else
     ENVIRONMENT=$1
     STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-    if [[ ${2-} ]]; then
-        LOCATION=$2
-        if [[ ${LOCATION} =~ ^/ ]]; then
-            LOCATION="$(echo ${LOCATION} | sed -e 's/^\///g')"
-        fi
-    fi
+    LOCATION="${2-}"
 fi
 
-s3_ls ${STACK_NAME} ${LOCATION-}
+s3_ls ${STACK_NAME} "${LOCATION-}"
 
 echoerr "INFO: Complete"
