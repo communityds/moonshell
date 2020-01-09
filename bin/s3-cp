@@ -10,13 +10,14 @@ if [[ $# -lt 3 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-    SOURCE=$2
-    DESTINATION=$3
+    SOURCE="$2"
+    DESTINATION="$3"
     shift 3
     OPTIONS=$*
 fi
 
-s3_cp ${STACK_NAME} ${SOURCE} ${DESTINATION} ${OPTIONS-}
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+s3_cp ${STACK_NAME} "${SOURCE}" "${DESTINATION}" ${OPTIONS-}
 
 echoerr "INFO: Complete"

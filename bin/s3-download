@@ -12,22 +12,23 @@ if [[ $# -lt 3 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     SOURCE=$2
     DESTINATION=$3
     shift 3
     OPTIONS=$*
 fi
 
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
 case $EXE in
     s3-download)
-        s3_download ${STACK_NAME} ${SOURCE} ${DESTINATION} ${OPTIONS-}
+        s3_download ${STACK_NAME} "${SOURCE}" "${DESTINATION}" ${OPTIONS-}
     ;;
     s3-upload)
-        s3_upload ${STACK_NAME} ${SOURCE} ${DESTINATION} ${OPTIONS-}
+        s3_upload ${STACK_NAME} "${SOURCE}" "${DESTINATION}" ${OPTIONS-}
     ;;
     s3-upload-multipart)
-        s3_upload_multipart ${STACK_NAME} ${SOURCE} ${DESTINATION} ${OPTIONS-}
+        s3_upload_multipart ${STACK_NAME} "${SOURCE}" "${DESTINATION}" ${OPTIONS-}
     ;;
     *)
         echoerr "ERROR: Unknown option '${EXE}'"
