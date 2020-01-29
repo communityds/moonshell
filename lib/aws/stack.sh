@@ -57,6 +57,41 @@ stack_name_from_vpc_id () {
     fi
 }
 
+stack_parameter_set () {
+    local stack_name=$1
+    local parameter_key=$2
+    local parameter_value=$3
+
+    local parameters=($(aws cloudformation get-template-summary \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name}  \
+        | jq -r '.Parameters[].ParameterKey'))
+
+    if ! contains ${parameter_key} ${parameters[@]}; then
+        echoerr "ERROR: Can not update non-existant parameter '${parameter_key}' with '${parameter_value}'"
+        return 1
+    fi
+
+    local parameter parameter_json
+    for parameter in ${parameters[@]}; do
+        if [[ ${parameter} == ${parameter_key} ]]; then
+            parameter_json+=",{\"ParameterKey\":\"${parameter}\",\"ParameterValue\":\"${parameter_value}\"}"
+        else
+            parameter_json+=",{\"ParameterKey\":\"${parameter}\",\"UsePreviousValue\":true}"
+        fi
+    done
+
+    aws cloudformation update-stack \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --parameters "[${parameter_json#,}]" \
+        --use-previous-template \
+        --capabilities CAPABILITY_IAM \
+        >/dev/null
+
+    return $?
+}
+
 stack_resource_id () {
     # Return a string of the ${resource_id} inside ${stack_name}
     local stack_name=$1
