@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Update a single parameter on a stack
+#
+# NOTE: Updating a paramater which is not used by any resource in your template
+# will not trigger a stack update, so only update parameters which are actively
+# used.
+#
+
+source ${MOON_SHELL}
+
+overlay_self
+
+BASENAME=$(basename $0)
+
+if [[ $# -lt 3 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT PARAM_KEY PARAM_VALUE"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ stack-parameter-set dev AppAMI ami-1234567890abc"
+    exit
+else
+    export ENVIRONMENT=$1
+    export PARAM_KEY=$2
+    export PARAM_VALUE=$3
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+stack_parameter_set ${STACK_NAME} ${PARAM_KEY} ${PARAM_VALUE}
+
