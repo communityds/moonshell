@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# Find and deregister either all unused AMIs, or only those of $ROLE
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) AMI_ID"
+    exit
+else
+    AMI_ID=$1
+fi
+
+ami_info ${AMI_ID}
+
