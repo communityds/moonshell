@@ -75,6 +75,18 @@ ami_find_roles () {
     return $?
 }
 
+ami_info () {
+    local ami_id=$1
+
+    ami_validate ${ami_id-}
+
+    aws ec2 describe-images \
+        --region ${AWS_REGION} \
+        --image-ids ${ami_id} \
+        --query "Images[]" \
+        | jq '.'
+}
+
 ami_list_all () {
     # Return an array of AMI ids
     local account_id=$(sts_account_id)
@@ -123,3 +135,19 @@ ami_list_sorted () {
 
     return $?
 }
+
+ami_validate () {
+    local ami_id=$1
+
+    if [[ -z ${ami_id-} ]]; then
+        echoerr "ERROR: AMI Id is null"
+        return 1
+    elif [[ ! ${ami_id} =~ ^ami-[a-f0-9]{17}$ ]]; then
+        echoerr "ERROR: AMI Id '${ami_id}' is invalid"
+        echoerr "INFO: AMI Id must match regex of '^ami-[a-f0-9]{17}\$'"
+        return 1
+    else
+        return 0
+    fi
+}
+
