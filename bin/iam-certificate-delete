@@ -36,9 +36,6 @@ echo
     && echoerr "ERROR: Aborting on user request" \
     && exit 1
 
-echoerr "INFO: Permanently deleting '${IAM_CERT_NAME}' in 7 seconds (Ctrl-C to cancel)"
-sleep 7
-
 aws iam delete-server-certificate \
     --region ${AWS_REGION} \
     --server-certificate-name ${IAM_CERT_NAME}
