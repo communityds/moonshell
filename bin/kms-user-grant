@@ -12,7 +12,7 @@
 
 export MOON_FILE=false
 
-source ${MOON_SHELL}
+source $(dirname $0)/../moon.sh
 
 GRANTS="Decrypt Encrypt ReEncryptFrom ReEncryptTo DescribeKey GenerateDataKey GenerateDataKeyWithoutPlaintext"
 

@@ -3,9 +3,7 @@
 #
 #
 
-source ${MOON_SHELL}
-
-overlay_dir "$(dirname $0)/../"
+source $(dirname $0)/../moon.sh
 
 BASENAME=$(basename $0)
 

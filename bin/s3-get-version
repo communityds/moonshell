@@ -3,7 +3,7 @@
 # Downloads a specific version of a file stored in a stack's s3 bucket
 #
 
-source ${MOON_SHELL}
+source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 3 ]]; then
     echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE DEST_FILE|DEST_PATH"

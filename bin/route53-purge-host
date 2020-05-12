@@ -3,7 +3,7 @@
 #
 #
 
-source ${MOON_SHELL}
+source $(dirname $0)/../moon.sh
 
 [[ $# -lt 1 ]] \
     && echoerr "Usage: $(basename $0) ENVIRONMENT" \

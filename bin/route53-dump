@@ -6,7 +6,7 @@
 
 export MOON_FILE=false
 
-source ${MOON_SHELL}
+source $(dirname $0)/../moon.sh
 
 # To provide a more informative 'Usage' messgage we first find all available
 # hosted zones
