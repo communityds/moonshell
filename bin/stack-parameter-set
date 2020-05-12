@@ -7,9 +7,7 @@
 # used.
 #
 
-source ${MOON_SHELL}
-
-overlay_self
+source $(dirname $0)/../moon.sh
 
 BASENAME=$(basename $0)
 
