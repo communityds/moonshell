@@ -7,17 +7,18 @@ export MOON_FILE=false
 
 source $(dirname $0)/../moon.sh
 
-echoerr "INFO: Enumerating available server certificates"
-IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
-    --query "ServerCertificateMetadataList[].ServerCertificateName" \
-    --output text))
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) CERTIFICATE_NAME"
+    exit
+else
+    IAM_CERT_NAME=$1
+fi
 
-[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
-    && echoerr "ERROR: Could not find any server certificates" \
-    && exit 1
-
-echo "Choose a certificate to query:"
-IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+echoerr "INFO: Testing '${IAM_CERT_NAME}'"
+if ! aws iam get-server-certificate --server-certificate-name ${IAM_CERT_NAME} &>/dev/null; then
+    echoerr "FATAL: Certificate '${IAM_CERT_NAME}' can not be found"
+    exit 255
+fi
 
 echoerr "INFO: Finding all DNS names on certificate: ${IAM_CERT_NAME}"
 DNS_NAMES=($(aws iam get-server-certificate \
@@ -26,7 +27,7 @@ DNS_NAMES=($(aws iam get-server-certificate \
     --output text \
     | openssl x509 -text -noout \
     | grep DNS \
-    | sed -e 's/\,//g'))
+    | sed -e 's/\,//g' -e 's/DNS://g'))
 
 for dns_name in ${DNS_NAMES[@]}; do
     echoerr ${dns_name}
