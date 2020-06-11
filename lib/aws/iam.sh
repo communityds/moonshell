@@ -47,7 +47,7 @@ iam_access_key_create () {
     local iam_user="$1"
 
     if _iam_test_user ${iam_user-}; then
-        echoerr "INFO: Creating API key and secret for '${iam_user}'"
+        echoerr "INFO: Creating API key and secret for: ${iam_user}"
         aws iam create-access-key \
             --user-name ${iam_user} \
             --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"

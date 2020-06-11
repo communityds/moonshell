@@ -24,7 +24,7 @@ else
     shift
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 DUMP_FILE="/tmp/$STACK_NAME.slowlog"
 
 while getopts ':o:i:' OPT; do

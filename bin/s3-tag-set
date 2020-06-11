@@ -16,7 +16,7 @@ else
     VERSION_ID=${5-}
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 s3_tag_set ${STACK_NAME} "${S3_FILE}" "${KEY}" "${VALUE}" "${VERSION_ID-}"
 

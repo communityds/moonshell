@@ -178,7 +178,7 @@ s3_get_file_version () {
         --query "Versions[?LastModified=='${version_timestamp}'].VersionId" \
         --output text)
 
-    echoerr "INFO: Getting version '${version_id}' of '${file_path}'"
+    echoerr "INFO: Getting version of '${file_path}': ${version_id}"
     aws s3api get-object \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
@@ -201,7 +201,7 @@ s3_get_versions () {
     local prefix="${3-}"
 
     if [[ ! ${is_latest} =~ ^(true|false)$ ]]; then
-        echoerr "ERROR: is_latest can only be 'true' or 'false'"
+        echoerr "ERROR: is_latest can only be (true|false)"
         return 1
     fi
 
@@ -234,7 +234,7 @@ s3_ls () {
     [[ -z ${s3_bucket_name-} ]] && return 1
 
     local s3_url="s3://${s3_bucket_name}/${location-}"
-    echoerr "INFO: Listing objects in ${s3_url}"
+    echoerr "INFO: Listing objects in: ${s3_url}"
     aws s3 ls --region ${AWS_REGION} ${s3_url}
     return $?
 }
@@ -345,7 +345,7 @@ s3_stack_bucket_name () {
     local -a s3_buckets=($(stack_resource_type_id ${stack_name} "AWS::S3::Bucket"))
 
     if [[ -z ${s3_buckets[@]-} ]]; then
-        echoerr "ERROR: No S3 buckets found in stack '${stack_name}'"
+        echoerr "ERROR: No S3 buckets found in stack: ${stack_name}"
         return 1
     elif [[ ${#s3_buckets[@]} -gt 1 ]]; then
         choose ${s3_buckets[@]}
@@ -368,7 +368,7 @@ s3_tag_delete () {
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
 
-    echoerr "WARNING: This will permanently delete all tags for object '${s3_file}'"
+    echoerr "WARNING: This will permanently delete all tags for object: ${s3_file}"
     if prompt_no "Are you sure you wish to continue?"; then
         echoerr "INFO: Exiting on user request"
         return 0
@@ -571,11 +571,11 @@ s3_upload_multipart () {
         local num_parts=$((${#files[@]} - 1))
         local index
         for index in $(seq ${num_parts}); do
-            echoerr "INFO: uploading part ${index} of ${num_parts}..."
+            echoerr "INFO: uploading part: ${index}/${num_parts}"
             local file=${files[$index]};
             local etag=$(_s3_upload_multipart_part ${s3_bucket_name} "${destination}" "${index}" "${file}" "${upload_id}")
             if [[ -z "${etag}" ]]; then
-                echoerr "ERROR: Upload failed on part ${index} of ${num_parts}"
+                echoerr "ERROR: Upload failed on part: ${index}/${num_parts}"
                 popd >/dev/null
                 rm -rf ${filesdir}
                 return 1
@@ -610,7 +610,7 @@ s3_upload_multipart () {
             return 1
         fi
 
-        echoerr "INFO: File successfully uploaded to '${location}'"
+        echoerr "INFO: File successfully uploaded to: ${location}"
 
         popd >/dev/null
 
@@ -647,7 +647,7 @@ _s3_upload_multipart_part() {
             --content-md5 ${md5})
         etag=$(echo $response | jq -r '.ETag')
         if [[ -z "$etag" ]]; then
-            echoerr "INFO: Upload of part ${part} failed on attempt ${retry}"
+            echoerr "INFO: Upload of part failed on attempt: ${retry}"
             if [[ ${retry} -lt ${max_retries} ]]; then
                 echoerr "INFO: retrying..."
                  # Wait a few seconds in case of temporary connectivity loss
@@ -656,7 +656,7 @@ _s3_upload_multipart_part() {
             continue
         elif [[ ${retry} -gt 1 ]]; then
             # Give feedback if the retry succeeded
-            echoerr "INFO: Upload of part ${part} succeeded on attempt ${retry}"
+            echoerr "INFO: Upload of part succeeded on attempt: ${retry}"
         fi
 
         # Success, return the etag

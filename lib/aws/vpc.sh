@@ -36,7 +36,7 @@ vpc_peer_associate () {
     local source_vpc_id="$1"
     local target_vpc_id="$2"
 
-    echoerr "INFO: Creating peering connection between ${source_vpc_id} and ${target_vpc_id}"
+    echoerr "INFO: Creating peering connection from ${source_vpc_id} to ${target_vpc_id}"
     local peering_id=$(aws ec2 create-vpc-peering-connection \
         --region ${AWS_REGION} \
         --vpc-id ${source_vpc_id} \
@@ -74,7 +74,7 @@ vpc_peer_connection () {
     local req_vpc_id="$1"
     local acc_vpc_id="$2"
 
-    echoerr "INFO: Searching for peering connections from ${req_vpc_id}"
+    echoerr "INFO: Searching for peering connections from: ${req_vpc_id}"
     local peering_connections=($(aws ec2 describe-vpc-peering-connections \
         --region ${AWS_REGION} \
         --filters \
@@ -90,7 +90,7 @@ vpc_peer_connection () {
             echo ${peering_connections}
             return 0
         else
-            echoerr "INFO: Multiple peering connections found."
+            echoerr "INFO: Multiple peering connections found"
             echo ${peering_connections[@]}
             return 0
         fi
@@ -105,7 +105,7 @@ vpc_peer_dissociate () {
         echoerr "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
         return 1
     fi
-    # Delete an existing peering connection between two VPCs.
+    # Delete an existing peering connection between two VPCs
     local source_vpc_id="$1"
     local target_vpc_id="$2"
 }

@@ -16,7 +16,7 @@ else
     TAG_KEY=$2
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 TAG_KEYS=($(vpc-tag-list ${ENVIRONMENT}))
 VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
 

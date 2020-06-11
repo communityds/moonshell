@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+
+echoerr "INFO: Describing stacks"
+STACKS_JSON="$(aws cloudformation list-stacks)"
+
+PARENT_STACK_ID=$(echo ${STACKS_JSON} \
+    | jq -r ".StackSummaries[] | select(.StackName == \"${STACK_NAME}\") | .StackId")
+NESTED_STACKS=($(echo ${STACKS_JSON} \
+    | jq -r ".StackSummaries[] | select(.ParentId == \"${PARENT_STACK_ID}\") | .StackName" \
+    | sort))
+
+STACKS=(${STACK_NAME} ${NESTED_STACKS[@]-})
+
+for stack in ${STACKS[@]}; do
+    stack_json=$(aws cloudformation describe-stacks \
+        --stack-name ${stack} \
+        --query "Stacks[]")
+
+    echoerr "INFO: StackName:       $(echo ${stack_json} | jq -r '.[].StackName')"
+    echoerr "INFO: StackStatus:     $(echo ${stack_json} | jq -r '.[].StackStatus')"
+    echoerr "INFO: LastUpdatedTime: $(echo ${stack_json} | jq -r '.[].LastUpdatedTime')"
+
+    if [[ ${#STACKS[@]} -gt 1 ]] && [[ ! ${stack} == ${STACKS[-1]} ]]; then
+        echoerr "INFO:"
+    fi
+done
+

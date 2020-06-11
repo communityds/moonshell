@@ -19,7 +19,7 @@ else
     export PARAMETER=$2
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 COMPONENTS=(output parameter)
 COMPONENT=$(echo ${BASENAME} | sed -e 's/stack-//' -e 's/-get//')

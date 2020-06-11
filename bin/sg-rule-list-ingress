@@ -15,7 +15,7 @@ else
     SG=$2
 fi
 
-export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 if [[ ${SG} =~ ^sg- ]]; then
     SG_ID=${SG}

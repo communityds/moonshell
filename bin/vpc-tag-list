@@ -15,7 +15,7 @@ else
     ENVIRONMENT=$1
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
 
 TAG_KEYS=($(aws ec2 describe-tags \

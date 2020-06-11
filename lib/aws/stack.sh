@@ -112,6 +112,10 @@ stack_list_parameter () {
     pipe_failure ${PIPESTATUS[@]}
 }
 
+stack_name () {
+    export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+}
+
 stack_name_from_vpc_id () {
     if [[ $# -lt 1 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} VPC_ID"
@@ -126,12 +130,54 @@ stack_name_from_vpc_id () {
         --output text)
 
     if [[ ! ${stack_name-} ]]; then
-        echoerr "ERROR: Could not resolve 'aws:cloudformation:stack-name' from vpc '${vpc_id}"
+        echoerr "ERROR: Could not resolve 'aws:cloudformation:stack-name' tag key from vpc: ${vpc_id}"
         return 1
     else
         echo ${stack_name}
         return 0
     fi
+}
+
+stack_outputs () {
+    local stack_name=$1
+
+    aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --query 'sort_by(Stacks[].Outputs[], &OutputKey)[]'
+}
+
+stack_parameter_file () {
+    if [[ -z ${ENVIRONMENT-} ]]; then
+        echoerr "FATAL: Unset variable: ENVIRONMENT"
+        return 255
+    fi
+
+    export STACK_PARAMETER_FILE="moonshell/${ENVIRONMENT}.sh"
+
+    if [[ ! -f "${STACK_PARAMETER_FILE}" ]]; then
+        echoerr "ERROR: Can not find parameter file: ${STACK_PARAMETER_FILE}"
+        return 1
+    fi
+}
+
+stack_parameter_file_parse () {
+    local param_file=$1
+    local param_var=$2
+
+    if ! typeset -Ap ${param_var} >&/dev/null; then
+        echoerr "ERROR: '${param_var}' is not an associative array"
+        return 1
+    fi
+
+    local line param_key param_value
+    while read line; do
+        if [[ ${line} =~ ^[a-zA-Z0-9_]+\= ]]; then
+            param_key=${line%%=*}
+            param_value=${line#*=}
+            eval ${param_var}[${param_key}]=${param_value}
+        fi
+    done <${param_file}
 }
 
 stack_parameter_set () {
@@ -149,7 +195,7 @@ stack_parameter_set () {
         | jq -r '.Parameters[].ParameterKey'))
 
     if ! contains ${parameter_key} ${parameters[@]}; then
-        echoerr "ERROR: Can not update non-existant parameter '${parameter_key}' with '${parameter_value}'"
+        echoerr "ERROR: Can not update non-existant parameter: ${parameter_key}"
         return 1
     fi
 
@@ -178,6 +224,15 @@ stack_parameter_set () {
     return $?
 }
 
+stack_parameters () {
+    local stack_name=$1
+
+    aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --query 'sort_by(Stacks[].Parameters[], &ParameterKey)[]'
+}
+
 stack_resource_id () {
     if [[ $# -lt 2 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
@@ -197,7 +252,7 @@ stack_resource_id () {
         echo ${resource_id}
         return 0
     else
-        echoerr "ERROR: Could not resolve resource '${resource}' from stack '${stack_name}'"
+        echoerr "ERROR: Could not resolve resource: ${resource}"
         return 1
     fi
 }
@@ -217,15 +272,13 @@ stack_resource_type_id () {
         --output text))
 
     if [[ -z ${resource_ids[@]-} ]]; then
-        echoerr "WARNING: No resources of type ${resource_type} found"
+        echoerr "WARNING: No resources of type found: ${resource_type}"
         return 1
     else
         echo ${resource_ids[@]}
         return 0
     fi
 }
-# TODO: Remove this once all the things have been updated to not need it.
-alias stack_resource_type=stack_resource_type_id
 
 stack_resource_type_name () {
     if [[ $# -lt 2 ]] ;then
@@ -242,12 +295,47 @@ stack_resource_type_name () {
         --output text))
 
     if [[ -z ${resource_names[@]-} ]]; then
-        echoerr "WARNING: No resources of type ${resource_type} found"
+        echoerr "WARNING: No resources of type found ${resource_type}"
         return 1
     else
         echo ${resource_names[@]}
         return 0
     fi
+}
+
+stack_status () {
+    [[ $# -lt 1 ]] \
+        && echoerr "Usage: ${FUNCNAME[0]} STACK_NAME" \
+        && return 1
+
+    local stack_name=${1-}
+
+    local status=$(aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --query "Stacks[].StackStatus" \
+        --output text \
+        2>/dev/null)
+
+    if [[ -z ${status-} ]]; then
+        echo NULL
+        return 1
+    fi
+
+    echo ${status}
+}
+
+stack_status_from_id () {
+    [[ $# -lt 1 ]] \
+        && echoerr "Usage: ${FUNCNAME[0]} STACK_ID" \
+        && return 1
+
+    local stack_id=$1
+
+    aws cloudformation list-stacks \
+        --region ${AWS_REGION} \
+        --query "StackSummaries[?StackId=='${stack_id}'].StackStatus" \
+        --output text
 }
 
 stack_status_ok () {
@@ -258,6 +346,47 @@ stack_status_ok () {
         UPDATE_ROLLBACK_COMPLETE
     )
     echo ${status_complete[@]}
+}
+
+stack_template_bucket () {
+    if [[ -z ${STACK_TEMPLATE_BUCKET-} ]]; then
+        echoerr "FATAL: Undefined variable: STACK_TEMPLATE_BUCKET"
+        return 1
+    fi
+}
+
+stack_template_bucket_scheme () {
+    if [[ -z ${STACK_TEMPLATE_BUCKET_SCHEME-} ]]; then
+        export STACK_TEMPLATE_BUCKET_SCHEME="https://"
+    fi
+
+    if [[ ! ${STACK_TEMPLATE_BUCKET_SCHEME} =~ ^(https|file)://$ ]]; then
+        echoerr "ERROR: Unsupported scheme: ${STACK_TEMPLATE_BUCKET_SCHEME}"
+        return 1
+    fi
+}
+
+stack_template_file () {
+    if [[ -z ${STACK_TEMPLATE_FILE-} ]]; then
+        export STACK_TEMPLATE_FILE="moonshell/templates/template.yml"
+    fi
+
+    if [[ ! -f "${STACK_TEMPLATE_FILE}" ]]; then
+        echoerr "ERROR: Can not find template file: ${STACK_TEMPLATE_FILE}"
+        return 1
+    fi
+}
+
+stack_template_upload () {
+    stack_template_bucket_scheme
+    stack_template_bucket
+    stack_template_file
+
+    echoerr "INFO: Uploading templates: ${STACK_TEMPLATE_FILE}"
+    aws s3 sync \
+        --delete \
+        $(dirname ${STACK_TEMPLATE_FILE})/ \
+        s3://${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/
 }
 
 stack_value () {
@@ -279,7 +408,7 @@ stack_value () {
         echo "${resource_id}"
         return 0
     else
-        echoerr "ERROR: Could not resolve '${param}' resource '${resource}' from stack '${stack_name}'"
+        echoerr "ERROR: Could not resolve ${param} resource: ${resource}"
         return 1
     fi
 }

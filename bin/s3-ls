@@ -10,9 +10,10 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     LOCATION="${2-}"
 fi
+
+stack_name
 
 s3_ls ${STACK_NAME} "${LOCATION-}"
 

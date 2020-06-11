@@ -39,17 +39,17 @@ overlay_dir_install () {
     if [[ -f "${overlay_file}" ]]; then
         local existing_dir=$(awk '{print $2}' "${overlay_file}")
         if [[ "${existing_dir}" == "${dir_realpath}" ]]; then
-            echoerr "WARNING: Overlay has already installed itself for '${dir_name}'"
+            echoerr "WARNING: Overlay has already installed itself for: ${dir_name}"
             return 0
         else
-            echoerr "ERROR: Overlay file '${overlay_file}' already exists, but points to a different dir: '${existing_dir}'"
+            echoerr "ERROR: Overlay file '${overlay_file}' already exists, but points to a different dir: ${existing_dir}"
             return 1
         fi
     else
-        echoerr "INFO: Installing '${dir_name}' in to '${overlay_file}'"
+        echoerr "INFO: Installing '${dir_name}' to: ${overlay_file}"
         echo "overlay_dir ${dir_realpath}" > "${overlay_file}"
 
-        echoerr "INFO: Sourcing '${overlay_file}'"
+        echoerr "INFO: Sourcing: ${overlay_file}"
         source ${overlay_file}
 
         return $?
@@ -71,7 +71,7 @@ overlay_dir () {
     if [[ -d ${dir}/bin ]]; then
         overlay_path_prepend "$(realpath ${dir}/bin)"
     elif [[ ! -d ${dir} ]]; then
-        echoerr "ERROR: '${dir}' does not exist or is not a directory"
+        echoerr "ERROR: Directory does not exist or is not a directory: ${dir}"
         return 1
     fi
 
@@ -98,7 +98,7 @@ overlay_path_append () {
             export PATH=${PATH}:$(realpath ${bin_dir})
         fi
     else
-        echoerr "ERROR: '${bin_dir}' is not a dir"
+        echoerr "ERROR: Not a directory: ${bin_dir}"
         return 1
     fi
 }
@@ -116,7 +116,7 @@ overlay_path_prepend () {
             export PATH=$(realpath ${bin_dir}):${PATH}
         fi
     else
-        echoerr "ERROR: '${bin_dir}' is not a dir"
+        echoerr "ERROR: Not a directory: ${bin_dir}'"
         return 1
     fi
 }
@@ -136,7 +136,7 @@ overlay_source_dir () {
     fi
 
     if [[ ! -d ${source_dir} ]]; then
-        echoerr "ERROR: '${source_dir}' is not a dir"
+        echoerr "ERROR: Not a directory: ${source_dir}"
         return 1
     fi
 

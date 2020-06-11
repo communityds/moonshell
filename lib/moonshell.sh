@@ -44,7 +44,7 @@ Perform basic functions for Moonshell.
 
     -h, --help      show this help and exit
     -r, --reset     remove all var files and regenerate self
-    -t, --test      run bashate, rubocop and markdownlint
+    -t, --test      run bashate and markdownlint
 EOF
 }
 
@@ -81,8 +81,6 @@ _moonshell_test () {
         bashate -i E006,E042 moon.sh $(find -name "*.sh")
         echoerr "Testing markdown..."
         mdl $(find -name "*.md")
-        echoerr "Testing ruby..."
-        bundle exec rubocop -D
     popd >/dev/null
 }
 

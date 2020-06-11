@@ -13,7 +13,7 @@ else
     S3_FILE=$2
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 s3_tag_get ${STACK_NAME} "${S3_FILE}"
 

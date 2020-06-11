@@ -18,8 +18,8 @@ else
     PREFIX=$2
 fi
 
-export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+stack_name
+S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 
 echoerr "INFO: Gathering all versions of file '${PREFIX}'"
 S3_JSON="$(aws s3api list-object-versions \

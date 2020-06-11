@@ -23,11 +23,12 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     [[ ${2-} ]] \
         && SNAPSHOT_NAME=$2 \
         || SNAPSHOT_NAME=${DEFAULT_SNAPSHOT_NAME}
 fi
+
+stack_name
 
 rds_snapshot_create ${STACK_NAME} ${SNAPSHOT_NAME}
 

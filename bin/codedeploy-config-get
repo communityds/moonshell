@@ -12,7 +12,7 @@ else
     ENVIRONMENT=$1
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 echoerr "INFO: Setting variables"
 CURRENT_DEPLOYMENT_CONFIG=$(aws deploy get-deployment-group \

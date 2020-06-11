@@ -1,11 +1,7 @@
 # Moonshell
 
-[![Build Status](https://travis-ci.org/communityds/moonshell.svg?branch=master)](https://travis-ci.org/communityds/moonshell)
-
-This project is based upon [BashEnv](https://github.com/pingram3030/bashenv)
-which is a dynamic bash environment management solution. TL;DR; It's a
-framework you can use to create custom functions and modifications to Bash to
-do what ever you please.
+The original impetus and raison detre for this project was [Moonshot](https://github.com/acquia/moonshot).
+It has since been abandoned by its owner, but it did some things well and simply.
 
 The focus of this project is to make AWS CF stacks simple and easy for an
 administrator to use from the CLI.
@@ -21,6 +17,8 @@ Influential axioms:
 Contents:
 
 1. [Overview](#overview)
+
+1. [Directory Structure](#directory-structure)
 
 1. [Usage](#usage)
 
@@ -44,11 +42,7 @@ Everything starts with `./moon.sh`. When sourced it:
 
 ### Setup
 
-You must have `jq` installed to parse output from the AWS CLI.
-
-```
-bundle install
-```
+`jq` must be installed to parse output from the AWS CLI.
 
 To get the most out of Moonshell you have to source it during login. You can
 add the following to your `~/.bashrc` or `~/.bash_profile`, which ever is best
@@ -65,23 +59,77 @@ Sample:
 source ${HOME}/tools/moonshell/moon.sh
 ```
 
+## Directory Structure
+
+To implement Moonshell in to a product a few key files are required:
+
+```
+moonshell/moonshell.sh
+moonshell/${environment}.sh
+moonshell/templates/template.yml
+moonshell/templates/nest-template.yml
+```
+
+### moonshell/moonshell.sh
+
+This file contains all global variables to use with every environment of every
+stack for this product.
+
+Mandatory minimum contents:
+* `APP_NAME` Is the name of your product which matches `^[a-zA-Z0-9_]*$`
+* `STACK_TEMPLATE_BUCKET` Is the short name of your preconfigured bucket
+
+Optional
+* `STACK_TEMPLATE_FILE` Overrides the default location of the parent stack template: `moonshell/templates/template.yml`
+* `STACK_TEMPLATE_BUCKET_SCHEME` is one of `s3://`(default) or `file://`.
+
+### moonshell/${environment}.sh
+
+An environment file must exist for each environment of an application. It is a
+line delimited list of `KEY=VALUE`. The KEY word must be valid for both Bash and
+Cloudformation. The VALUE must be a quoted string.
+
+Example:
+
+```
+InstanceType="t3.nano"
+VolumeSize="50"
+EncryptionEnabled="true"
+EncryptionKey="arn:aws:kms:ap-southeast-2:123456789012:key/12345678-90ab-cdef-1234-567890abcdef"
+```
+
+### moonshell/templates/template.yml
+
+The content and size of the main template must comply with all [AWS quotas](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html).
+
+### moonshell/templates/nest-template.yml
+
+The naming of your nested-template is up to you, provided the parent stack template
+is whatever `STACK_TEMPLATE_FILE` is set to. When the `moonshell/templates/`
+directory is uploaded to your designated S3 bucket it automatically runs with
+the `--delete` flag.
+
+It is recommended to not have versioning enabled on your `STACK_TEMPLATE_BUCKET`
+and instead rely on versioning of your template in git.
+
 ## Usage
 
-The majority of Moonshell's functionality relies upon `Moonfile.rb`, Moonshot's
-main configuration file. We read `Moonfile.rb` and programatically set
-`APP_NAME`, which must conform to `^[a-zA-Z0-9_]*$` and which in turn is
-concatenated with the `ENVIRONMENT` name, to create the `STACK_NAME` set by every
-`bin/` script:
+The functionality of Moonshell differs between whether it is in an interractive
+shell, or a script. There are two main switches you may need to use in custom
+scripts depending on the level of integration required.
+
+* `AWS_ACCOUNT_NAME` if `false` does not pre-load any AWS specific libraries
+* `MOON_FILE` if `false` disables the need to be in the root of a repo to operate
+
+The majority of Moonshell's functionality relies upon a `moonshell/moonshell.sh`
+to set product related variables. By default we assume that the stack name is
+a concatenatenation of application and environment.
 
 * `STACK_NAME="${APP_NAME}-${ENVIRONMENT}"`
 
-To override this behaviour put `export MOON_FILE=false` in your script before
-sourcing `moon.sh`
-
 ### Debug
 
-To see Bash debug ouput of any failing command, simply execute the command with
-the `DEBUG` variable set.
+Debugging is relatively easy as you only need set a single variable; `DEBUG`.
 
 For example:
 
@@ -90,7 +138,9 @@ DEBUG=true s3-ls dev
 ```
 
 To debug issues with the initial shell sourcing of Moonshell, uncomment the
-`DEBUG` line from your `~/.bashrc`/`~/.bash_profile` and spawn a new shell.
+`DEBUG` line from your `~/.bashrc`/`~/.bash_profile` and spawn a new shell. All
+future shells will have DEBUG enabled by default until you remove it from your
+profile.
 
 ### Admin
 
@@ -98,9 +148,7 @@ The `_moonshell` function enables basic admin functionality for Moonshell. You
 can tab complete its options for more info.
 
 ```
-[user@host ~]$ _moonshell -<tab><tab>
--h       --help   -r       --reset  -t       --test
-[user@host ~]$ _moonshell --help
+[user@host ~]$ _moonshell
 Usage: _moonshell [-h|--help] [-r|--reset] [-s|--setup]
 Perform basic functions for Moonshell.
 
@@ -111,13 +159,13 @@ Perform basic functions for Moonshell.
 
 ### Overlaying
 
-Moonshell contains common functions and features that we need across all of our
-products, but each product has differences; requires different tools, different
+Moonshell contains common functions and features required across all products,
+but each product has differences; requires different tools, different
 variables etc. The solution is to overlay customisations.
 
 Per the structure below, Moonshell uses the FHS standard dirs of `bin`, `lib`,
-`var`, `etc`, etc. If, in your repo checkout of `${HOME}/dev/repo`, you have a
-`bin` and `lib` directory, you can simply:
+`var`, `etc`, etc. If, in your repo of `${HOME}/dev/repo`, you have a `bin` and
+`lib` directory, you can simply:
 
 `overlay_dir_install PATH_TO_REPO`
 
@@ -137,9 +185,9 @@ Moonshell tries to adhere to Linux FHS best practice:
 
 * etc/
 
-  * completion.d/ - Bash completion functions suffixed with `.sh`
+    * completion.d/ - Bash completion functions suffixed with `.sh`
 
-  * profile.d/ - Definitions of variables and other statically set things
+    * profile.d/ - Definitions of variables and other statically set things
 
 * usr/ - Extra supporting files for applications
 
@@ -148,10 +196,11 @@ Moonshell tries to adhere to Linux FHS best practice:
 ## Why
 
 A lot of the functionality herein should ideally be ported to Moonshot, but, at
-the time of writing these tools, using Ruby to develop solutions to our needs
-is an expense we can't afford. We are working through the process of developing
-out several systems that all interract with each other on some level; the scope
-and functionality is being found out as development happens.
+the time of writing these tools Moonshot has been abandoned by its original
+author and using Ruby to develop solutions to our needs is an expense we can't
+afford. We are working through the process of developing out several systems
+that all interract with each other on some level; the scope and functionality
+is being found out as development happens.
 
 Bash was the quickest and easiest way to create re-usable code that runs on all
 systems regardless of all external dependencies, with exception of `aws-cli`,
@@ -248,6 +297,44 @@ CloudFormation Defaults:
   use it to find the VPCId from the stack's name when other methods aren't
   available.
 
+### Code Deploy
+
+Per stack there must only be one Code Deploy application. We tar ball the
+`codedeploy/` directory and upload it to `codedeploy/` in the stack's local s3
+bucket. All nodes which are to deploy the artefact must have read access to
+that location, and the host buliding the artefact must be able to write to it.
+
+Inside of the `codedeploy/` directory you must have an `appspec.yml` file per:
+https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html#appspec-reference-server
+
+Example S3 IAM policy written in YAML
+
+```
+  ArtefactS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ArtefactS3IAMPolicy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource:
+              - Fn::GetAtt:
+                - ArtefactS3Bucket
+                - Arn
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource:
+              - Fn::Join:
+                - ''
+                - - Fn::GetAtt:
+                    - ArtefactS3Bucket
+                    - Arn
+                  - '/codedeploy/*'
+```
+
 ### KMS
 
 We strongly advise the use of KMS to encrypt all data at rest. You can use KMS
@@ -267,6 +354,9 @@ To view all available KMS keys for your account:
 ```
 aws kms list-aliases
 ```
+
+* NOTE: You should specify a KMS key as the key UUID and not the alias, this is
+because IAM policy can only be set on a key's UUID.
 
 ### SSH with a Jump Host / Bastion
 

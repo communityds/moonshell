@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    ENVIRONMENT=$1
+fi
+
+stack_name
+
+if [[ ! -d codedeploy ]]; then
+    echoerr "ERROR: No 'codedeploy/' directory present"
+    echoerr "INFO: See the Moonshell README.md for more information"
+    exit 1
+fi
+
+OUTPUT_FILE=$(mktemp -t $(basename $0)_${STACK_NAME}_.XXXXXX)
+TEMP_DIR=$(mktemp -p /tmp -d $(basename $0)_${STACK_NAME}_.XXXXXX)
+GIT_URL=$(git remote get-url origin)
+GIT_COMMIT=$(git rev-parse HEAD)
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+DEPLOY_FILE="codedeploy/$(date +%s).tgz"
+
+pushd ${TEMP_DIR} >/dev/null
+    echoerr "INFO: Cloning '${APP_NAME}' to: ${TEMP_DIR}"
+    git clone ${GIT_URL} . 2>/dev/null
+
+    echoerr "INFO: Checking out: ${GIT_COMMIT}"
+    git checkout ${GIT_COMMIT} 2>/dev/null
+
+    echoerr "INFO: Tarballing: codedeploy/"
+    pushd codedeploy >/dev/null
+        tar zcf ${OUTPUT_FILE} .
+    popd >/dev/null
+popd >/dev/null
+
+echoerr "INFO: Uploading deployment artefact to: s3://${S3_BUCKET}/${DEPLOY_FILE}"
+s3_upload ${STACK_NAME} ${OUTPUT_FILE} ${DEPLOY_FILE} &>/dev/null
+
+echoerr "INFO: Cleaning up: ${OUTPUT_FILE}"
+rm -f ${OUTPUT_FILE}
+echoerr "INFO: Cleaning up: ${TEMP_DIR}"
+rm -Rf ${TEMP_DIR}
+
+echoerr "INFO: Creating deployment"
+DEPLOY_ID=$(aws deploy create-deployment \
+    --region ${AWS_REGION} \
+    --application-name ${STACK_NAME} \
+    --deployment-group-name ${STACK_NAME} \
+    --s3-location "{
+        \"bucket\": \"${S3_BUCKET}\",
+        \"key\": \"${DEPLOY_FILE}\",
+        \"bundleType\": \"tgz\"
+    }" \
+    --query "deploymentId" \
+    --output text)
+
+if [[ -z ${DEPLOY_ID-} ]]; then
+    echoerr "ERROR: Failed to create a deployment"
+    exit 1
+fi
+
+echoerr "INFO: Waiting for deployment '${DEPLOY_ID}' to complete successfully"
+# We have to temporarily disable non-zero exits to better handle a failed deployment
+set +e
+aws deploy wait deployment-successful \
+    --region ${AWS_REGION} \
+    --deployment-id ${DEPLOY_ID} 2>/dev/null
+STATUS=$?
+set -e
+
+if [[ ${STATUS-} -gt 0 ]]; then
+    echoerr "ERROR: Deployment '${DEPLOY_ID}' failed with message:"
+    aws deploy get-deployment \
+        --region ${AWS_REGION} \
+        --deployment-id ${DEPLOY_ID} \
+        | jq -r '.deploymentInfo.errorInformation.message'
+else
+    echoerr "INFO: Deployment '${DEPLOY_ID}' completed successfully"
+fi
+
+exit ${STATUS}
+

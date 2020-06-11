@@ -56,10 +56,10 @@ route53_delete_records () {
         # The resource_record is a JSON hash, so quote that shit!
         local resource_record="$(route53_get_resource_record ${hosted_zone_id} ${resource})"
         if [[ ${resource_record-} ]]; then
-            echoerr "INFO: Deleting resource record '${resource}' from ${hosted_zone_id}"
+            echoerr "INFO: Deleting resource record from ${hosted_zone_id}: ${resource}"
             route53_delete_record_set ${hosted_zone_id} "${resource_record}"
         else
-            echoerr "WARNING: Skipping ${resource}"
+            echoerr "WARNING: Skipping: ${resource}"
         fi
     done
 }
@@ -109,7 +109,7 @@ route53_external_hosted_zone_id () {
         | grep -Eo '(\w+)$')
 
     if [[ -z ${hosted_zone_id-} ]]; then
-        echoerr "ERROR: could not find hosted_zone_id from ${hosted_zone_name}"
+        echoerr "ERROR: could not find hosted_zone_id from: ${hosted_zone_name}"
         return 1
     else
         echo ${hosted_zone_id}
@@ -153,7 +153,7 @@ route53_get_resource_record () {
         | jq -c '.[]')"
 
     if [[ -z ${resource_record-} ]]; then
-        echoerr "WARNING: No record found for resource '${resource}'"
+        echoerr "WARNING: No record found for resource: ${resource}"
         return 1
     else
         echo "${resource_record}"
@@ -178,7 +178,7 @@ route53_id_from_zone_name () {
         --output text)
 
     [[ -z ${hosted_zone_id-} ]] \
-        && echoerr "ERROR: No Id found for ${hosted_zone_name}" \
+        && echoerr "ERROR: No Id found for: ${hosted_zone_name}" \
         && return 1 \
         || echo ${hosted_zone_id}
 }
@@ -206,7 +206,7 @@ route53_list_name () {
         --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
         --output text)
     [[ -z ${hosted_zone_id-} ]] \
-        && echoerr "ERROR: Unable to find 'Id' for zone '${hosted_zone_name}'" \
+        && echoerr "ERROR: Unable to find 'Id' for zone: ${hosted_zone_name}" \
         && return 1
 
     local record_type
@@ -267,7 +267,7 @@ route53_list_internal () {
                 echoerr "  ${record}"
             done
         else
-            echoerr "INFO: No ${record_type} records found"
+            echoerr "INFO: No records found for type: ${record_type}"
         fi
     done
 }
@@ -281,7 +281,7 @@ route53_list_type_records () {
     # of FQDNs. Currently we only support enumerating either A or CNAME records.
     local hosted_zone_id="$1"
     [[ ! ${2} =~ ^(A|CNAME)$ ]] \
-        && echoerr "ERROR: Unsupported type '${2}'" \
+        && echoerr "ERROR: Unsupported type: ${2}" \
         && return 1 \
         || local type=$2
 
@@ -316,7 +316,7 @@ route53_vpc_associate () {
         && echoerr "ERROR: Failed to submit change" \
         && return 1
 
-    echoerr "INFO: Waiting for ${change_id} to complete..."
+    echoerr "INFO: Waiting for change to complete: ${change_id}"
     aws route53 wait resource-record-sets-changed --id ${change_id}
 }
 
@@ -343,7 +343,7 @@ route53_vpc_dissociate () {
         && echoerr "ERROR: Failed to submit change" \
         && return 1
 
-    echoerr "INFO: Waiting for ${change_id} to complete..."
+    echoerr "INFO: Waiting for change to complete: ${change_id}"
     aws route53 wait resource-record-sets-changed --id ${change_id}
 }
 
@@ -359,7 +359,7 @@ route53_zone_name_from_id () {
         --query "HostedZones[?Id=='/hostedzone/${hosted_zone_id}'].Name" \
         --output text)
     [[ -z ${hosted_zone_name-} ]] \
-        && echoerr "ERROR: No Name found for ${hosted_zone_id}" \
+        && echoerr "ERROR: No Name found for: ${hosted_zone_id}" \
         && return 1 \
         || echo ${hosted_zone_name}
 }

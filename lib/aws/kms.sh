@@ -79,11 +79,6 @@ kms_list_keys_detail () {
                 --key-id ${key} \
                 --query "KeyMetadata.{Arn:Arn,CreationDate:CreationDate,Description:Description,KeyState:KeyState,ExpirationModel:ExpirationModel}" \
                 --output table
-            # Key Aliases are not supported for this operation
-            #aws kms list-resource-tags \
-            #    --key-id ${key} \
-            #    --query "Tags" --output table \
-            #    --output table
         else
             echoerr "ERROR: The key origin '${managed}' did not match"
             return 1
