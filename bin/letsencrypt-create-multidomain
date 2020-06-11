@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
-# Create a wildcard certificate from letsencrypt
+# Create a multi-domain certificate from letsencrypt
+#
+# Assumptions:
+#   * Multi-domain certificates are stored in IAM as the first domain name referenced.
+#   * Stack parameters are set up to use the first domain name as the certificate name.
 #
 
 export MOON_FILE=false
@@ -16,7 +20,7 @@ if [[ $# -lt 1 ]]; then
     echoerr "    $ $(basename $0) foo.example.com bar.example.com"
     exit 0
 else
-    DOMAINS=($*)
+    DOMAINS=(${@})
 fi
 
 KEY_BITS="4096"
@@ -78,7 +82,7 @@ pushd ${MOON_VAR} >/dev/null
         || clean_exit 1
 
     echoerr "INFO: Uploading to IAM"
-    iam-certificate-update ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
+    iam-certificate-update ${DOMAINS[0]} ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
 
     if [[ $? -gt 0 ]]; then
         echoerr "WARNING: iam-certificate-update did not exit 0. Keeping temporary files."
