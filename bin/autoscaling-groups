@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# Set the desired capacity for an ASG in a stack.
+#
+# This is particularly handy for when something has happened that causes
+# codedeploy to always fail deployment which in turn kills the server.
+# After a default 5 tries the autoscaling group will be left empty, this
+# script lets you easily set it back to 1 for retrying.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    ENVIRONMENT=$1
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+echoerr "INFO: Finding all ASGs for stack '${STACK_NAME}'"
+AUTOSCALING_GROUPS=($(stack_resource_type_id ${STACK_NAME} "AWS::AutoScaling::AutoScalingGroup"))
+
+for asg in ${AUTOSCALING_GROUPS[@]}; do
+    echo ${asg}
+done
+
