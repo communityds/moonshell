@@ -12,6 +12,11 @@ source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 2 ]]; then
     echoerr "Usage: $(basename $0) ENVIRONMENT ASG_PREFIX [DESIRED_CAPACITY]"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev app"
+    echoerr "  $ $(basename $0) staging cache 2"
+    echoerr "  $ $(basename $0) production Utility"
     exit
 else
     ENVIRONMENT=$1

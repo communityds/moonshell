@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 #
-# Set the desired capacity for an ASG in a stack.
-#
-# This is particularly handy for when something has happened that causes
-# codedeploy to always fail deployment which in turn kills the server.
-# After a default 5 tries the autoscaling group will be left empty, this
-# script lets you easily set it back to 1 for retrying.
+# List all ASGs in a stack
 #
 
 source $(dirname $0)/../moon.sh
