@@ -10,12 +10,18 @@
 
 source $(dirname $0)/../moon.sh
 
-if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT [DESIRED_CAPACITY]"
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT ASG_PREFIX [DESIRED_CAPACITY]"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev app"
+    echoerr "  $ $(basename $0) staging cache 2"
+    echoerr "  $ $(basename $0) production Utility"
     exit
 else
     ENVIRONMENT=$1
-    DESIRED_CAPACITY=${2:-1}
+    ASG_PREFIX=$2
+    DESIRED_CAPACITY=${3:-1}
 fi
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
@@ -23,8 +29,18 @@ STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 echoerr "INFO: Finding all ASGs for stack '${STACK_NAME}'"
 AUTO_SCALING_GROUPS=($(stack_resource_type_id ${STACK_NAME} "AWS::AutoScaling::AutoScalingGroup"))
 
-echoerr "Choose an ASG to modify:"
-AUTO_SCALING_GROUP=$(choose ${AUTO_SCALING_GROUPS[@]})
+for asg in ${AUTO_SCALING_GROUPS[@]}; do
+    if matches ${ASG_PREFIX,,} ${asg,,}; then
+        echoerr "INFO: Found matching Autoscaling Group '${asg}'"
+        AUTO_SCALING_GROUP=${asg}
+        break
+    fi
+done
+
+if [[ -z ${AUTO_SCALING_GROUP-} ]]; then
+    echoerr "ERROR: Could not find a matching Autoscaling Group for '${ASG_PREFIX}'"
+    exit 1
+fi
 
 echoerr "INFO: Setting desired capacity for '${AUTO_SCALING_GROUP}' to '${DESIRED_CAPACITY}'"
 aws autoscaling set-desired-capacity \
