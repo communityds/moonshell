@@ -89,20 +89,22 @@ kms_stack_key_id () {
     local stack_name=$1
 
     # Because describe-stacks is a heavy, rate limited, API call, attempt to
-    # find an alias named for the stack first.
+    # find the alias, named for the stack, first.
     local account_id=$(sts_account_id)
     local kms_key_alias="arn:aws:kms:${AWS_REGION}:${account_id}:alias/${stack_name}"
 
-    if aws kms describe-key --key-id ${kms_key_alias} &>/dev/null; then
-        printf "${kms_key_alias}"
-        return 0
-    fi
+    local kms_key_id=$(aws kms describe-key \
+        --key-id ${kms_key_alias} \
+        --query "KeyMetadata.KeyId" \
+        --output text)
 
-    local kms_key_id="$(aws cloudformation describe-stacks \
-        --region ${AWS_REGION} \
-        --stack-name ${stack_name} \
-        --query "Stacks[].Parameters[?starts_with(ParameterValue,'arn:aws:kms')].ParameterValue" \
-        --output text)"
+    if [[ -z ${kms_key_id-} ]]; then
+        kms_key_id="$(aws cloudformation describe-stacks \
+            --region ${AWS_REGION} \
+            --stack-name ${stack_name} \
+            --query "Stacks[].Parameters[?starts_with(ParameterValue,'arn:aws:kms')].ParameterValue" \
+            --output text)"
+    fi
 
     [[ ${kms_key_id-} ]] \
         && printf "${kms_key_id}" \
