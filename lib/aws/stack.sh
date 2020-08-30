@@ -2,6 +2,16 @@
 #
 # STACK FUNCTIONS
 #
+stack_id () {
+    local stack_name=$1
+
+    aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        --query "Stacks[].StackId" \
+        --output text
+}
+
 stack_list_app () {
     # List all stacks of the same type as the app you are administering
     aws cloudformation describe-stacks \
@@ -25,6 +35,25 @@ stack_list_all_parents () {
         --query "StackSummaries[?not_null(TemplateDescription)].StackName" \
         | jq -r '.[]' \
         | sort
+}
+
+stack_list_nested () {
+    local stack_name=$1
+
+    local stack_id=$(stack_id ${stack_name})
+
+    local nested_stacks=($(aws cloudformation list-stacks \
+        --region ${AWS_REGION} \
+        --stack-status-filter ${stack_status_ok[@]} \
+        --query "StackSummaries[?ParentId=='${stack_id}'].StackName" \
+        --output text))
+
+    if [[ -z ${nested_stacks-} ]]; then
+        echoerr "WARNING: No nested stacks found "
+        return 0
+    else
+        echo ${nested_stacks[@]}
+    fi
 }
 
 stack_list_others () {
