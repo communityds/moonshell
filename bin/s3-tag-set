@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 4 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE KEY VALUE [VERSION_ID]"
+    exit 0
+else
+    ENVIRONMENT=$1
+    S3_FILE=$2
+    KEY=$3
+    VALUE=$4
+    VERSION_ID=${5-}
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+s3_tag_set ${STACK_NAME} "${S3_FILE}" "${KEY}" "${VALUE}" "${VERSION_ID-}"
+
+echoerr "INFO: Tag '${KEY}' was added to object '${S3_FILE}'"
+
