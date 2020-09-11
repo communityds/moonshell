@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE [VERSION_ID]"
+    exit 0
+else
+    ENVIRONMENT=$1
+    S3_FILE=$2
+    VERSION_ID=${3-}
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+s3_tag_delete ${STACK_NAME} "${S3_FILE}" "${VERSION_ID-}"
+
+echoerr "INFO: All tags were deleted from object '${S3_FILE}'"

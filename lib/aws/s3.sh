@@ -299,6 +299,76 @@ s3_stack_bucket_name () {
     fi
 }
 
+s3_tag_delete () {
+    local stack_name=$1
+    local s3_file="$2"
+    local version_id="${3-}"
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    echoerr "WARNING: This will permanently delete all tags for object '${s3_file}'"
+    if prompt_no "Are you sure you wish to continue?"; then
+        echoerr "INFO: Exiting on user request"
+        return 0
+    fi
+
+    aws s3api delete-object-tagging \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key "${s3_file}" \
+        $([[ ${version_id-} ]] && echo "--version-id ${version_id}") \
+        >/dev/null
+}
+
+s3_tag_get () {
+    local stack_name=$1
+    local s3_file="$2"
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    aws s3api get-object-tagging \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key "${s3_file}" \
+        --output table
+}
+
+s3_tag_set () {
+    local stack_name=$1
+    local s3_file="$2"
+    local key="$3"
+    local value="$4"
+    local version_id="${5-}"
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+    [[ -z ${s3_bucket_name-} ]] && return 1
+
+    local current_tag_json tag_json
+
+    current_tag_json=$(aws s3api get-object-tagging \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key "${s3_file}" \
+        --query "TagSet")
+
+    # TODO Add logic to handle the updating of tags
+    if [[ -z ${current_tag_json-} ]] || [[ ${current_tag_json-} == "[]" ]]; then
+        tag_json="[{\"Key\":\"${key}\",\"Value\":\"${value}\"}]"
+    else
+        tag_json="[{\"Key\":\"${key}\",\"Value\":\"${value}\"},$(echo ${current_tag_json} | jq -c '.[]' | paste -sd,)]"
+    fi
+
+    aws s3api put-object-tagging \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key "${s3_file}" \
+        $([[ ${version_id-} ]] && echo "--version-id ${version_id}") \
+        --tagging "{\"TagSet\":${tag_json}}" \
+        >/dev/null
+}
+
 s3_upload () {
     # Upload a named object to ${s3_bucket_name}
     local stack_name=$1
