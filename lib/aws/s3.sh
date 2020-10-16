@@ -94,6 +94,25 @@ s3_download () {
     return $?
 }
 
+s3_file_versions () {
+    local stack_name=$1
+    local file_path=$2
+
+    [[ ${file_path} =~ ^\/ ]] \
+        && file_path=${file_path/\//}
+
+    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
+
+    local version_timestamps=($(aws s3api list-object-versions \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --prefix "${file_path}" \
+        --query "Versions[].LastModified" \
+        --output text))
+
+    echo ${version_timestamps[@]}
+}
+
 s3_get_versions () {
     # Enumerate either latest, or archived versions of objects in a versioned
     # ${s3_bucket_name}. Returns VersionIds as an array
@@ -169,25 +188,6 @@ s3_get_file_version () {
         ${destination}
 
     return $?
-}
-
-s3_file_versions () {
-    local stack_name=$1
-    local file_path=$2
-
-    [[ ${file_path} =~ ^\/ ]] \
-        && file_path=${file_path/\//}
-
-    local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-
-    local version_timestamps=($(aws s3api list-object-versions \
-        --region ${AWS_REGION} \
-        --bucket ${s3_bucket_name} \
-        --prefix "${file_path}" \
-        --query "Versions[].LastModified" \
-        --output text))
-
-    echo ${version_timestamps[@]}
 }
 
 s3_ls () {
