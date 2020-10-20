@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+#
+# Downloads a specific version of a file stored in a stack's s3 bucket
+#
+
+source $(dirname $0)/../moon.sh
+
+OUTPUT="${PWD}"
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE [OPTIONS]"
+    echoerr
+    echoerr "Options:"
+    echoerr "  -o     Output file/dir. Default: '${OUTPUT}'"
+    echoerr "  -v     Version ID. Default: prompt"
+    exit 0
+else
+    ENVIRONMENT=$1
+    S3_FILE=$2
+    shift 2
+fi
+
+echoerr "INFO: Setting variables"
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+
+while getopts ':o:v:' OPT; do
+    case "${OPT}" in
+        o) OUTPUT="$(realpath ${OPTARG})" ;;
+        v) VERSION_ID="${OPTARG}" ;;
+        *)
+            echoerr "ERROR: Invalid option '${OPT}'"
+            exit 1
+        ;;
+    esac
+done
+
+if [[ -d ${OUTPUT} ]]; then
+    OUTPUT="$(realpath ${OUTPUT})/$(basename ${S3_FILE})"
+fi
+
+echoerr "INFO: Gathering all versions of '${S3_FILE}'"
+# The output of list-object-versions has to be parsed like this because
+# --prefix can match multiple files, and we only wish to match what the user
+# input, so we parse with jq and create a valid and JSON array of the data we
+# care about.
+VERSION_JSON="[$(aws s3api list-object-versions \
+    --region ${AWS_REGION} \
+    --bucket ${S3_BUCKET} \
+    --prefix "${S3_FILE}" \
+    --query "Versions[]" \
+    | jq -c ".[] | select(.Key == \"${S3_FILE}\") | { \"LastModified\": .LastModified, \"VersionId\": .VersionId }" \
+    | paste -sd,)]"
+
+VERSION_COUNT=$(echo ${VERSION_JSON} | jq '. | length')
+VERSIONS=($(echo ${VERSION_JSON} | jq -r '.[].VersionId'))
+
+if [[ ${VERSION_ID-} ]] && contains ${VERSION_ID} ${VERSIONS[@]-}; then
+    echoerr "INFO: Found valid version '${VERSION_ID}'"
+elif [[ ${VERSION_COUNT} == 0 ]]; then
+    echoerr "INFO: No versions of file '${S3_FILE}' found"
+    exit 0
+elif [[ ${VERSION_COUNT} == 1 ]]; then
+    VERSION_ID=$(echo ${VERSION_JSON} | jq -r ".[0].VersionId")
+elif [[ ${VERSION_COUNT} -gt 1 ]]; then
+    echoerr "INFO: Choose a version to download"
+    echo ${VERSION_JSON} | jq -r '. | to_entries[] | [.key, .value.LastModified, .value.VersionId] | @tsv'
+
+    read -p "Choice [0-$((${VERSION_COUNT} - 1))]: "
+
+    if [[ ! ${REPLY-} =~ ^[0-9]+$ ]]; then
+        echoerr "ERROR: '${REPLY}' is invalid"
+        exit 1
+    elif [[ ${REPLY} -lt 0 ]] || [[ ${REPLY} -ge ${VERSION_COUNT} ]]; then
+        echoerr "ERROR: Choice '${REPLY}' is out of bounds"
+        exit 1
+    else
+        VERSION_ID=$(echo ${VERSION_JSON} | jq -r ".[${REPLY}].VersionId")
+    fi
+else
+    echoerr "ERROR: Invalid index '${VERSION_COUNT}'"
+    exit 1
+fi
+
+[[ -z ${VERSION_ID-} ]] \
+    && echoerr "ERROR: Could not define VERSION_ID" \
+    && exit 1
+
+LAST_MODIFIED=$(echo $VERSION_JSON | jq -r ".[] | select(.VersionId == \"${VERSION_ID}\") | .LastModified")
+
+echoerr "INFO: Downloading '${S3_FILE}' version '${VERSION_ID}' modified on '${LAST_MODIFIED}' to '${OUTPUT}'"
+aws s3api get-object \
+    --region ${AWS_REGION} \
+    --bucket ${S3_BUCKET} \
+    --key ${S3_FILE} \
+    --version-id ${VERSION_ID} \
+    ${OUTPUT}
+
+echoerr "INFO: Complete"
+
