@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# Lists all versions and mtimes of a file stored in a stack's s3 bucket
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT S3_FILE"
+    exit 0
+else
+    ENVIRONMENT=$1
+    S3_FILE=$2
+fi
+
+echoerr "INFO: Setting variables"
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+
+echoerr "INFO: Gathering all versions of '${S3_FILE}'"
+# The output of list-object-versions has to be parsed like this because
+# --prefix can match multiple files, and we only wish to match what the user
+# input, so we parse with jq and create a valid and JSON array of the data we
+# care about.
+aws s3api list-object-versions \
+    --region ${AWS_REGION} \
+    --bucket ${S3_BUCKET} \
+    --prefix "${S3_FILE}" \
+    --query "Versions[]" \
+    | jq -r ".[] | select(.Key == \"${S3_FILE}\") | [ .LastModified, .VersionId ] | @tsv"
+
+echoerr "INFO: Complete"
+
