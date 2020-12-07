@@ -10,6 +10,15 @@ vpc_id_from_stack_name () {
     return $?
 }
 
+vpc_internal_hosted_zone_id () {
+    # Return the string of the Internal hosted_zone_id inside ${vpc}
+    local vpc_id=$1
+
+    local stack_name=$(stack_name_from_vpc_id ${vpc_id})
+    stack_value_output ${stack_name} InternalRoute53HostedZoneId
+    return $?
+}
+
 vpc_peer_associate () {
     # Create and accept a peering connection between two VPCs. The active
     # AWS account must have permission to accept the peering request on the
@@ -106,15 +115,6 @@ vpc_peers_to_accepter () {
             Name=status-code,Values=active,pending-acceptance,provisioning \
         --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
         --output text
-    return $?
-}
-
-vpc_internal_hosted_zone_id () {
-    # Return the string of the Internal hosted_zone_id inside ${vpc}
-    local vpc_id=$1
-
-    local stack_name=$(stack_name_from_vpc_id ${vpc_id})
-    stack_value_output ${stack_name} InternalRoute53HostedZoneId
     return $?
 }
 
