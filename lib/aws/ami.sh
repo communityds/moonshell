@@ -28,20 +28,28 @@ ami_deregister () {
     # Deregisters an ${ami_id} and its associated EBS ${snapshot_id}
     local ami_id=$1
 
-    local wait=7
+    local wait=5
 
-    echoerr "INFO: Finding snapshot for ${ami_id}"
-    local snapshot_id=$(aws ec2 describe-snapshots \
+    echoerr "INFO: Gathering AMI info"
+    local ami_json=$(aws ec2 describe-images \
         --region ${AWS_REGION} \
-        --query "Snapshots[?contains(Description, '${ami_id}')].SnapshotId" \
-        --output text)
+        --image-ids ${ami_id})
 
-    echoerr "WARNING: Deleting ${ami_id} and ${snapshot_id} in ${wait} seconds. Ctrl-C to cancel"
+    local role=$(echo $ami_json | jq -r '.Images[].Tags[] | select(.Key == "role") | .Value')
+    local snapshot_id=$(echo ${ami_json} | jq -r '.Images[].BlockDeviceMappings[].Ebs.SnapshotId')
+
+    echoerr "WARNING: Deregistering ${role} AMI '${ami_id}' in ${wait} seconds. Ctrl-C to cancel"
     sleep ${wait}
 
-    aws ec2 deregister-image --region ${AWS_REGION} --image-id ${ami_id} \
-        && aws ec2 delete-snapshot --region ${AWS_REGION} --snapshot-id ${snapshot_id} \
-        || echoerr "ERROR: Failed to deregister ${ami_id}. ${snapshot_id} is preserved"
+    aws ec2 deregister-image --region ${AWS_REGION} --image-id ${ami_id} || true
+
+    if pipe_failure ${PIPESTATUS[@]}; then
+        echoerr "ERROR: Failed to deregister ${ami_id}"
+        echoerr "INFO: Snapshot '${snapshot_id}' is preserved"
+    else
+        echoerr "INFO: Deleting AMI snapshot '${snapshot_id}'"
+        aws ec2 delete-snapshot --region ${AWS_REGION} --snapshot-id ${snapshot_id}
+    fi
 }
 
 ami_export () {

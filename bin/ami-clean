@@ -43,6 +43,7 @@ fi
 
 if [[ ${AMIS[@]-} ]]; then
     for ami in ${AMIS[@]}; do
+        echoerr "INFO: Testing '${ami}'"
         instances=($(instances_running_ami ${ami}))
         if [[ ${instances[@]-} ]]; then
             echoerr "INFO: Instances running from ${ami}"
