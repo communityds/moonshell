@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# Output Private IP of the instance
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
+    exit
+else
+    INSTANCES=($@)
+fi
+
+aws ec2 describe-instances \
+    --region ${AWS_REGION} \
+    --instance-ids ${INSTANCES[@]} \
+    --output table
+
