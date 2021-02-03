@@ -2,5 +2,7 @@
 #
 #
 #
-[[ -z ${AWS_REGION-} ]] && export AWS_REGION="ap-southeast-2"
+[[ -z ${AWS_REGION-} ]] \
+    && export AWS_REGION="ap-southeast-2" \
+    || true
 
