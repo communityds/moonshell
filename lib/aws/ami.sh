@@ -28,7 +28,7 @@ ami_deregister () {
     # Deregisters an ${ami_id} and its associated EBS ${snapshot_id}
     local ami_id=$1
 
-    local wait=5
+    local wait=0
 
     echoerr "INFO: Gathering AMI info"
     local ami_json=$(aws ec2 describe-images \
