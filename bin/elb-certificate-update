@@ -6,11 +6,12 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT [CERTIFICATE_NAME]"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [CERTIFICATE_NAME] [ELB_LOGICAL_ID]"
     exit 0
 else
     ENVIRONMENT=$1
     IAM_CERT_NAME=${2-}
+    ELB_LOGICAL_ID=${3-}
 fi
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
@@ -58,10 +59,19 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
     echoerr "INFO: Finding Listeners to update"
     ELB_LISTENERS=($(echo ${STACK_RESOURCES_JSON} | jq -r '.[] | select(.ResourceType == "AWS::ElasticLoadBalancingV2::Listener") | .LogicalResourceId'))
 
-    if [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
+    if [[ ${ELB_LOGICAL_ID-} ]]; then
+        if contains ${ELB_LOGICAL_ID} ${ELB_LISTENERS[@]-} 2>/dev/null; then
+            echoerr "INFO: Found defined Listener"
+            ELB_LISTENER=${ELB_LOGICAL_ID}
+        else
+            echoerr "ERROR: Listener '${ELB_LOGICAL_ID}' is not a resource of '${STACK_NAME}'"
+            exit 1
+        fi
+    elif [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
         # Try to find a Listener labelled as "https"
         for listener in ${ELB_LISTENERS[@]}; do
             if [[ ${listener} =~ [HTTPS|https] ]]; then
+                echoerr "INFO: Found HTTPS Listener: '${listener}'"
                 ELB_LISTENER=${listener}
             fi
         done
@@ -70,15 +80,16 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
             ELB_LISTENER=$(choose ${ELB_LISTENERS[@]})
         fi
     else
+        echoerr "INFO: Using default Listener"
         ELB_LISTENER=${ELB_LISTENERS}
     fi
 
     ELB_LISTENER_ARN=$(echo ${STACK_RESOURCES_JSON} | jq -r ".[] | select(.LogicalResourceId == \"${ELB_LISTENER}\") | .PhysicalResourceId")
-    echoerr "INFO: Found Listener: '${ELB_LISTENER_ARN}'"
+    echoerr "INFO: Listener ARN: '${ELB_LISTENER_ARN}'"
 
     DEFAULT_CERTIFICATE=$(aws elbv2 describe-listener-certificates --listener-arn ${ELB_LISTENER_ARN} \
         | jq -r '.Certificates[] | select(.IsDefault == true) | .CertificateArn')
-    echoerr "INFO: Found certificate to replace: '${DEFAULT_CERTIFICATE}'"
+    echoerr "INFO: Found default certificate ARN: '${DEFAULT_CERTIFICATE}'"
 
     if [[ ${DEFAULT_CERTIFICATE} == ${IAM_CERT_ARN} ]]; then
         echoerr "ERROR: Can not replace a certificate with itself"
