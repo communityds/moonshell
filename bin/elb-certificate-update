@@ -45,24 +45,67 @@ IAM_CERT_ARN="$(aws iam list-server-certificates \
     --output text)"
 echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
 
-echoerr "INFO: Selecting ELB to update"
-STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
-HTTPS_ELBS=($(aws elb describe-load-balancers \
+echoerr "INFO: Finding stack resources"
+STACK_RESOURCES_JSON=$(aws cloudformation list-stack-resources \
     --region ${AWS_REGION} \
-    --load-balancer-names ${STACK_ELBS[@]} \
-    | jq -r ".LoadBalancerDescriptions[] \
-        | select(.ListenerDescriptions[].Listener.Protocol == \"HTTPS\") \
-        | .LoadBalancerName"))
+    --stack-name "${STACK_NAME}" \
+    --query "StackResourceSummaries[]")
+STACK_RESOURCE_TYPES=($(echo ${STACK_RESOURCES_JSON} \
+    | jq -r '.[].ResourceType'))
 
-[[ ${#HTTPS_ELBS[@]} -gt 1 ]] \
-    && echo "Choose an ELB to update:" \
-    && ELB_NAME=$(choose ${HTTPS_ELBS[@]}) \
-    || ELB_NAME=${HTTPS_ELBS}
+# ELB or ELBv2?
+if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}; then
+    echoerr "INFO: Finding Listeners to update"
+    ELB_LISTENERS=($(echo ${STACK_RESOURCES_JSON} | jq -r '.[] | select(.ResourceType == "AWS::ElasticLoadBalancingV2::Listener") | .LogicalResourceId'))
 
-echoerr "INFO: Setting ELB '${ELB_NAME}' with new certificate"
-aws elb set-load-balancer-listener-ssl-certificate \
-    --region ${AWS_REGION} \
-    --load-balancer-name ${ELB_NAME} \
-    --load-balancer-port ${ELB_PORT} \
-    --ssl-certificate-id ${IAM_CERT_ARN}
+    if [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
+        # Try to find a Listener labelled as "https"
+        for listener in ${ELB_LISTENERS[@]}; do
+            if [[ ${listener} =~ [HTTPS|https] ]]; then
+                ELB_LISTENER=${listener}
+            fi
+        done
+        if [[ -z ${ELB_LISTENER-} ]]; then
+            echoerr "Choose the Listener to update:" \
+            ELB_LISTENER=$(choose ${ELB_LISTENERS[@]})
+        fi
+    else
+        ELB_LISTENER=${ELB_LISTENERS}
+    fi
+
+    ELB_LISTENER_ARN=$(echo ${STACK_RESOURCES_JSON} | jq -r ".[] | select(.LogicalResourceId == \"${ELB_LISTENER}\") | .PhysicalResourceId")
+    echoerr "INFO: Found Listener: '${ELB_LISTENER_ARN}'"
+
+    DEFAULT_CERTIFICATE=$(aws elbv2 describe-listener-certificates --listener-arn ${ELB_LISTENER_ARN} \
+        | jq -r '.Certificates[] | select(.IsDefault == true) | .CertificateArn')
+    echoerr "INFO: Found certificate to replace: '${DEFAULT_CERTIFICATE}'"
+
+    if [[ ${DEFAULT_CERTIFICATE} == ${IAM_CERT_ARN} ]]; then
+        echoerr "ERROR: Can not replace a certificate with itself"
+        exit 1
+    fi
+
+    echoerr "INFO: Setting default certificate"
+    aws elbv2 modify-listener --listener-arn ${ELB_LISTENER_ARN} --certificates CertificateArn=${IAM_CERT_ARN}
+else
+    STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
+    HTTPS_ELBS=($(aws elb describe-load-balancers \
+        --region ${AWS_REGION} \
+        --load-balancer-names ${STACK_ELBS[@]} \
+        | jq -r ".LoadBalancerDescriptions[] \
+            | select(.ListenerDescriptions[].Listener.Protocol == \"HTTPS\") \
+            | .LoadBalancerName"))
+
+    [[ ${#HTTPS_ELBS[@]} -gt 1 ]] \
+        && echo "Choose an ELB to update:" \
+        && ELB_NAME=$(choose ${HTTPS_ELBS[@]}) \
+        || ELB_NAME=${HTTPS_ELBS}
+
+    echoerr "INFO: Setting ELB '${ELB_NAME}' with new certificate"
+    aws elb set-load-balancer-listener-ssl-certificate \
+        --region ${AWS_REGION} \
+        --load-balancer-name ${ELB_NAME} \
+        --load-balancer-port ${ELB_PORT} \
+        --ssl-certificate-id ${IAM_CERT_ARN}
+fi
 
