@@ -113,47 +113,22 @@ s3_file_versions () {
     echo ${version_timestamps[@]}
 }
 
-s3_get_versions () {
-    # Enumerate either latest, or archived versions of objects in a versioned
-    # ${s3_bucket_name}. Returns VersionIds as an array
-    local s3_bucket_name=$1
-    local is_latest=$2
-
-    if [[ ! ${is_latest} =~ ^(true|false)$ ]]; then
-        echoerr "ERROR: is_latest can only be 'true' or 'false'"
-        return 1
-    fi
-
-    # TODO: We can oly delete a maximum of 1000 objects at any one time.
-    # we need a way to handle this more intelligently instead of relying
-    # on the user to run this several times..
-    echoerr "INFO: Gathering first 1000 objects"
-    # --max-items appears to be broken, but we should try to reduce load on
-    # the AWS API anyway.
-    aws s3api list-object-versions \
-        --region ${AWS_REGION} \
-        --bucket ${s3_bucket_name} \
-        --max-items 1000 \
-        --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" \
-        | jq -c '[limit (1000; .[] | select(.VersionId))]'
-
-    return ${PIPESTATUS[0]}
-}
-
 s3_get_delete_markers () {
     # When an object is deleted a DeleteMarker is set. Enumerate all
     # DeleteMarkers and return VersionIds as an array
     local s3_bucket_name=$1
+    local s3_prefix="${2-}"
 
-    echoerr "INFO: Gathering first 1000 objects"
+    echoerr "INFO: Gathering 1000 objects"
     # --max-items appears to be broken, but we should try to reduce load on
     # the AWS API anyway.
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
+        --prefix "${s3_prefix-}" \
         --max-items 1000 \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" \
-        | jq -c '[limit (1000; .[] | select(.VersionId))]'
+        | jq -c '[limit (1000; .[] | select(.VersionId))]' 2>/dev/null
 
     return ${PIPESTATUS[0]}
 }
@@ -188,6 +163,35 @@ s3_get_file_version () {
         ${destination}
 
     return $?
+}
+
+s3_get_versions () {
+    # Enumerate either latest, or archived versions of objects in a versioned
+    # ${s3_bucket_name}. Returns VersionIds as an array
+    local s3_bucket_name=$1
+    local is_latest=${2}
+    local prefix="${3-}"
+
+    if [[ ! ${is_latest} =~ ^(true|false)$ ]]; then
+        echoerr "ERROR: is_latest can only be 'true' or 'false'"
+        return 1
+    fi
+
+    # TODO: We can oly delete a maximum of 1000 objects at any one time.
+    # we need a way to handle this more intelligently instead of relying
+    # on the user to run this several times..
+    echoerr "INFO: Gathering 1000 objects"
+    # --max-items appears to be broken, but we should try to reduce load on
+    # the AWS API anyway.
+    aws s3api list-object-versions \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --prefix "${prefix}" \
+        --max-items 1000 \
+        --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" \
+        | jq -c '[limit (1000; .[] | select(.VersionId))]' 2>/dev/null
+
+    return ${PIPESTATUS[0]}
 }
 
 s3_ls () {
@@ -239,30 +243,31 @@ s3_purge_versions () {
     # delete them. This must be tackled in the specific order of archived
     # versions, current verions and then delete markers.
     local s3_bucket_name=$1
+    local s3_prefix="${2-}"
 
-    local not_latest_json=$(s3_get_versions ${s3_bucket_name} false)
-    if [[ ${not_latest_json-} ]] && [[ ! ${not_latest_json-} =~ ^\[\]$ ]]; then
+    local delete_marker_json latest_json not_latest_json
+
+    not_latest_json="$(s3_get_versions ${s3_bucket_name} false "${s3_prefix-}")"
+    while [[ ${not_latest_json-} ]] && [[ ! ${not_latest_json-} =~ ^\[\]$ ]]; do
         echoerr "WARNING: Deleting old versions"
-        s3_delete_objects ${s3_bucket_name} ${not_latest_json}
-    else
-        echoerr "INFO: No old objects found."
-    fi
+        s3_delete_objects ${s3_bucket_name} "${not_latest_json}"
 
-    local latest_json=$(s3_get_versions ${s3_bucket_name} true)
-    if [[ ${latest_json-} ]] && [[ ! ${latest_json-} =~ ^\[\]$ ]]; then
+        not_latest_json="$(s3_get_versions ${s3_bucket_name} false "${s3_prefix-}")"
+    done
+
+    latest_json="$(s3_get_versions ${s3_bucket_name} true "${s3_prefix-}")"
+    while [[ ${latest_json-} ]] && [[ ! ${latest_json-} =~ ^\[\]$ ]]; do
         echoerr "WARNING: Deleting current versions"
-        s3_delete_objects ${s3_bucket_name} ${latest_json}
-    else
-        echoerr "INFO: No current objects found."
-    fi
+        s3_delete_objects ${s3_bucket_name} "${latest_json}"
+        latest_json="$(s3_get_versions ${s3_bucket_name} true "${s3_prefix-}")"
+    done
 
-    local delete_marker_json=$(s3_get_delete_markers ${s3_bucket_name})
-    if [[ ${delete_marker_json-} ]] && [[ ! ${delete_marker_json-} =~ ^(null|None|\[\])$ ]]; then
+    delete_marker_json="$(s3_get_delete_markers ${s3_bucket_name} "${s3_prefix-}")"
+    while [[ ${delete_marker_json-} ]] && [[ ! ${delete_marker_json-} =~ ^(null|None|\[\])$ ]]; do
         echoerr "WARNING: Deleting delete markers"
-        s3_delete_objects ${s3_bucket_name} ${delete_marker_json}
-    else
-        echoerr "INFO: No Delete Markers."
-    fi
+        s3_delete_objects ${s3_bucket_name} "${delete_marker_json}"
+        delete_marker_json="$(s3_get_delete_markers ${s3_bucket_name} "${s3_prefix-}")"
+    done
 }
 
 s3_rm () {
