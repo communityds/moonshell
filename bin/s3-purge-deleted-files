@@ -18,7 +18,7 @@ fi
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 SLEEP=7
 export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
-OLD_FILE_JSON=$(s3_get_delete_markers ${S3_BUCKET_NAME})
+OLD_FILE_JSON=$(s3_get_delete_markers ${S3_BUCKET})
 # If there are no deleted files then the previous command will output "None"
 # Because scripts are run with set -eu, jq will fail to parse "None" and the
 # script will exit 1
