@@ -5,35 +5,27 @@
 
 source $(dirname $0)/../moon.sh
 
-usage () {
+if [[ $# -lt 1 ]]; then
     echoerr "This script purges every version of every object from the S3 bucket created in the environment's stack"
     echoerr
     echoerr "Usage: $(basename $0) ENVIRONMENT"
     exit
-}
-
-#
-# INPUT
-#
-if [[ $# -lt 1 ]]; then
-    usage
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
-    S3_BUCKET_NAME=$(s3_stack_bucket_name ${STACK_NAME})
 fi
 
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 
-echo "You are about to delete the entire contents of the S3 bucket '${S3_BUCKET_NAME}' from the '${STACK_NAME}' stack."
-echo -n "Are you sure you wish to continue? (y/N) "
-read yolo
-[[ ! ${yolo} =~ ^[yY]$ ]] \
-    && echo "INFO: Quitting." \
-    && exit 0
+echoerr "You are about to delete the entire contents of the S3 bucket '${S3_BUCKET}' from the '${STACK_NAME}' stack."
+if prompt_no "Are you sure you wish to continue?"; then
+    echoerr "INFO: Quitting"
+    exit 0
+fi
 
-echoerr "INFO: Deletion of all objects from '${S3_BUCKET_NAME}' will commence in 7 seconds (ctrl-C to cancel)"
+echoerr "INFO: Deletion of all objects from '${S3_BUCKET}' will commence in 7 seconds (ctrl-C to cancel)"
 sleep 7
-s3_purge_versions ${S3_BUCKET_NAME}
+s3_purge_versions ${S3_BUCKET}
 
 echoerr "INFO: Finding remaining files"
 remnants=($(aws s3api list-object-versions \

@@ -13,27 +13,26 @@ if [[ $# -lt 1 ]]; then
     exit
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 fi
 
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 SLEEP=7
-S3_BUCKET_NAME=$(s3_stack_bucket_name ${STACK_NAME})
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 OLD_FILE_JSON=$(s3_get_delete_markers ${S3_BUCKET_NAME})
 # If there are no deleted files then the previous command will output "None"
 # Because scripts are run with set -eu, jq will fail to parse "None" and the
 # script will exit 1
 OBJECTS=$(echo ${OLD_FILE_JSON} | jq '.' | grep -c "VersionId")
 
-echo "You are about to irrecoverably delete ${OBJECTS} objects from ${STACK_NAME}'s S3 bucket that are not 'latest'."
-read -n 1 -p "Do you wish to continue? (y/N): " yolo
-echoerr
-[[ ! ${yolo} =~ ^[yY]$ ]] \
-    && echo "INFO: Aborting." \
-    && exit 0
+echoerr "INFO: You are about to irrecoverably delete ${OBJECTS} objects from ${STACK_NAME}'s S3 bucket that are not 'latest'."
+if prompt_no "Do you wish to continue?"; then
+    echo "INFO: Aborting."
+    exit 0
+fi
 
-echoerr "INFO: Deletion of ${OBJECTS} objects from '${S3_BUCKET_NAME}' will commence in ${SLEEP} seconds (ctrl-C to cancel)"
+echoerr "INFO: Deletion of ${OBJECTS} objects from '${S3_BUCKET}' will commence in ${SLEEP} seconds (ctrl-C to cancel)"
 sleep ${SLEEP}
-s3_delete_objects ${S3_BUCKET_NAME} ${OLD_FILE_JSON}
+s3_delete_objects ${S3_BUCKET} ${OLD_FILE_JSON}
 
 echoerr "INFO: Deletion complete. Have a nice day :)"
 
