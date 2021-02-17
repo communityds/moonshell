@@ -20,6 +20,11 @@ STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 TAG_KEYS=($(vpc-tag-list ${ENVIRONMENT}))
 VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
 
+if [[ -z ${VPC_ID-} ]]; then
+    echoerr "ERROR: Can not resolve VPCId for environment '${ENVIRONMENT}'"
+    exit 1
+fi
+
 if ! contains ${TAG_KEY} ${TAG_KEYS[@]}; then
     echoerr "ERROR: Key '${TAG_KEY}' not present"
     exit 1
