@@ -7,13 +7,14 @@ export MOON_FILE=false
 
 source $(dirname $0)/../moon.sh
 
-[[ $# -lt 1 ]] \
-    && echo "Usage $(basename $0) INSTANCE_ID [INSTANCE_ID]" \
-    && exit
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage $(basename $0) INSTANCE_ID [INSTANCE_ID]"
+    exit
+else
+    INSTANCES=($@)
+fi
 
-instances=($@)
-
-for instance in ${instances[@]}; do
+for instance in ${INSTANCES[@]}; do
     if [[ ! ${instance} =~ ^i-[0-9a-f]+$ ]]; then
         echo "WARNING: Instance '${instance}' is not a valid instance id; ignoring."
     else

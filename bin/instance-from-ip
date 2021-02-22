@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# Output the InstanceId from an IPv4 address
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage $(basename $0) IPV4_ADDRESS"
+    exit
+else
+    ADDRESS=$1
+fi
+
+if [[ ! ${ADDRESS} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    echoerr "ERROR: '${ADDRESS}' does not match an IPv4 address"
+    exit 1
+fi
+
+echoerr "INFO: Resolving InstanceId from '${ADDRESS}'"
+aws ec2 describe-instances \
+    --region ${AWS_REGION} \
+    --filters Name=ip-address,Values=${ADDRESS} \
+    --query "Reservations[].Instances[].InstanceId" \
+    --output text
+
