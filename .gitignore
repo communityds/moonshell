@@ -3,3 +3,4 @@ lib/private
 etc/profile.d/private
 etc/completion.d/private
 vendor/
+!vendor/infra
