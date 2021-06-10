@@ -60,8 +60,9 @@ kms_list_keys_detail () {
         && return 1
 
     for key in ${keys[@]}; do
-        managed=$(aws kms describe-key --key-id ${key} \
+        managed=$(aws kms describe-key \
             --region ${AWS_REGION} \
+            --key-id ${key} \
             --output text \
             --query "KeyMetadata.Origin")
         if [[ ${managed} == "AWS_KMS" ]]; then
@@ -94,6 +95,7 @@ kms_stack_key_id () {
     local kms_key_alias="arn:aws:kms:${AWS_REGION}:${account_id}:alias/${stack_name}"
 
     local kms_key_id=$(aws kms describe-key \
+        --region ${AWS_REGION} \
         --key-id ${kms_key_alias} \
         --query "KeyMetadata.KeyId" \
         --output text)
