@@ -46,7 +46,7 @@ bastion_admin_hostname () {
 
     if [[ -n ${ADMIN_NODE_HOSTNAME-} ]]; then
         echo "${ADMIN_NODE_HOSTNAME}.${stack_name}.local"
-    elif $(type ssh_target_hostname &>/dev/null); then
+    elif type ssh_target_hostname &>/dev/null; then
         echo "$(ssh_target_hostname ${stack_name})"
     else
         echoerr "INFO: Defaulting admin hostname to 'localhost'."
