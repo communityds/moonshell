@@ -75,6 +75,7 @@ pushd ${MOON_VAR} >/dev/null
     ./acme.sh/acme.sh --issue \
         -d ${DOMAIN_NAME} \
         -d *.${DOMAIN_NAME} \
+        --server letsencrypt \
         --dns dns_aws \
         --keylength ${KEY_BITS} \
         --cert-file ${CERT_FILE} \
