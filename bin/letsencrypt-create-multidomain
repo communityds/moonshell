@@ -73,7 +73,7 @@ pushd ${MOON_VAR} >/dev/null
         $(for domain in ${DOMAINS[@]}; do
             echo "-d ${domain}"
         done) \
-        --server letsencrypt
+        --server letsencrypt \
         --dns dns_aws \
         --keylength ${KEY_BITS} \
         --cert-file ${CERT_FILE} \
