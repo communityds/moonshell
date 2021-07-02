@@ -67,6 +67,30 @@ stack_list_others () {
     done
 }
 
+stack_list_output () {
+    local stack_name=$1
+
+    aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        | jq -r '.Stacks[].Outputs[].OutputKey' \
+        | sort
+
+    pipe_failure ${PIPESTATUS[@]}
+}
+
+stack_list_parameter () {
+    local stack_name=$1
+
+    aws cloudformation describe-stacks \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        | jq -r '.Stacks[].Parameters[].ParameterKey' \
+        | sort
+
+    pipe_failure ${PIPESTATUS[@]}
+}
+
 stack_name_from_vpc_id () {
     # Return the ${stack_name} of ${vpc_id}
     local vpc_id=$1
@@ -110,13 +134,18 @@ stack_parameter_set () {
         fi
     done
 
+    echoerr "INFO: Updating '${stack_name}'"
     aws cloudformation update-stack \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
         --parameters "[${parameter_json#,}]" \
         --use-previous-template \
         --capabilities CAPABILITY_IAM \
-        >/dev/null
+        >/dev/null \
+        && echoerr "INFO: Waiting for update to complete" \
+        && aws cloudformation wait stack-update-complete \
+            --region ${AWS_REGION} \
+            --stack-name ${stack_name}
 
     return $?
 }

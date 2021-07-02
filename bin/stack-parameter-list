@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+BASENAME=$(basename $0)
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+
+COMPONENTS=(output parameter)
+COMPONENT=$(echo ${BASENAME} | sed -e 's/stack-//' -e 's/-list//')
+
+if ! contains ${COMPONENT} ${COMPONENTS[@]}; then
+    echoerr "FATAL: Unsupported option '${COMPONENT}'"
+    exit 255
+fi
+
+stack_list_${COMPONENT} ${STACK_NAME}
+
