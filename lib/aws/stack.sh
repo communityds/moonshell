@@ -134,6 +134,7 @@ stack_parameter_set () {
         fi
     done
 
+    echoerr "INFO: Updating '${stack_name}'"
     aws cloudformation update-stack \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
@@ -141,6 +142,7 @@ stack_parameter_set () {
         --use-previous-template \
         --capabilities CAPABILITY_IAM \
         >/dev/null \
+        && echoerr "INFO: Waiting for update to complete" \
         && aws cloudformation wait stack-update-complete \
             --region ${AWS_REGION} \
             --stack-name ${stack_name}
