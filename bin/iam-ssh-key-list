@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# List SSH public keys for a named user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT"
+    exit
+else
+    IAM_USER=$(echo -n ${1} | tr [:upper:] [:lower:])
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User '${IAM_USER}' does not exist"
+    exit 0
+fi
+
+aws iam list-ssh-public-keys \
+    --region ${AWS_REGION} \
+    --user-name ${IAM_USER} \
+    | jq '.SSHPublicKeys'
+

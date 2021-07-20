@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# Delete an SSH public key ID for a named user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT KEY_ID"
+    exit
+else
+    IAM_USER=$(echo -n ${1} | tr [:upper:] [:lower:])
+    SSH_KEY_ID="${2}"
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User '${IAM_USER}' does not exist"
+    exit 0
+fi
+
+aws iam delete-ssh-public-key \
+    --region ${AWS_REGION} \
+    --user-name ${IAM_USER} \
+    --ssh-public-key-id ${SSH_KEY_ID}
+
+echoerr "INFO: Key '${SSH_KEY_ID}' deleted"
+
