@@ -422,17 +422,12 @@ s3_upload_file () {
         destination="${destination-}$(basename ${source})"
     fi
 
-    local filesize=$(stat ${format_bytes} "${source}")
-    if [[ ${filesize} -gt 5242880 ]]; then
-        s3_upload_multipart ${s3_bucket_name} "${source}" "${destination}" ${options-}
-    else
-        aws s3api put-object \
-            --region ${AWS_REGION} \
-            --bucket ${s3_bucket_name} \
-            --key "${destination}" \
-            --body "${source}" \
-            ${options-}
-    fi
+    aws s3api put-object \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --key "${destination}" \
+        --body "${source}" \
+        ${options-}
 }
 
 s3_upload_path () {
