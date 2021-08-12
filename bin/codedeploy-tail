@@ -4,7 +4,7 @@
 # per-deployment log files elsewhere, but this file receives them all.
 #
 
-CODEDEPLOY_LOG="/var/log/aws/codedeploy-agent/codedeploy-agent.log"
+CODEDEPLOY_LOG="/opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log"
 TAIL_COMMAND="tail -f -n0 ${CODEDEPLOY_LOG}"
 
 if [[ -f ${CODEDEPLOY_LOG} ]]; then
