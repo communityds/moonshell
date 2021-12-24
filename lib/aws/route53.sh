@@ -120,14 +120,6 @@ route53_fqdn_from_host () {
 }
 
 route53_get_resource_record () {
-    if ! $(which jq &>/dev/null); then
-        echoerr "INFO: Attempting to install jq"
-        sudo yum -y install jq
-        if [[ $? -ne 0 ]]; then
-            echoerr "ERROR: Failed to install jq"
-            return 1
-        fi
-    fi
     # From a ${resource} record in the ${hosted_zone_id}, output JSON
     local hosted_zone_id="$1"
     local resource="$2"

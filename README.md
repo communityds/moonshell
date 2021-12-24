@@ -44,6 +44,8 @@ Everything starts with `./moon.sh`. When sourced it:
 
 ### Setup
 
+You must have `jq` installed to parse output from the AWS CLI.
+
 ```
 bundle install
 ```
