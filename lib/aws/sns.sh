@@ -9,9 +9,9 @@ sns_post () {
         return 1
     fi
 
-    local stack_name="${1-}"
-    local subject="${2-}"
-    local message="${3-}"
+    local stack_name="$1"
+    local subject="$2"
+    local message="$3"
 
     local notification_arn=$(stack_value_output ${stack_name} NotificationTopicArn)
 

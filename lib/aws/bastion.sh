@@ -37,7 +37,7 @@ bastion () {
 }
 
 bastion_admin_hostname () {
-    local stack_name=$1
+    local stack_name="$1"
 
     # The preferred method for choosing an admin host is to export
     # ADMIN_NODE_HOSTNAME. For legacy's sake and to provide more functionality,
@@ -56,16 +56,16 @@ bastion_admin_hostname () {
 }
 
 bastion_exec () {
-    local cmd=$1
+    local cmd="$1"
 
     ssh ${SSH_OPTS} $(bastion) "${cmd}"
 }
 
 bastion_exec_admin () {
     # Execute command on an admin host inside a stack via the bastion
-    local stack_name=$1
-    local cmd=$2
-    local outfile=${3-}
+    local stack_name="$1"
+    local cmd="$2"
+    local outfile="${3-}"
 
     local target_hostname=$(bastion_admin_hostname ${stack_name})
 
@@ -76,9 +76,9 @@ bastion_exec_admin () {
 
 bastion_exec_host () {
     # Execute a command on a single host
-    local target_hostname=$1
-    local cmd=$2
-    local outfile=${3-}
+    local target_hostname="$1"
+    local cmd="$2"
+    local outfile="${3-}"
 
     [[ ${outfile-} ]] \
         && ssh ${SSH_OPTS} ${target_hostname} "${cmd}" > ${outfile} \
@@ -88,9 +88,9 @@ bastion_exec_host () {
 }
 
 bastion_pdsh_host () {
-    local target_fqdn=$1
+    local target_fqdn="$1"
     local cmd="$2"
-    local out_file=${3-}
+    local out_file="${3-}"
 
     [[ $(uname) == "Darwin" ]] \
         && echoerr "ERROR: Unsupported OS 'Darwin'" \
@@ -116,8 +116,8 @@ bastion_pdsh_host () {
 }
 
 bastion_upload_file () {
-    local stack_name=$1
-    local upload_file=$2
+    local stack_name="$1"
+    local upload_file="$2"
 
     local bastion=$(bastion)
     local file_name="$(basename ${upload_file})"

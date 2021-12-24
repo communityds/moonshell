@@ -3,7 +3,7 @@
 # INSTANCE FUNCTIONS
 #
 instance_public_ip () {
-    local instance_id=$1
+    local instance_id="$1"
 
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
@@ -14,7 +14,7 @@ instance_public_ip () {
 }
 
 instance_private_ip () {
-    local instance_id=$1
+    local instance_id="$1"
 
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
@@ -26,7 +26,8 @@ instance_private_ip () {
 
 instances_running_ami () {
     # Return a list of running instances using ${ami_id}
-    local ami_id=$1
+    local ami_id="$1"
+
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
         --filter Name=image-id,Values=${ami_id} \

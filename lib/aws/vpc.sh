@@ -4,7 +4,7 @@
 #
 vpc_id_from_stack_name () {
     # Find the VPCId for ${stack_name}
-    local stack_name=$1
+    local stack_name="$1"
 
     stack_resource_type_id ${stack_name} "AWS::EC2::VPC"
     return $?
@@ -12,7 +12,7 @@ vpc_id_from_stack_name () {
 
 vpc_internal_hosted_zone_id () {
     # Return the string of the Internal hosted_zone_id inside ${vpc}
-    local vpc_id=$1
+    local vpc_id="$1"
 
     local stack_name=$(stack_name_from_vpc_id ${vpc_id})
     stack_value_output ${stack_name} InternalRoute53HostedZoneId
@@ -23,8 +23,8 @@ vpc_peer_associate () {
     # Create and accept a peering connection between two VPCs. The active
     # AWS account must have permission to accept the peering request on the
     # target VPC
-    local source_vpc_id=$1
-    local target_vpc_id=$2
+    local source_vpc_id="$1"
+    local target_vpc_id="$2"
 
     echoerr "INFO: Creating peering connection between ${source_vpc_id} and ${target_vpc_id}"
     local peering_id=$(aws ec2 create-vpc-peering-connection \
@@ -57,8 +57,8 @@ vpc_peer_connection () {
     # Returns the name of the ${peering_connection}, if one exists. A VPC should
     # never be associated with the same VPC multiple times, and tooling will die
     # if it is.
-    local req_vpc_id=$1
-    local acc_vpc_id=$2
+    local req_vpc_id="$1"
+    local acc_vpc_id="$2"
 
     echoerr "INFO: Searching for peering connections from ${req_vpc_id}"
     local peering_connections=($(aws ec2 describe-vpc-peering-connections \
@@ -88,12 +88,12 @@ vpc_peer_connection () {
 
 vpc_peer_dissociate () {
     # Delete an existing peering connection between two VPCs.
-    local source_vpc_id=$1
-    local target_vpc_id=$2
+    local source_vpc_id="$1"
+    local target_vpc_id="$2"
 }
 
 vpc_peers_from_requester () {
-    local req_vpc_id=$1
+    local req_vpc_id="$1"
 
     aws ec2 describe-vpc-peering-connections \
         --region ${AWS_REGION} \
@@ -106,7 +106,7 @@ vpc_peers_from_requester () {
 }
 
 vpc_peers_to_accepter () {
-    local acc_vpc_id=$1
+    local acc_vpc_id="$1"
 
     aws ec2 describe-vpc-peering-connections \
         --region ${AWS_REGION} \

@@ -3,8 +3,8 @@
 # ROUTE53 FUNCTIONS
 #
 route53_change_resource_records () {
-    local hosted_zone_id=$1
-    local action=$2
+    local hosted_zone_id="$1"
+    local action="$2"
     local resource_record="$3"
 
     [[ ! ${action} =~ ^(UPSERT|DELETE)$ ]] \
@@ -46,9 +46,9 @@ route53_delete_records () {
         && echoerr "ERROR: At least two arguments are required" \
         && return 1
 
-    local hosted_zone_id=$1
+    local hosted_zone_id="$1"
     shift
-    local resources=(${@-})
+    local -a resources=(${@-})
 
     for resource in ${resources[@]}; do
         # The resource_record is a JSON hash, so quote that shit!
@@ -65,7 +65,7 @@ route53_delete_records () {
 route53_delete_record_set () {
     # Delete an individual record from Route53. The resource_record must be an
     # appropriate JSON hash for the --change-batch function
-    local hosted_zone_id=$1
+    local hosted_zone_id="$1"
     [[ $# -gt 2 ]] \
         && echoerr "ERROR: You parsed in an array, not a string for \$2" \
         && return 1 \
@@ -77,14 +77,14 @@ route53_delete_record_set () {
 }
 
 route53_external_hosted_zone_name () {
-    local stack_name=$1
+    local stack_name="$1"
 
     stack_value_output ${stack_name} "ExternalRoute53HostedZoneName"
     return $?
 }
 
 route53_external_hosted_zone_id () {
-    local stack_name=$1
+    local stack_name="$1"
 
     local hosted_zone_name=$(route53_external_hosted_zone_name ${stack_name})
     [[ -z ${hosted_zone_name-} ]] \
@@ -108,8 +108,8 @@ route53_external_hosted_zone_id () {
 route53_fqdn_from_host () {
     # Find the FQDN in a hosted_zone from just the host's name. This is for
     # finding that "logger" actually resolves to "logger.core-production.local"
-    local hosted_zone_id=$1
-    local host=$2
+    local hosted_zone_id="$1"
+    local host="$2"
 
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
@@ -129,8 +129,8 @@ route53_get_resource_record () {
         fi
     fi
     # From a ${resource} record in the ${hosted_zone_id}, output JSON
-    local hosted_zone_id=$1
-    local resource=$2
+    local hosted_zone_id="$1"
+    local resource="$2"
 
     # The resource must be properly fully qualified
     [[ ! ${resource} =~ \.$ ]] && resource="${resource}."
@@ -151,7 +151,7 @@ route53_get_resource_record () {
 }
 
 route53_id_from_zone_name () {
-    local hosted_zone_name=$1
+    local hosted_zone_name="$1"
 
     # hosted_zone_name must be absolute.
     [[ ! ${hosted_zone_name} =~ \.$ ]] \
@@ -170,13 +170,14 @@ route53_id_from_zone_name () {
 
 route53_internal_hosted_zone_id () {
     # Return a string of the Internal hosted_zone_id created inside a stack
-    local stack_name=$1
+    local stack_name="$1"
+
     stack_value_output ${stack_name} InternalRoute53HostedZoneId
     return $?
 }
 
 route53_list_name () {
-    local hosted_zone_name=$1
+    local hosted_zone_name="$1"
 
     local hosted_zone_id=$(aws route53 list-hosted-zones \
         --region ${AWS_REGION} \
@@ -199,8 +200,9 @@ route53_list_name () {
 route53_list_external () { return;}
 
 route53_list_host_records () {
-    local stack_name=$1
-    local hosted_zone_id=$2
+    local stack_name="$1"
+    local hosted_zone_id="$2"
+
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
@@ -218,7 +220,7 @@ route53_list_hosted_zones () {
 }
 
 route53_list_internal () {
-    local stack_name=$1
+    local stack_name="$1"
 
     local record
     local record_type
@@ -243,7 +245,7 @@ route53_list_internal () {
 route53_list_type_records () {
     # Enumerate all ${type} records for a ${hosted_zone_id} and return an array
     # of FQDNs. Currently we only support enumerating either A or CNAME records.
-    local hosted_zone_id=$1
+    local hosted_zone_id="$1"
     [[ ! ${2} =~ ^(A|CNAME)$ ]] \
         && echoerr "ERROR: Unsupported type '${2}'" \
         && return 1 \
@@ -260,8 +262,8 @@ route53_list_type_records () {
 route53_vpc_associate () {
     # Associate a ${vpc} with the ${hosted_zone_id}. This permits ${vpc} to query
     # all records in the ${hosted_zone_id}
-    local hosted_zone_id=$1
-    local vpc=$2
+    local hosted_zone_id="$1"
+    local vpc="$2"
 
     local hosted_zone_name=$(route53_zone_name_from_id ${hosted_zone_id})
     [[ -z ${hosted_zone_name-} ]] && return 1
@@ -285,8 +287,8 @@ route53_vpc_associate () {
 route53_vpc_dissociate () {
     # Remove the association of ${vpc} with ${hosted_zone_id}. This revokes the
     # ability for ${vpc} to query all records in the ${hosted_zone_id}
-    local hosted_zone_id=$1
-    local vpc=$2
+    local hosted_zone_id="$1"
+    local vpc="$2"
 
     local hosted_zone_name=$(route53_zone_name_from_id ${hosted_zone_id})
     [[ -z ${hosted_zone_name-} ]] && return 1
@@ -308,7 +310,7 @@ route53_vpc_dissociate () {
 }
 
 route53_zone_name_from_id () {
-    local hosted_zone_id=$1
+    local hosted_zone_id="$1"
 
     local hosted_zone_name=$(aws route53 list-hosted-zones \
         --region ${AWS_REGION} \

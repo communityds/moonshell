@@ -3,11 +3,11 @@
 # SIMPLE STORAGE SERVICE (S3) FUNCTIONS
 #
 s3_cp () {
-    local stack_name=$1
+    local stack_name="$1"
     local src="$(s3_path_sanitise ${2})"
     local dst="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -31,8 +31,8 @@ s3_delete_objects () {
     #   "VersionId":"nkfayP3f3lLFmrBanFSNl4pc8ytT8ZY4",
     #   "Key":"dummy-location/file.name"
     # }]
-    local s3_bucket_name=$1
-    local json=$2
+    local s3_bucket_name="$1"
+    local json="$2"
 
     if ! $(echo ${json} | jq '.' &>/dev/null); then
         echoerr "ERROR: JSON is invalid"
@@ -65,11 +65,11 @@ s3_delete_objects () {
 
 s3_download () {
     # Download a named object from ${s3_bucket_name}
-    local stack_name=$1
+    local stack_name="$1"
     local source="$(s3_path_sanitise ${2-})" # Remote
     local destination="$3" # Local
     shift 3
-    local options=$*
+    local options="$*"
 
     # Remove / prefix, s3 does not like '//'
     local source=${source/#\//}
@@ -95,8 +95,8 @@ s3_download () {
 }
 
 s3_file_versions () {
-    local stack_name=$1
-    local file_path=$2
+    local stack_name="$1"
+    local file_path="$2"
 
     [[ ${file_path} =~ ^\/ ]] \
         && file_path=${file_path/\//}
@@ -116,7 +116,7 @@ s3_file_versions () {
 s3_get_delete_markers () {
     # When an object is deleted a DeleteMarker is set. Enumerate all
     # DeleteMarkers and return VersionIds as an array
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local s3_prefix="${2-}"
 
     echoerr "INFO: Gathering 1000 objects"
@@ -134,10 +134,10 @@ s3_get_delete_markers () {
 }
 
 s3_get_file_version () {
-    local stack_name=$1
-    local file_path=$2
-    local version_timestamp=$3
-    local destination=$4
+    local stack_name="$1"
+    local file_path="$2"
+    local version_timestamp="$3"
+    local destination="$4"
 
     [[ ${file_path} =~ ^\/ ]] \
         && file_path=${file_path/\//}
@@ -168,8 +168,8 @@ s3_get_file_version () {
 s3_get_versions () {
     # Enumerate either latest, or archived versions of objects in a versioned
     # ${s3_bucket_name}. Returns VersionIds as an array
-    local s3_bucket_name=$1
-    local is_latest=${2}
+    local s3_bucket_name="$1"
+    local is_latest="$2"
     local prefix="${3-}"
 
     if [[ ! ${is_latest} =~ ^(true|false)$ ]]; then
@@ -195,7 +195,7 @@ s3_get_versions () {
 }
 
 s3_ls () {
-    local stack_name=$1
+    local stack_name="$1"
     local location="$(s3_path_sanitise ${2-})"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
@@ -208,11 +208,11 @@ s3_ls () {
 }
 
 s3_mv () {
-    local stack_name=$1
+    local stack_name="$1"
     local src="$(s3_path_sanitise ${2})"
     local dst="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -242,7 +242,7 @@ s3_purge_versions () {
     # Iterate over all versions of all objects inside ${s3_bucket_name} and
     # delete them. This must be tackled in the specific order of archived
     # versions, current verions and then delete markers.
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local s3_prefix="${2-}"
 
     local delete_marker_json latest_json not_latest_json
@@ -271,10 +271,10 @@ s3_purge_versions () {
 }
 
 s3_rm () {
-    local stack_name=$1
+    local stack_name="$1"
     local file_path="$(s3_path_sanitise ${2})"
     shift 2
-    local options=$*
+    local options="$*"
 
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
@@ -283,7 +283,7 @@ s3_rm () {
 }
 
 s3_stack_bucket_name () {
-    local stack_name=$1
+    local stack_name="$1"
 
     if [[ ${S3_BUCKET-} ]]; then
         echo ${S3_BUCKET}
@@ -305,7 +305,7 @@ s3_stack_bucket_name () {
 }
 
 s3_tag_delete () {
-    local stack_name=$1
+    local stack_name="$1"
     local s3_file="$2"
     local version_id="${3-}"
 
@@ -327,7 +327,7 @@ s3_tag_delete () {
 }
 
 s3_tag_get () {
-    local stack_name=$1
+    local stack_name="$1"
     local s3_file="$2"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
@@ -341,7 +341,7 @@ s3_tag_get () {
 }
 
 s3_tag_set () {
-    local stack_name=$1
+    local stack_name="$1"
     local s3_file="$2"
     local key="$3"
     local value="$4"
@@ -376,11 +376,11 @@ s3_tag_set () {
 
 s3_upload () {
     # Upload a named object to ${s3_bucket_name}
-    local stack_name=$1
+    local stack_name="$1"
     local source="$2" # Local
     local destination="$(s3_path_sanitise ${3})" # Remote
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -402,11 +402,11 @@ s3_upload () {
 }
 
 s3_upload_file () {
-    local s3_bucket_name=${1}
-    local source="${2}"
+    local s3_bucket_name="$1"
+    local source="$2"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     # If uploading a sufficiently large file, explicitly use the AWS multipart upload API
     case $(uname) in
@@ -431,11 +431,11 @@ s3_upload_file () {
 }
 
 s3_upload_path () {
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local source="$2"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     [[ ! ${source} =~ /$ ]] && local source="${source}/"
 
@@ -447,11 +447,11 @@ s3_upload_path () {
 
 s3_upload_multipart () {
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local source="$(realpath ${2})"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     # Maybe parameterise chunk size?
     local chunksize=5m
@@ -540,11 +540,11 @@ s3_upload_multipart () {
 }
 
 _s3_upload_multipart_part() {
-    local s3_bucket_name=${1}
-    local key="${2}"
-    local part="${3}"
-    local file="${4}"
-    local upload_id="${5}"
+    local s3_bucket_name="$1"
+    local key="$2"
+    local part="$3"
+    local file="$4"
+    local upload_id="$5"
 
     local md5=$(openssl md5 -binary ${file} | base64)
     local response
