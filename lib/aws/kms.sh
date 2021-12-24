@@ -4,7 +4,12 @@
 #
 
 kms_id_from_key () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} KMS_KEY"
+        return 1
+    fi
     local key="$1"
+
     local key_id
 
     if [[ ${key} =~ ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$ ]]; then
@@ -87,6 +92,10 @@ kms_list_keys_detail () {
 }
 
 kms_stack_key_id () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     # Because describe-stacks is a heavy, rate limited, API call, attempt to

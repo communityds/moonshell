@@ -3,6 +3,10 @@
 # INSTANCE FUNCTIONS
 #
 instance_public_ip () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} INSTANCE_ID"
+        return 1
+    fi
     local instance_id="$1"
 
     aws ec2 describe-instances \
@@ -14,6 +18,10 @@ instance_public_ip () {
 }
 
 instance_private_ip () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} INSTANCE_ID"
+        return 1
+    fi
     local instance_id="$1"
 
     aws ec2 describe-instances \
@@ -25,7 +33,10 @@ instance_private_ip () {
 }
 
 instances_running_ami () {
-    # Return a list of running instances using ${ami_id}
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
     local ami_id="$1"
 
     aws ec2 describe-instances \

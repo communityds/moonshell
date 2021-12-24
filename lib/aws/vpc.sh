@@ -3,7 +3,10 @@
 # VPC FUNCTIONS
 #
 vpc_id_from_stack_name () {
-    # Find the VPCId for ${stack_name}
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     stack_resource_type_id ${stack_name} "AWS::EC2::VPC"
@@ -11,7 +14,10 @@ vpc_id_from_stack_name () {
 }
 
 vpc_internal_hosted_zone_id () {
-    # Return the string of the Internal hosted_zone_id inside ${vpc}
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local vpc_id="$1"
 
     local stack_name=$(stack_name_from_vpc_id ${vpc_id})
@@ -20,6 +26,10 @@ vpc_internal_hosted_zone_id () {
 }
 
 vpc_peer_associate () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
+        return 1
+    fi
     # Create and accept a peering connection between two VPCs. The active
     # AWS account must have permission to accept the peering request on the
     # target VPC
@@ -54,6 +64,10 @@ vpc_peer_associate () {
 }
 
 vpc_peer_connection () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} REQUESTER_VPC_ID ACCEPTER_VPC_ID"
+        return 1
+    fi
     # Returns the name of the ${peering_connection}, if one exists. A VPC should
     # never be associated with the same VPC multiple times, and tooling will die
     # if it is.
@@ -87,12 +101,20 @@ vpc_peer_connection () {
 }
 
 vpc_peer_dissociate () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
+        return 1
+    fi
     # Delete an existing peering connection between two VPCs.
     local source_vpc_id="$1"
     local target_vpc_id="$2"
 }
 
 vpc_peers_from_requester () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} VPC_ID"
+        return 1
+    fi
     local req_vpc_id="$1"
 
     aws ec2 describe-vpc-peering-connections \
@@ -106,6 +128,10 @@ vpc_peers_from_requester () {
 }
 
 vpc_peers_to_accepter () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} VPC_ID"
+        return 1
+    fi
     local acc_vpc_id="$1"
 
     aws ec2 describe-vpc-peering-connections \

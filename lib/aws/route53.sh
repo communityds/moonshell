@@ -3,6 +3,10 @@
 # ROUTE53 FUNCTIONS
 #
 route53_change_resource_records () {
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID ACTION RESOURCE_RECORD"
+        return 1
+    fi
     local hosted_zone_id="$1"
     local action="$2"
     local resource_record="$3"
@@ -40,12 +44,10 @@ route53_change_resource_records () {
 }
 
 route53_delete_records () {
-    # Iterate over an array of ${resources[@]} and delete each entry from the
-    # ${hosted_zone_id}
-    [[ $# -lt 2 ]] \
-        && echoerr "ERROR: At least two arguments are required" \
-        && return 1
-
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE [RESOURCE]"
+        return 1
+    fi
     local hosted_zone_id="$1"
     shift
     local -a resources=(${@-})
@@ -63,8 +65,10 @@ route53_delete_records () {
 }
 
 route53_delete_record_set () {
-    # Delete an individual record from Route53. The resource_record must be an
-    # appropriate JSON hash for the --change-batch function
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE_RECORD"
+        return 1
+    fi
     local hosted_zone_id="$1"
     [[ $# -gt 2 ]] \
         && echoerr "ERROR: You parsed in an array, not a string for \$2" \
@@ -77,6 +81,10 @@ route53_delete_record_set () {
 }
 
 route53_external_hosted_zone_name () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     stack_value_output ${stack_name} "ExternalRoute53HostedZoneName"
@@ -84,6 +92,10 @@ route53_external_hosted_zone_name () {
 }
 
 route53_external_hosted_zone_id () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     local hosted_zone_name=$(route53_external_hosted_zone_name ${stack_name})
@@ -106,6 +118,10 @@ route53_external_hosted_zone_id () {
 }
 
 route53_fqdn_from_host () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID HOST"
+        return 1
+    fi
     # Find the FQDN in a hosted_zone from just the host's name. This is for
     # finding that "logger" actually resolves to "logger.core-production.local"
     local hosted_zone_id="$1"
@@ -120,7 +136,10 @@ route53_fqdn_from_host () {
 }
 
 route53_get_resource_record () {
-    # From a ${resource} record in the ${hosted_zone_id}, output JSON
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE"
+        return 1
+    fi
     local hosted_zone_id="$1"
     local resource="$2"
 
@@ -143,6 +162,10 @@ route53_get_resource_record () {
 }
 
 route53_id_from_zone_name () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
+        return 1
+    fi
     local hosted_zone_name="$1"
 
     # hosted_zone_name must be absolute.
@@ -161,7 +184,10 @@ route53_id_from_zone_name () {
 }
 
 route53_internal_hosted_zone_id () {
-    # Return a string of the Internal hosted_zone_id created inside a stack
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     stack_value_output ${stack_name} InternalRoute53HostedZoneId
@@ -169,6 +195,10 @@ route53_internal_hosted_zone_id () {
 }
 
 route53_list_name () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_NAME"
+        return 1
+    fi
     local hosted_zone_name="$1"
 
     local hosted_zone_id=$(aws route53 list-hosted-zones \
@@ -192,6 +222,10 @@ route53_list_name () {
 route53_list_external () { return;}
 
 route53_list_host_records () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME HOSTED_ZONE_ID"
+        return 1
+    fi
     local stack_name="$1"
     local hosted_zone_id="$2"
 
@@ -212,6 +246,10 @@ route53_list_hosted_zones () {
 }
 
 route53_list_internal () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
     local stack_name="$1"
 
     local record
@@ -235,6 +273,10 @@ route53_list_internal () {
 }
 
 route53_list_type_records () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID TYPE"
+        return 1
+    fi
     # Enumerate all ${type} records for a ${hosted_zone_id} and return an array
     # of FQDNs. Currently we only support enumerating either A or CNAME records.
     local hosted_zone_id="$1"
@@ -252,8 +294,10 @@ route53_list_type_records () {
 }
 
 route53_vpc_associate () {
-    # Associate a ${vpc} with the ${hosted_zone_id}. This permits ${vpc} to query
-    # all records in the ${hosted_zone_id}
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
+        return 1
+    fi
     local hosted_zone_id="$1"
     local vpc="$2"
 
@@ -277,8 +321,10 @@ route53_vpc_associate () {
 }
 
 route53_vpc_dissociate () {
-    # Remove the association of ${vpc} with ${hosted_zone_id}. This revokes the
-    # ability for ${vpc} to query all records in the ${hosted_zone_id}
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
+        return 1
+    fi
     local hosted_zone_id="$1"
     local vpc="$2"
 
@@ -302,6 +348,10 @@ route53_vpc_dissociate () {
 }
 
 route53_zone_name_from_id () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
+        return 1
+    fi
     local hosted_zone_id="$1"
 
     local hosted_zone_name=$(aws route53 list-hosted-zones \
