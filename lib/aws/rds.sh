@@ -3,11 +3,14 @@
 # RDS FUNCTIONS
 #
 rds_dump_db () {
-    # Dump a named ${database} to the defined ${out_file}
-    local stack_name=$1
-    local database=$2
-    local out_file=$3
-    local options=${4-}
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local out_file="$3"
+    local options="${4-}"
 
     local instance=$(rds_instance_select ${stack_name})
     [[ -z ${instance-} ]] && return 1
@@ -20,9 +23,12 @@ rds_dump_db () {
 }
 
 rds_engine_type () {
-    # Query RDS resource for DB engine type and return result as a string
-    local stack_name=$1
-    local resource_name=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_NAME"
+        return 1
+    fi
+    local stack_name="$1"
+    local resource_name="$2"
 
     local engine=$(aws rds describe-db-instances \
         --region ${AWS_REGION} \
@@ -44,9 +50,12 @@ rds_engine_type () {
 }
 
 rds_instance_select () {
-    # If there are multiple RDS resources, prompt for selection and return
-    # selection as a string
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
+
     local instance replica
     local -a instances=($(rds_stack_resources ${stack_name}))
 
@@ -83,8 +92,11 @@ rds_instance_select () {
 }
 
 rds_list_dbs () {
-    # list all databases hosted on the RDS instance.
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     local instance=$(rds_instance_select ${stack_name})
     [[ -z ${instance-} ]] && return 1
@@ -97,10 +109,14 @@ rds_list_dbs () {
 }
 
 rds_mysql_dump_db () {
-    local stack_name=$1
-    local database=$2
-    local out_file=$3
-    local options=${4-}
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local out_file="$3"
+    local options="${4-}"
 
     local last_line
     local mysql_opts="--complete-insert --disable-keys --single-transaction ${options-}"
@@ -122,17 +138,24 @@ rds_mysql_dump_db () {
 }
 
 rds_mysql_list_dbs () {
-    stack_name=$1
-    instance=$2
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    stack_name="$1"
 
     bastion_exec_admin ${stack_name} \
         "mysql -BNe \"SHOW DATABASES;\""
 }
 
 rds_mysql_restore_db () {
-    local stack_name=$1
-    local database=$2
-    local in_file=$3
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local in_file="$3"
 
     local upload_file=$(basename ${in_file})
     local mysql_opts=" "
@@ -170,10 +193,15 @@ rds_postgres_dump_db () {
     # and revoked from, it. The database is dumped as plain text and not a
     # compressed or other format because we need to sed out some things that
     # SuperUser™ doesn't have access to do, like add a fucking comment...
-    local stack_name=$1
-    local database=$2
-    local out_file=$3
-    local options=${4-}
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local out_file="$3"
+    local options="${4-}"
+
     local pg_opts="--no-privileges --if-exists --clean --no-owner ${options-}"
 
     rds_postgres_grant ${stack_name} ${database}
@@ -188,9 +216,13 @@ rds_postgres_dump_db () {
 }
 
 rds_postgres_grant () {
-    # Grant a database to SuperUser™
-    local stack_name=$1
-    local database=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+
     echoerr "INFO: Granting ownership of ${database} to postgres"
     bastion_exec_admin ${stack_name} \
         "psql -d ${database} -c \"
@@ -200,7 +232,11 @@ rds_postgres_grant () {
 }
 
 rds_postgres_list_dbs () {
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     local databases=($(bastion_exec_admin ${stack_name} \
         "psql -tAc \"select datname from pg_DATABASE;\""))
@@ -224,9 +260,13 @@ rds_postgres_restore_db () {
     # restore a postgres db with this function, you will have to fix up
     # permissions after restoration. Once again GRANT and REVOKE must be
     # explicitly called.
-    local stack_name=$1
-    local database=$2
-    local in_file=$3
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local in_file="$3"
 
     local upload_file=$(basename ${in_file})
     local bastion=$(bastion)
@@ -268,9 +308,13 @@ rds_postgres_restore_db () {
 }
 
 rds_postgres_revoke () {
-    # Revoke permissions of ${database} from SuperUser™
-    local stack_name=$1
-    local database=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+
     echoerr "INFO: Revoking ownership of ${database} from postgres"
     bastion_exec_admin ${stack_name} \
         "psql -d ${database} -c \"
@@ -280,10 +324,13 @@ rds_postgres_revoke () {
 }
 
 rds_restore_db () {
-    # Restore a named ${database} from a defined ${in_file}
-    local stack_name=$1
-    local database=$2
-    local in_file=$3
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        return 1
+    fi
+    local stack_name="$1"
+    local database="$2"
+    local in_file="$3"
 
     echoerr "INFO: Setting variables"
 
@@ -298,9 +345,13 @@ rds_restore_db () {
 }
 
 rds_slowlog () {
-    local stack_name=$1
-    local dump_file=$2
-    local index=${3-}
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME DUMP_FILE [INDEX]"
+        return 1
+    fi
+    local stack_name="$1"
+    local dump_file="$2"
+    local index="${3-}"
 
     [[ ${index-} ]] \
         && local suffix=".${index}" \
@@ -326,8 +377,12 @@ rds_slowlog () {
 }
 
 rds_snapshot_create () {
-    local stack_name=$1
-    local snapshot_id=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME SNAPSHOT_ID"
+        return 1
+    fi
+    local stack_name="$1"
+    local snapshot_id="$2"
 
     local instance=$(rds_instance_select ${stack_name})
     [[ ${instance-} ]] \
@@ -349,7 +404,11 @@ rds_snapshot_create () {
 }
 
 rds_snapshot_delete () {
-    local snapshot_id=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} SNAPSHOT_ID"
+        return 1
+    fi
+    local snapshot_id="$1"
 
     echoerr "INFO: Deleting DB snapshot"
     aws rds delete-db-snapshot \
@@ -360,7 +419,11 @@ rds_snapshot_delete () {
 }
 
 rds_snapshot_list () {
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     local instance=$(rds_instance_select ${stack_name})
     [[ ${instance-} ]] \
@@ -384,8 +447,11 @@ rds_snapshot_list () {
 }
 
 rds_stack_resources () {
-    # Enumerate all RDS resources in the stack and return an array
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     local -a stack_status_ok=($(stack_status_ok))
 

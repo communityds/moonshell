@@ -37,7 +37,11 @@ bastion () {
 }
 
 bastion_admin_hostname () {
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     # The preferred method for choosing an admin host is to export
     # ADMIN_NODE_HOSTNAME. For legacy's sake and to provide more functionality,
@@ -56,16 +60,24 @@ bastion_admin_hostname () {
 }
 
 bastion_exec () {
-    local cmd=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} COMMAND"
+        return 1
+    fi
+    local cmd="$1"
 
     ssh ${SSH_OPTS} $(bastion) "${cmd}"
 }
 
 bastion_exec_admin () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME COMMAND [OUT_FILE]"
+        return 1
+    fi
     # Execute command on an admin host inside a stack via the bastion
-    local stack_name=$1
-    local cmd=$2
-    local outfile=${3-}
+    local stack_name="$1"
+    local cmd="$2"
+    local outfile="${3-}"
 
     local target_hostname=$(bastion_admin_hostname ${stack_name})
 
@@ -75,10 +87,14 @@ bastion_exec_admin () {
 }
 
 bastion_exec_host () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} TARGET_HOSTNAME COMMAND [OUT_FILE]"
+        return 1
+    fi
     # Execute a command on a single host
-    local target_hostname=$1
-    local cmd=$2
-    local outfile=${3-}
+    local target_hostname="$1"
+    local cmd="$2"
+    local outfile="${3-}"
 
     [[ ${outfile-} ]] \
         && ssh ${SSH_OPTS} ${target_hostname} "${cmd}" > ${outfile} \
@@ -88,9 +104,13 @@ bastion_exec_host () {
 }
 
 bastion_pdsh_host () {
-    local target_fqdn=$1
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} TARGET_FQDN COMMAND [OUT_FILE]"
+        return 1
+    fi
+    local target_fqdn="$1"
     local cmd="$2"
-    local out_file=${3-}
+    local out_file="${3-}"
 
     [[ $(uname) == "Darwin" ]] \
         && echoerr "ERROR: Unsupported OS 'Darwin'" \
@@ -116,8 +136,12 @@ bastion_pdsh_host () {
 }
 
 bastion_upload_file () {
-    local stack_name=$1
-    local upload_file=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE"
+        return 1
+    fi
+    local stack_name="$1"
+    local upload_file="$2"
 
     local bastion=$(bastion)
     local file_name="$(basename ${upload_file})"

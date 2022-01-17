@@ -3,7 +3,12 @@
 # AMI FUNCTIONS
 #
 ami_describe_launch_permissions () {
-    local ami_id=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
+    local ami_id="$1"
+
     echoerr "INFO: Echoing launch permissions for ami '${ami_id}'"
     # Table output looks purdy with this data
     aws ec2 describe-image-attribute \
@@ -14,7 +19,11 @@ ami_describe_launch_permissions () {
 }
 
 ami_describe () {
-    local -a ami_ids=$@
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
+        return 1
+    fi
+    local -a ami_ids=(${@})
 
     echoerr "INFO: Describing AMIs"
     aws ec2 describe-images \
@@ -25,8 +34,12 @@ ami_describe () {
 }
 
 ami_deregister () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
     # Deregisters an ${ami_id} and its associated EBS ${snapshot_id}
-    local ami_id=$1
+    local ami_id="$1"
 
     local wait=0
 
@@ -53,7 +66,11 @@ ami_deregister () {
 }
 
 ami_export () {
-    local ami_id=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
+    local ami_id="$1"
 
     local account
     local accounts=($(aws_accounts))
@@ -84,7 +101,11 @@ ami_find_roles () {
 }
 
 ami_info () {
-    local ami_id=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
+    local ami_id="$1"
 
     ami_validate ${ami_id-}
 
@@ -111,8 +132,12 @@ ami_list_all () {
 }
 
 ami_list_role () {
-    # Return a sorted array of AMI ids
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
     local ami_role="$1"
+
     local account_id=$(sts_account_id)
 
     if ! contains ${ami_role} $(ami_find_roles); then
@@ -133,7 +158,11 @@ ami_list_role () {
 }
 
 ami_list_sorted () {
-    local -a ami_ids=$@
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
+        return 1
+    fi
+    local -a ami_ids=(${@})
 
     echoerr "INFO: Listing and date sorting AMIs"
     aws ec2 describe-images \
@@ -145,7 +174,11 @@ ami_list_sorted () {
 }
 
 ami_validate () {
-    local ami_id=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} AMI_ID"
+        return 1
+    fi
+    local ami_id="$1"
 
     if [[ -z ${ami_id-} ]]; then
         echoerr "ERROR: AMI Id is null"

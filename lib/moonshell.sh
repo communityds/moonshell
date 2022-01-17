@@ -70,7 +70,7 @@ _moonshell_reset () {
 _moonshell_source () {
     local source_dir=$1
 
-    for source_file in $(find ${source_dir}/ ${MOON_FIND_OPTS} -name '*.sh'); do
+    for source_file in $(find $(realpath "${source_dir}")/ ${MOON_FIND_OPTS} -name '*.sh'); do
         source "${source_file}"
     done
 }

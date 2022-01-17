@@ -4,7 +4,11 @@
 #
 
 _iam_test_group () {
-    local iam_group=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_GROUP"
+        return 1
+    fi
+    local iam_group="$1"
 
     [[ -z ${iam_user} ]] \
         && echoerr "ERROR: IAM group must be provided" \
@@ -18,7 +22,11 @@ _iam_test_group () {
 }
 
 _iam_test_user () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     [[ -z ${iam_user} ]] \
         && echoerr "ERROR: IAM username must be provided" \
@@ -32,7 +40,11 @@ _iam_test_user () {
 }
 
 iam_access_key_create () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     if _iam_test_user ${iam_user-}; then
         echoerr "INFO: Creating API key and secret for '${iam_user}'"
@@ -43,8 +55,12 @@ iam_access_key_create () {
 }
 
 iam_access_key_delete () {
-    local iam_user=$1
-    local access_key=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER ACCESS_KEY_ID"
+        return 1
+    fi
+    local iam_user="$1"
+    local access_key="$2"
 
     if ! _iam_test_user ${iam_user-}; then
         return 1
@@ -58,7 +74,11 @@ iam_access_key_delete () {
 }
 
 iam_access_key_list () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     if ! _iam_test_user ${iam_user-}; then
         return 1
@@ -91,7 +111,11 @@ iam_policy_list_customer () {
 }
 
 iam_user_arn () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam get-user \
         --user-name ${iam_user} \
@@ -100,7 +124,11 @@ iam_user_arn () {
 }
 
 iam_user_create () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     if ! _iam_test_user ${iam_user-}; then
         echoerr "INFO: Creating user '${iam_user}'"
@@ -111,7 +139,11 @@ iam_user_create () {
 }
 
 iam_user_exists () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     _iam_test_user ${iam_user-}
 
@@ -119,8 +151,12 @@ iam_user_exists () {
 }
 
 iam_user_group_add () {
-    local iam_user=$1
-    local iam_group=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
+        return 1
+    fi
+    local iam_user="$1"
+    local iam_group="$2"
 
     if _iam_test_group ${iam_group-}; then
         aws iam add-user-to-group \
@@ -133,8 +169,12 @@ iam_user_group_add () {
 }
 
 iam_user_group_del () {
-    local iam_user=$1
-    local iam_group=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
+        return 1
+    fi
+    local iam_user="$1"
+    local iam_group="$2"
 
     if _iam_test_group ${iam_group-}; then
         aws iam remove-user-from-group \
@@ -147,7 +187,11 @@ iam_user_group_del () {
 }
 
 iam_user_group_list () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam list-groups-for-user \
         --user-name ${iam_user} \
@@ -158,7 +202,11 @@ iam_user_group_list () {
 }
 
 iam_user_mfa_devices () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam list-mfa-devices \
         --user-name ${iam_user} \
@@ -167,7 +215,11 @@ iam_user_mfa_devices () {
 }
 
 iam_user_policies () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam list-attached-user-policies \
         --user-name ${iam_user} \
@@ -176,7 +228,11 @@ iam_user_policies () {
 }
 
 iam_user_ssc () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam list-service-specific-credentials \
         --user-name ${iam_user} \
@@ -185,7 +241,11 @@ iam_user_ssc () {
 }
 
 iam_user_ssh_keys () {
-    local iam_user=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} IAM_USER"
+        return 1
+    fi
+    local iam_user="$1"
 
     aws iam list-ssh-public-keys \
         --user-name ${iam_user} \

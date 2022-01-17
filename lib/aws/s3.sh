@@ -3,11 +3,15 @@
 # SIMPLE STORAGE SERVICE (S3) FUNCTIONS
 #
 s3_cp () {
-    local stack_name=$1
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME SOURCE DESTINATION"
+        return 1
+    fi
+    local stack_name="$1"
     local src="$(s3_path_sanitise ${2})"
     local dst="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -26,13 +30,17 @@ s3_cp () {
 }
 
 s3_delete_objects () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET JSON"
+        return 1
+    fi
     # Sample JSON input:
     # [{
     #   "VersionId":"nkfayP3f3lLFmrBanFSNl4pc8ytT8ZY4",
     #   "Key":"dummy-location/file.name"
     # }]
-    local s3_bucket_name=$1
-    local json=$2
+    local s3_bucket_name="$1"
+    local json="$2"
 
     if ! $(echo ${json} | jq '.' &>/dev/null); then
         echoerr "ERROR: JSON is invalid"
@@ -64,12 +72,16 @@ s3_delete_objects () {
 }
 
 s3_download () {
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
     # Download a named object from ${s3_bucket_name}
-    local stack_name=$1
-    local source="$(s3_path_sanitise ${2-})" # Remote
+    local stack_name="$1"
+    local source="$(s3_path_sanitise ${2})" # Remote
     local destination="$3" # Local
     shift 3
-    local options=$*
+    local options="$*"
 
     # Remove / prefix, s3 does not like '//'
     local source=${source/#\//}
@@ -95,8 +107,12 @@ s3_download () {
 }
 
 s3_file_versions () {
-    local stack_name=$1
-    local file_path=$2
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH"
+        return 1
+    fi
+    local stack_name="$1"
+    local file_path="$2"
 
     [[ ${file_path} =~ ^\/ ]] \
         && file_path=${file_path/\//}
@@ -114,9 +130,13 @@ s3_file_versions () {
 }
 
 s3_get_delete_markers () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET PREFIX"
+        return 1
+    fi
     # When an object is deleted a DeleteMarker is set. Enumerate all
     # DeleteMarkers and return VersionIds as an array
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local s3_prefix="${2-}"
 
     echoerr "INFO: Gathering 1000 objects"
@@ -134,10 +154,14 @@ s3_get_delete_markers () {
 }
 
 s3_get_file_version () {
-    local stack_name=$1
-    local file_path=$2
-    local version_timestamp=$3
-    local destination=$4
+    if [[ $# -lt 4 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH VERSION_TIMESTAMP DESTINATION"
+        return 1
+    fi
+    local stack_name="$1"
+    local file_path="$2"
+    local version_timestamp="$3"
+    local destination="$4"
 
     [[ ${file_path} =~ ^\/ ]] \
         && file_path=${file_path/\//}
@@ -166,10 +190,14 @@ s3_get_file_version () {
 }
 
 s3_get_versions () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET IS_LATEST [PREFIX]"
+        return 1
+    fi
     # Enumerate either latest, or archived versions of objects in a versioned
     # ${s3_bucket_name}. Returns VersionIds as an array
-    local s3_bucket_name=$1
-    local is_latest=${2}
+    local s3_bucket_name="$1"
+    local is_latest="$2"
     local prefix="${3-}"
 
     if [[ ! ${is_latest} =~ ^(true|false)$ ]]; then
@@ -195,7 +223,11 @@ s3_get_versions () {
 }
 
 s3_ls () {
-    local stack_name=$1
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME PREFIX"
+        return 1
+    fi
+    local stack_name="$1"
     local location="$(s3_path_sanitise ${2-})"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
@@ -208,11 +240,15 @@ s3_ls () {
 }
 
 s3_mv () {
-    local stack_name=$1
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
+    local stack_name="$1"
     local src="$(s3_path_sanitise ${2})"
     local dst="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -231,6 +267,10 @@ s3_mv () {
 }
 
 s3_path_sanitise () {
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} PREFIX"
+        return 1
+    fi
     # We must strip ^/ from all s3 paths
     local s3_path="$*"
 
@@ -239,10 +279,14 @@ s3_path_sanitise () {
 }
 
 s3_purge_versions () {
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET PREFIX"
+        return 1
+    fi
     # Iterate over all versions of all objects inside ${s3_bucket_name} and
     # delete them. This must be tackled in the specific order of archived
     # versions, current verions and then delete markers.
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local s3_prefix="${2-}"
 
     local delete_marker_json latest_json not_latest_json
@@ -271,10 +315,14 @@ s3_purge_versions () {
 }
 
 s3_rm () {
-    local stack_name=$1
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH [OPTIONS]"
+        return 1
+    fi
+    local stack_name="$1"
     local file_path="$(s3_path_sanitise ${2})"
     shift 2
-    local options=$*
+    local options="$*"
 
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
@@ -283,7 +331,11 @@ s3_rm () {
 }
 
 s3_stack_bucket_name () {
-    local stack_name=$1
+    if [[ $# -lt 1 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name="$1"
 
     if [[ ${S3_BUCKET-} ]]; then
         echo ${S3_BUCKET}
@@ -305,7 +357,11 @@ s3_stack_bucket_name () {
 }
 
 s3_tag_delete () {
-    local stack_name=$1
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH [VERSION_ID]"
+        return 1
+    fi
+    local stack_name="$1"
     local s3_file="$2"
     local version_id="${3-}"
 
@@ -327,7 +383,11 @@ s3_tag_delete () {
 }
 
 s3_tag_get () {
-    local stack_name=$1
+    if [[ $# -lt 2 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH"
+        return 1
+    fi
+    local stack_name="$1"
     local s3_file="$2"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
@@ -341,7 +401,11 @@ s3_tag_get () {
 }
 
 s3_tag_set () {
-    local stack_name=$1
+    if [[ $# -lt 4 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME FILE_PATH KEY VALUE [VERSION_ID]"
+        return 1
+    fi
+    local stack_name="$1"
     local s3_file="$2"
     local key="$3"
     local value="$4"
@@ -375,12 +439,16 @@ s3_tag_set () {
 }
 
 s3_upload () {
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} STACK_NAME SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
     # Upload a named object to ${s3_bucket_name}
-    local stack_name=$1
+    local stack_name="$1"
     local source="$2" # Local
     local destination="$(s3_path_sanitise ${3})" # Remote
     shift 3
-    local options=$*
+    local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
@@ -402,11 +470,15 @@ s3_upload () {
 }
 
 s3_upload_file () {
-    local s3_bucket_name=${1}
-    local source="${2}"
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
+    local s3_bucket_name="$1"
+    local source="$2"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     # If uploading a sufficiently large file, explicitly use the AWS multipart upload API
     case $(uname) in
@@ -431,11 +503,15 @@ s3_upload_file () {
 }
 
 s3_upload_path () {
-    local s3_bucket_name=$1
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
+    local s3_bucket_name="$1"
     local source="$2"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     [[ ! ${source} =~ /$ ]] && local source="${source}/"
 
@@ -446,12 +522,16 @@ s3_upload_path () {
 }
 
 s3_upload_multipart () {
+    if [[ $# -lt 3 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET SOURCE DESTINATION [OPTIONS]"
+        return 1
+    fi
     # Upload a named object to ${s3_bucket_name} using the multipart upload API
-    local s3_bucket_name=$1
+    local s3_bucket_name="$1"
     local source="$(realpath ${2})"
     local destination="$(s3_path_sanitise ${3})"
     shift 3
-    local options=$*
+    local options="$*"
 
     # Maybe parameterise chunk size?
     local chunksize=5m
@@ -540,11 +620,15 @@ s3_upload_multipart () {
 }
 
 _s3_upload_multipart_part() {
-    local s3_bucket_name=${1}
-    local key="${2}"
-    local part="${3}"
-    local file="${4}"
-    local upload_id="${5}"
+    if [[ $# -lt 5 ]] ;then
+        "Usage: ${FUNCNAME[0]} S3_BUCKET KEY PART FILE UPLOAD_ID"
+        return 1
+    fi
+    local s3_bucket_name="$1"
+    local key="$2"
+    local part="$3"
+    local file="$4"
+    local upload_id="$5"
 
     local md5=$(openssl md5 -binary ${file} | base64)
     local response
