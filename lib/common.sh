@@ -20,10 +20,12 @@ bash_rc_file () {
 }
 
 contains () {
-    [ $# -lt 2 ] \
-        && echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}" \
-        && echoerr "Returns 0 if search_item is in bash_array, 1 if not." \
-        && return 1
+    if [[ $# -lt 2 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}"
+        echoerr "Returns 0 if search_item is in bash_array, 1 if not."
+        return 1
+    fi
+
     local i
     for i in "${@:2}"; do
         [[ "$i" == "$1" ]] && return 0
@@ -32,6 +34,11 @@ contains () {
 }
 
 choose () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \${BASH_ARRAY[@]}"
+        return 1
+    fi
+
     # Parse in an array and the user's selection will be echoed as a string
     local -a items=($@)
     local count choice
@@ -59,6 +66,11 @@ choose () {
 }
 
 choose_default () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \${BASH_ARRAY[@]}"
+        return 1
+    fi
+
     # ARGV[0] is the default value to be returned.
     # It does not have to exist in the array, that is the user's choice..
     local default=$1
@@ -106,10 +118,11 @@ generate_password () {
 }
 
 matches () {
-    [ $# -lt 2 ] \
-        && echoerr "Usage: ${FUNCNAME[0]} \$MATCH_ITEM \${BASH_ARRAY[@]}" \
-        && echoerr "Returns 0 if match_item matches any element of the array, 1 if not." \
-        && return 1
+    if [[ $# -lt 2 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \$MATCH_ITEM \${BASH_ARRAY[@]}"
+        echoerr "Returns 0 if match_item matches any element of the array, 1 if not."
+        return 1
+    fi
 
     local i
     for i in "${@:2}"; do
@@ -119,8 +132,12 @@ matches () {
 }
 
 prompt_boolean () {
-    local question="$1"
-    local default=${2-yes}
+    if [[ $# -lt 1 ]] || [[ ! ${1-} =~ ^yes|no$ ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \"QUESTION\" [yes|no]"
+    else
+        local question="${1}"
+        local default=${2-yes}
+    fi
 
     [[ ! ${default} =~ ^yes|no$ ]] \
         && echoerr "WARNING: Invalid default '${default}'" \
@@ -167,7 +184,7 @@ pipe_failure () {
     # Return true if a non-zero exit code was found
     #
     # if pipe_failure ${PIPESTATUS[@]}; then handle_error; fi
-    local -a pipestatus=($@)
+    local -a pipestatus=(${@-})
     local status
 
     for status in ${pipestatus[@]}; do
