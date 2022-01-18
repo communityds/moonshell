@@ -134,6 +134,7 @@ matches () {
 prompt_boolean () {
     if [[ $# -lt 1 ]] || [[ ! ${1-} =~ ^yes|no$ ]]; then
         echoerr "Usage: ${FUNCNAME[0]} \"QUESTION\" [yes|no]"
+        return 1
     else
         local question="${1}"
         local default=${2-yes}
