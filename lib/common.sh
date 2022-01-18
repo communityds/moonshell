@@ -132,7 +132,7 @@ matches () {
 }
 
 prompt_boolean () {
-    if [[ $# -lt 1 ]] || [[ ! ${1-} =~ ^yes|no$ ]]; then
+    if [[ $# -lt 1 ]] || [[ ${1-} =~ ^yes|no$ ]]; then
         echoerr "Usage: ${FUNCNAME[0]} \"QUESTION\" [yes|no]"
         return 1
     else
