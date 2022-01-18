@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# Upload an SSH public key for a named user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT \"SSH_PUBLIC_KEY\""
+    exit
+else
+    IAM_USER=$(echo -n ${1} | tr [:upper:] [:lower:])
+    SSH_KEY="${2}"
+fi
+
+if echo "${SSH_KEY}" | grep -q PRIVATE; then
+    echoerr "ERROR: Can not upload a private key"
+    exit 1
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "ERROR: User '${IAM_USER}' does not exist"
+    exit 1
+fi
+
+echoerr "INFO: Uploading SSH Key for '${IAM_USER}'"
+aws iam upload-ssh-public-key \
+    --region ${AWS_REGION} \
+    --user-name ${IAM_USER} \
+    --ssh-public-key-body "${SSH_KEY}"
+

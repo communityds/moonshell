@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# Get an SSH public key for a named user
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) USER_ACCOUNT KEY_ID"
+    exit
+else
+    IAM_USER=$(echo -n ${1} | tr [:upper:] [:lower:])
+    KEY_ID=$2
+fi
+
+if ! _iam_test_user ${IAM_USER}; then
+    echoerr "INFO: User '${IAM_USER}' does not exist"
+    exit 0
+fi
+
+ACTIVE_KEY_ID=$(iam-ssh-key-list ${IAM_USER} \
+    | jq -r ".[] | select(.Status == \"Active\") | select(.SSHPublicKeyId == \"${KEY_ID}\")")
+
+if [[ ${ACTIVE_KEY_ID-} ]]; then
+    echoerr "INFO: Getting '${IAM_USER}' SSH key: ${KEY_ID}"
+    aws iam get-ssh-public-key \
+        --region ${AWS_REGION} \
+        --user-name ${IAM_USER} \
+        --ssh-public-key-id ${KEY_ID} \
+        --encoding SSH \
+        | jq -r '.SSHPublicKey | select(.Status == "Active") | .SSHPublicKeyBody'
+else
+    echoerr "ERROR: Invalid or inactive key: ${KEY_ID}"
+    exit 1
+fi
+
