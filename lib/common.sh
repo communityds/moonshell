@@ -179,3 +179,21 @@ pipe_failure () {
     return 1
 }
 
+safe_source () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} BASH_LIBRARY"
+        return 0
+    else
+        local library="${1}"
+    fi
+
+
+    if [[ -f "${library}" ]]; then
+        echoerr "INFO: Safe source: ${library}"
+        source "${library}"
+    else
+        echoerr "WARNING: No file to source: ${library}"
+        return 0
+    fi
+}
+
