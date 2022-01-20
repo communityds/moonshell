@@ -91,11 +91,6 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
         | jq -r '.Certificates[] | select(.IsDefault == true) | .CertificateArn')
     echoerr "INFO: Found default certificate ARN: '${DEFAULT_CERTIFICATE}'"
 
-    if [[ ${DEFAULT_CERTIFICATE} == ${IAM_CERT_ARN} ]]; then
-        echoerr "ERROR: Can not replace a certificate with itself"
-        exit 1
-    fi
-
     echoerr "INFO: Setting default certificate"
     aws elbv2 modify-listener --listener-arn ${ELB_LISTENER_ARN} --certificates CertificateArn=${IAM_CERT_ARN}
 else
