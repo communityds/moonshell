@@ -70,7 +70,7 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
     elif [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
         # Try to find a Listener labelled as "https"
         for listener in ${ELB_LISTENERS[@]}; do
-            if [[ ${listener} =~ [HTTPS|https] ]]; then
+            if [[ ${listener} =~ HTTPS|https ]]; then
                 echoerr "INFO: Found HTTPS Listener: '${listener}'"
                 ELB_LISTENER=${listener}
             fi
