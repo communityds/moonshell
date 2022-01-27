@@ -228,7 +228,7 @@ s3_ls () {
         return 1
     fi
     local stack_name="$1"
-    local location="$(s3_path_sanitise ${2-})"
+    local location="$(s3_path_sanitise ${2-} 2>/dev/null)"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
     [[ -z ${s3_bucket_name-} ]] && return 1
