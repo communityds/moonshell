@@ -4,7 +4,7 @@
 #
 instance_public_ip () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} INSTANCE_ID"
+        echoerr "Usage: ${FUNCNAME[0]} INSTANCE_ID"
         return 1
     fi
     local instance_id="$1"
@@ -19,7 +19,7 @@ instance_public_ip () {
 
 instance_private_ip () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} INSTANCE_ID"
+        echoerr "Usage: ${FUNCNAME[0]} INSTANCE_ID"
         return 1
     fi
     local instance_id="$1"
@@ -34,7 +34,7 @@ instance_private_ip () {
 
 instances_running_ami () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_id="$1"

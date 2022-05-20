@@ -5,7 +5,7 @@
 
 kms_id_from_key () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} KMS_KEY"
+        echoerr "Usage: ${FUNCNAME[0]} KMS_KEY"
         return 1
     fi
     local key="$1"
@@ -93,7 +93,7 @@ kms_list_keys_detail () {
 
 kms_stack_key_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"

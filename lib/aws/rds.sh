@@ -4,7 +4,7 @@
 #
 rds_dump_db () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
         return 1
     fi
     local stack_name="$1"
@@ -24,7 +24,7 @@ rds_dump_db () {
 
 rds_engine_type () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -51,7 +51,7 @@ rds_engine_type () {
 
 rds_instance_select () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -93,7 +93,7 @@ rds_instance_select () {
 
 rds_list_dbs () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -110,7 +110,7 @@ rds_list_dbs () {
 
 rds_mysql_dump_db () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
         return 1
     fi
     local stack_name="$1"
@@ -139,7 +139,7 @@ rds_mysql_dump_db () {
 
 rds_mysql_list_dbs () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     stack_name="$1"
@@ -150,7 +150,7 @@ rds_mysql_list_dbs () {
 
 rds_mysql_restore_db () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
         return 1
     fi
     local stack_name="$1"
@@ -194,7 +194,7 @@ rds_postgres_dump_db () {
     # compressed or other format because we need to sed out some things that
     # SuperUser™ doesn't have access to do, like add a fucking comment...
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
         return 1
     fi
     local stack_name="$1"
@@ -217,7 +217,7 @@ rds_postgres_dump_db () {
 
 rds_postgres_grant () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
         return 1
     fi
     local stack_name="$1"
@@ -233,7 +233,7 @@ rds_postgres_grant () {
 
 rds_postgres_list_dbs () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -261,7 +261,7 @@ rds_postgres_restore_db () {
     # permissions after restoration. Once again GRANT and REVOKE must be
     # explicitly called.
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
         return 1
     fi
     local stack_name="$1"
@@ -309,7 +309,7 @@ rds_postgres_restore_db () {
 
 rds_postgres_revoke () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE"
         return 1
     fi
     local stack_name="$1"
@@ -325,7 +325,7 @@ rds_postgres_revoke () {
 
 rds_restore_db () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE IN_FILE"
         return 1
     fi
     local stack_name="$1"
@@ -346,7 +346,7 @@ rds_restore_db () {
 
 rds_slowlog () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME DUMP_FILE [INDEX]"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DUMP_FILE [INDEX]"
         return 1
     fi
     local stack_name="$1"
@@ -378,7 +378,7 @@ rds_slowlog () {
 
 rds_snapshot_create () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME SNAPSHOT_ID"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME SNAPSHOT_ID"
         return 1
     fi
     local stack_name="$1"
@@ -405,7 +405,7 @@ rds_snapshot_create () {
 
 rds_snapshot_delete () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} SNAPSHOT_ID"
+        echoerr "Usage: ${FUNCNAME[0]} SNAPSHOT_ID"
         return 1
     fi
     local snapshot_id="$1"
@@ -420,7 +420,7 @@ rds_snapshot_delete () {
 
 rds_snapshot_list () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -448,7 +448,7 @@ rds_snapshot_list () {
 
 rds_stack_resources () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"

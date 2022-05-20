@@ -4,7 +4,7 @@
 #
 vpc_id_from_stack_name () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -15,7 +15,7 @@ vpc_id_from_stack_name () {
 
 vpc_internal_hosted_zone_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local vpc_id="$1"
@@ -27,7 +27,7 @@ vpc_internal_hosted_zone_id () {
 
 vpc_peer_associate () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
         return 1
     fi
     # Create and accept a peering connection between two VPCs. The active
@@ -65,7 +65,7 @@ vpc_peer_associate () {
 
 vpc_peer_connection () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} REQUESTER_VPC_ID ACCEPTER_VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} REQUESTER_VPC_ID ACCEPTER_VPC_ID"
         return 1
     fi
     # Returns the name of the ${peering_connection}, if one exists. A VPC should
@@ -102,7 +102,7 @@ vpc_peer_connection () {
 
 vpc_peer_dissociate () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
         return 1
     fi
     # Delete an existing peering connection between two VPCs.
@@ -112,7 +112,7 @@ vpc_peer_dissociate () {
 
 vpc_peers_from_requester () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} VPC_ID"
         return 1
     fi
     local req_vpc_id="$1"
@@ -129,7 +129,7 @@ vpc_peers_from_requester () {
 
 vpc_peers_to_accepter () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} VPC_ID"
         return 1
     fi
     local acc_vpc_id="$1"

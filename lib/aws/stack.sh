@@ -4,7 +4,7 @@
 #
 stack_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -43,7 +43,7 @@ stack_list_all_parents () {
 
 stack_list_nested () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -66,7 +66,7 @@ stack_list_nested () {
 
 stack_list_others () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     # List every stack in an account, except the one we are administering..
@@ -82,7 +82,7 @@ stack_list_others () {
 
 stack_list_output () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -98,7 +98,7 @@ stack_list_output () {
 
 stack_list_parameter () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -114,7 +114,7 @@ stack_list_parameter () {
 
 stack_name_from_vpc_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} VPC_ID"
         return 1
     fi
     local vpc_id="$1"
@@ -136,7 +136,7 @@ stack_name_from_vpc_id () {
 
 stack_parameter_set () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME PARAM_KEY PARAM_VALUE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME PARAM_KEY PARAM_VALUE"
         return 1
     fi
     local stack_name="$1"
@@ -180,7 +180,7 @@ stack_parameter_set () {
 
 stack_resource_id () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
         return 1
     fi
     local stack_name="$1"
@@ -204,7 +204,7 @@ stack_resource_id () {
 
 stack_resource_type_id () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_TYPE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_TYPE"
         return 1
     fi
     local stack_name="$1"
@@ -229,7 +229,7 @@ alias stack_resource_type=stack_resource_type_id
 
 stack_resource_type_name () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_TYPE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE_TYPE"
         return 1
     fi
     local stack_name="$1"
@@ -262,7 +262,7 @@ stack_status_ok () {
 
 stack_value () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE PARAM"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE PARAM"
         return 1
     fi
     local stack_name="$1"
@@ -286,7 +286,7 @@ stack_value () {
 
 stack_value_input () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
         return 1
     fi
     local stack_name="$1"
@@ -298,7 +298,7 @@ stack_value_input () {
 
 stack_value_parameter () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
         return 1
     fi
     local stack_name="$1"
@@ -310,7 +310,7 @@ stack_value_parameter () {
 
 stack_value_output () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME RESOURCE"
         return 1
     fi
     local stack_name="$1"

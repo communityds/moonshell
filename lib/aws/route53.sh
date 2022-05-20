@@ -4,7 +4,7 @@
 #
 route53_change_resource_records () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID ACTION RESOURCE_RECORD"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID ACTION RESOURCE_RECORD"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -45,7 +45,7 @@ route53_change_resource_records () {
 
 route53_delete_records () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE [RESOURCE]"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE [RESOURCE]"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -66,7 +66,7 @@ route53_delete_records () {
 
 route53_delete_record_set () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE_RECORD"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE_RECORD"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -82,7 +82,7 @@ route53_delete_record_set () {
 
 route53_external_hosted_zone_name () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -93,7 +93,7 @@ route53_external_hosted_zone_name () {
 
 route53_external_hosted_zone_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -119,7 +119,7 @@ route53_external_hosted_zone_id () {
 
 route53_fqdn_from_host () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID HOST"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID HOST"
         return 1
     fi
     # Find the FQDN in a hosted_zone from just the host's name. This is for
@@ -137,7 +137,7 @@ route53_fqdn_from_host () {
 
 route53_get_resource_record () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -163,7 +163,7 @@ route53_get_resource_record () {
 
 route53_id_from_zone_name () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
         return 1
     fi
     local hosted_zone_name="$1"
@@ -185,7 +185,7 @@ route53_id_from_zone_name () {
 
 route53_internal_hosted_zone_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -196,7 +196,7 @@ route53_internal_hosted_zone_id () {
 
 route53_list_name () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_NAME"
         return 1
     fi
     local hosted_zone_name="$1"
@@ -223,7 +223,7 @@ route53_list_external () { return;}
 
 route53_list_host_records () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME HOSTED_ZONE_ID"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME HOSTED_ZONE_ID"
         return 1
     fi
     local stack_name="$1"
@@ -247,7 +247,7 @@ route53_list_hosted_zones () {
 
 route53_list_internal () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
         return 1
     fi
     local stack_name="$1"
@@ -274,7 +274,7 @@ route53_list_internal () {
 
 route53_list_type_records () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID TYPE"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID TYPE"
         return 1
     fi
     # Enumerate all ${type} records for a ${hosted_zone_id} and return an array
@@ -295,7 +295,7 @@ route53_list_type_records () {
 
 route53_vpc_associate () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -322,7 +322,7 @@ route53_vpc_associate () {
 
 route53_vpc_dissociate () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID VPC_ID"
         return 1
     fi
     local hosted_zone_id="$1"
@@ -349,7 +349,7 @@ route53_vpc_dissociate () {
 
 route53_zone_name_from_id () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
+        echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID"
         return 1
     fi
     local hosted_zone_id="$1"

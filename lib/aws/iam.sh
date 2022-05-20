@@ -5,7 +5,7 @@
 
 _iam_test_group () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_GROUP"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_GROUP"
         return 1
     fi
     local iam_group="$1"
@@ -23,7 +23,7 @@ _iam_test_group () {
 
 _iam_test_user () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -41,7 +41,7 @@ _iam_test_user () {
 
 iam_access_key_create () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -56,7 +56,7 @@ iam_access_key_create () {
 
 iam_access_key_delete () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER ACCESS_KEY_ID"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER ACCESS_KEY_ID"
         return 1
     fi
     local iam_user="$1"
@@ -75,7 +75,7 @@ iam_access_key_delete () {
 
 iam_access_key_list () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -112,7 +112,7 @@ iam_policy_list_customer () {
 
 iam_user_arn () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -125,7 +125,7 @@ iam_user_arn () {
 
 iam_user_create () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -140,7 +140,7 @@ iam_user_create () {
 
 iam_user_exists () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -152,7 +152,7 @@ iam_user_exists () {
 
 iam_user_group_add () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
         return 1
     fi
     local iam_user="$1"
@@ -170,7 +170,7 @@ iam_user_group_add () {
 
 iam_user_group_del () {
     if [[ $# -lt 2 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER IAM_GROUP"
         return 1
     fi
     local iam_user="$1"
@@ -188,7 +188,7 @@ iam_user_group_del () {
 
 iam_user_group_list () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -203,7 +203,7 @@ iam_user_group_list () {
 
 iam_user_mfa_devices () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -216,7 +216,7 @@ iam_user_mfa_devices () {
 
 iam_user_policies () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -229,7 +229,7 @@ iam_user_policies () {
 
 iam_user_ssc () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"
@@ -242,7 +242,7 @@ iam_user_ssc () {
 
 iam_user_ssh_keys () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} IAM_USER"
+        echoerr "Usage: ${FUNCNAME[0]} IAM_USER"
         return 1
     fi
     local iam_user="$1"

@@ -5,7 +5,7 @@
 
 sns_post () {
     if [[ $# -lt 3 ]] ;then
-        "Usage: ${FUNCNAME[0]} STACK_NAME \"SUBJECT\" \"MESSAGE\""
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME \"SUBJECT\" \"MESSAGE\""
         return 1
     fi
     local stack_name="$1"

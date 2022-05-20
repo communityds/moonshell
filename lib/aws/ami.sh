@@ -4,7 +4,7 @@
 #
 ami_describe_launch_permissions () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_id="$1"
@@ -20,7 +20,7 @@ ami_describe_launch_permissions () {
 
 ami_describe () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
         return 1
     fi
     local -a ami_ids=(${@})
@@ -35,7 +35,7 @@ ami_describe () {
 
 ami_deregister () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     # Deregisters an ${ami_id} and its associated EBS ${snapshot_id}
@@ -67,7 +67,7 @@ ami_deregister () {
 
 ami_export () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_id="$1"
@@ -102,7 +102,7 @@ ami_find_roles () {
 
 ami_info () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_id="$1"
@@ -133,7 +133,7 @@ ami_list_all () {
 
 ami_list_role () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_role="$1"
@@ -159,7 +159,7 @@ ami_list_role () {
 
 ami_list_sorted () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID [AMI_ID]"
         return 1
     fi
     local -a ami_ids=(${@})
@@ -175,7 +175,7 @@ ami_list_sorted () {
 
 ami_validate () {
     if [[ $# -lt 1 ]] ;then
-        "Usage: ${FUNCNAME[0]} AMI_ID"
+        echoerr "Usage: ${FUNCNAME[0]} AMI_ID"
         return 1
     fi
     local ami_id="$1"
