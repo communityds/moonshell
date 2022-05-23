@@ -21,6 +21,7 @@ sts_assume_role () {
 
     local role_arn role_output role_resource_id role_session_name
 
+    echoerr "INFO: Finding resource id for logical resource: ${role}"
     role_resource_id=$(stack_resource_id ${stack_name} ${role} 2>/dev/null)
 
     if [[ -z ${role_resource_id-} ]]; then
@@ -28,6 +29,7 @@ sts_assume_role () {
         return 1
     fi
 
+    echoerr "INFO: Finding ARN for logical resource: ${role_resource_id}"
     role_arn=$(aws iam list-roles --query "Roles[?RoleName=='${role_resource_id}'].Arn" --output text)
 
     if [[ -z ${role_arn-} ]]; then
@@ -37,6 +39,7 @@ sts_assume_role () {
 
     role_session_name="${USER}-${role}"
 
+    echoerr "INFO: Assuming role for session: ${role_session_name}"
     role_output=$(aws sts assume-role \
         --role-arn ${role_arn} \
         --role-session-name ${role_session_name})
