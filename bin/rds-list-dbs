@@ -10,8 +10,9 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 fi
+
+stack_name
 
 rds_list_dbs ${STACK_NAME}
 

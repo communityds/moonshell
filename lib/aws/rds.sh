@@ -43,7 +43,7 @@ rds_engine_type () {
         mariadb) echo "mysql";;
         postgres) echo "postgres";;
         *)
-            echoerr "ERROR: Unsupported engine type '${engine}'"
+            echoerr "ERROR: Unsupported engine type: ${engine}"
             return 1
         ;;
     esac
@@ -86,7 +86,7 @@ rds_instance_select () {
             return 0
         fi
     else
-        echoerr "ERROR: No RDS instances found in stack '${stack_name}'"
+        echoerr "ERROR: No RDS instances found in stack: ${stack_name}"
         return 1
     fi
 }
@@ -119,7 +119,7 @@ rds_mysql_dump_db () {
     local options="${4-}"
 
     local last_line
-    local mysql_opts="--complete-insert --disable-keys --single-transaction ${options-}"
+    local mysql_opts="--complete-insert --disable-keys --single-transaction --set-gtid-purged=OFF ${options-}"
 
     echoerr "INFO: Dumping ${database} to ${out_file}"
 
@@ -160,14 +160,14 @@ rds_mysql_restore_db () {
     local upload_file=$(basename ${in_file})
     local mysql_opts=" "
 
-    echoerr "INFO: Uploading file to $(bastion):/tmp/"
+    echoerr "INFO: Uploading file to: $(bastion):/tmp/"
     bastion_upload_file ${stack_name} ${in_file}
 
     echoerr "INFO: Recreating database: ${database}"
     bastion_exec_admin ${stack_name} \
         "mysql -e \"DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database};\""
 
-    echoerr "INFO: Restoring database from /tmp/${upload_file}"
+    echoerr "INFO: Restoring database from: /tmp/${upload_file}"
     bastion_exec_admin ${stack_name} \
         "zcat /tmp/${upload_file} \
             | mysql ${mysql_opts} ${database}; \
@@ -315,7 +315,7 @@ rds_postgres_revoke () {
     local stack_name="$1"
     local database="$2"
 
-    echoerr "INFO: Revoking ownership of ${database} from postgres"
+    echoerr "INFO: Revoking ownership from postres of: ${database}"
     bastion_exec_admin ${stack_name} \
         "psql -d ${database} -c \"
             REVOKE ${database}_app FROM postgres;
@@ -359,7 +359,7 @@ rds_slowlog () {
 
     local instance=$(rds_instance_select ${stack_name})
     [[ ${instance-} ]] \
-        && echoerr "INFO: Found DB instance '${instance}'" \
+        && echoerr "INFO: Found DB instance: ${instance}" \
         || return 1
 
     # There are other slowquery.log files available, but there is no apparent
@@ -436,7 +436,7 @@ rds_snapshot_list () {
         --query "DBSnapshots[?DBInstanceIdentifier=='${instance}'].DBSnapshotIdentifier" \
         --output text))
     [[ -z ${snapshots[@]-} ]] \
-        && echoerr "INFO: No snapshots found for DB instance '${instance}'" \
+        && echoerr "INFO: No snapshots found for DB instance: ${instance}" \
         && return 1
 
     for snapshot in ${snapshots[@]}; do
@@ -461,7 +461,6 @@ rds_stack_resources () {
         --query "StackSummaries[?StackName=='${stack_name}'].StackId" \
         --output text)
 
-    # Nested stacks are so hot right now.
     local nested_stacks=($(aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter ${stack_status_ok[@]} \
@@ -473,7 +472,7 @@ rds_stack_resources () {
         local -a db_instance_test
 
         for nested_stack in ${stack_name} ${nested_stacks[@]}; do
-            # squelch 'warning' output from testing a stack that does not have a DBInstance
+            # squelch 'warning' output from testing a stack which does not have a DBInstance
             db_instance_test=($(stack_resource_type_id ${nested_stack} "AWS::RDS::DBInstance" 2>/dev/null))
             if [[ ${#db_instance_test[@]} -gt 0 ]]; then
                 echo ${db_instance_test[@]}

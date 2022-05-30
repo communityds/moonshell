@@ -17,7 +17,7 @@ else
     TARGET_STACK_NAME=${2}
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 TARGET_VPC_ID=$(vpc_id_from_stack_name ${TARGET_STACK_NAME})
 

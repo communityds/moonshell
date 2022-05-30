@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+# STACK_NAME
+stack_name
+# STACK_TEMPLATE_BUCKET
+stack_template_bucket
+# STACK_TEMPLATE_BUCKET_SCHEME
+stack_template_bucket_scheme
+# STACK_TEMPLATE_FILE
+stack_template_file
+# STACK_PARAMETER_FILE
+stack_parameter_file
+
+if [[ ${STACK_TEMPLATE_BUCKET_SCHEME} =~ file ]]; then
+    TEMPLATE_SWITCH="--template-body"
+else
+    TEMPLATE_SWITCH="--template-url"
+fi
+
+START_SECONDS=$(date +%s)
+SLEEP_DELAY=15
+
+
+echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
+declare -A PARAMS
+stack_parameter_file_parse ${STACK_PARAMETER_FILE} PARAMS
+
+echoerr "INFO: Gathering existing parameters"
+STACK_PARAMETERS=($(aws cloudformation get-template-summary \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME}  \
+    | jq -r '.Parameters[].ParameterKey'))
+
+echoerr "INFO: Parsing parameters"
+for param in ${STACK_PARAMETERS[@]-}; do
+    if grep -q ${param} ${STACK_TEMPLATE_FILE}; then
+        if contains ${param} ${!PARAMS[@]}; then
+            PARAM_JSON+=",{\"ParameterKey\":\"${param}\",\"ParameterValue\":\"${PARAMS[$param]}\"}"
+        else
+            PARAM_JSON+=",{\"ParameterKey\":\"${param}\",\"UsePreviousValue\":true}"
+        fi
+    else
+        echoerr "INFO: Skipping removed parameter: ${param}"
+    fi
+done
+
+if prompt_no "Do you wish to update '${STACK_NAME}'?"; then
+    echoerr "INFO: Exiting on user request"
+    exit
+fi
+
+stack_template_upload
+
+echoerr "INFO: Updating: ${STACK_NAME}"
+# If when updating a stack the uploaded template does not precipitate change,
+# the return code is 255, so we have to test both the command and its output to
+# decipher if there is actually no change
+aws cloudformation update-stack \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    --parameters "[${PARAM_JSON#,}]" \
+    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3-${AWS_REGION}.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+    2>&1 \
+    | grep -q 'No updates are to be performed' \
+    | true
+STATUS=(${PIPESTATUS[@]})
+
+# If the first process exited 255
+# And the output from the command matched the very specific grep
+# Or the first process exited 0
+# Then, we're cool
+if [[ ${STATUS[0]} == 0 ]]; then
+    echoerr "INFO: Update triggered. Waiting for stack update to complete"
+elif [[ ${STATUS[0]} == 255 ]] && [[ ${STATUS[1]} == 0 ]]; then
+    echoerr "INFO: No updates are to be performed"
+    exit
+else
+    echoerr "ERROR: Failed to update stack '${STACK_NAME}'"
+    echoerr "INFO: Run with 'DEBUG=true' for more output"
+    exit ${STATUS[0]}
+fi
+
+echoerr "INFO: Waiting for stack update to complete"
+aws cloudformation wait \
+    stack-update-complete \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    &>/dev/null &
+
+WAIT_PID=$!
+
+until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
+    STACK_STATUS=$(stack_status ${STACK_NAME})
+    echoerr "INFO: Stack status: ${STACK_STATUS}"
+    sleep ${SLEEP_DELAY}
+done
+
+echoerr "INFO: $(basename $0) completed with status '$(stack_status ${STACK_NAME})' in '$(($(date +%s) - ${START_SECONDS}))' seconds"
+

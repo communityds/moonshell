@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+START_SECONDS=$(date +%s)
+SLEEP_DELAY=15
+
+
+#
+# Check for existing stack and a valid template
+#
+if ! aws cloudformation describe-stacks --region ${AWS_REGION} --stack-name ${STACK_NAME} &>/dev/null; then
+    echoerr "ERROR: Stack '${STACK_NAME}' does not exist"
+    exit 1
+fi
+
+STACK_STATUS=$(stack_status ${STACK_NAME})
+
+if contains ${STACK_STATUS} $(stack_status_ok); then
+    echoerr "INFO: Stack found in state '${STACK_STATUS}'"
+else
+    echoerr "WARNING: Stack '${STACK_NAME}' is not in an OK state '${STACK_STATUS}'"
+fi
+
+
+#
+# VPC Association
+#
+echoerr "INFO: Testing for active VPC associations"
+VPC_ID=$(stack_resource_type_id ${STACK_NAME} "AWS::EC2::VPC" || true)
+
+if [[ ${VPC_ID-} ]]; then
+    VPC_ACCEPTER_ID=($(vpc_peers_to_accepter ${VPC_ID}))
+    VPC_REQUESTER_ID=($(vpc_peers_from_requester ${VPC_ID}))
+
+    if [[ ${#VPC_ACCEPTER_ID[@]} -gt 0 ]] || [[ ${#VPC_REQUESTER_ID[@]} -gt 0 ]]; then
+        echoerr "ERROR: This stack's VPC '${VPC_ID}' is still associated with other stacks"
+        vpc-list-associations ${ENVIRONMENT}
+        exit 1
+    else
+        echoerr "INFO: No active VPC associations found"
+    fi
+else
+    echoerr "INFO: VPC not found"
+fi
+
+
+#
+# Test for and handle undeletable resources
+#
+echoerr "INFO: Searching for undeletable resources"
+for resource_type in AWS::S3::Bucket AWS::Route53::HostedZone; do
+    resource_id=$(stack_resource_type_id ${STACK_NAME} ${resource_type} || true)
+    if [[ ${resource_id-} ]]; then
+        echoerr "WARNING: Found undeletable ${resource_type} resource: '${resource_id}'"
+        RETAINED_RESOURCES+=(${resource_id})
+    fi
+    unset resource_id
+done
+
+if [[ ${RETAINED_RESOURCES[@]-} ]]; then
+    echoerr "WARNING: You must delete these resources yourself after stack deletion has failed"
+fi
+
+
+#
+# Test for Volumes and associated snapshots
+#
+echoerr "INFO: Searching for volumes and snapshots"
+VOLUME_RESOURCE_ID="$(stack_resource_type_id ${STACK_NAME} AWS::EC2::Volume || true)"
+if [[ ${VOLUME_RESOURCE_ID-} ]]; then
+    echoerr "INFO: Found volume '${VOLUME_RESOURCE_ID}'"
+    VOLUME_SNAPSHOT_IDS=($(aws ec2 describe-snapshots \
+        --region ${AWS_REGION} \
+        --filters Name=volume-id,Values=${VOLUME_RESOURCE_ID} \
+        --query "Snapshots[].SnapshotId" \
+        --output text))
+
+    if [[ ${#VOLUME_SNAPSHOT_IDS[@]} -gt 0 ]]; then
+        echoerr "INFO: Found snapshots for volume '${VOLUME_RESOURCE_ID}'"
+        if ! prompt_no "Do you wish to permanently delete all volume snapshots now?"; then
+            for snapshot_id in ${VOLUME_SNAPSHOT_IDS[@]}; do
+                echoerr "INFO: Deleting snapshot '${snapshot_id}'"
+                aws ec2 delete-snapshot \
+                    --region ${AWS_REGION} \
+                    --snapshot-id ${snapshot_id}
+            done
+        fi
+    else
+        echoerr "INFO: No snapshots found for volume '${VOLUME_RESOURCE_ID}'"
+    fi
+fi
+
+
+#
+# Point of No Return
+#
+if prompt_no "Are you really really sure you wish to completely delete the stack '${STACK_NAME}' from the '${AWS_ACCOUNT_NAME}' account?"; then
+    echoerr "INFO: Exiting on user request"
+    exit 1
+fi
+
+echoerr "INFO: Deleting '${STACK_NAME}'"
+aws cloudformation delete-stack \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    2>&1 \
+    | sed -e '/^$/d'
+
+
+echoerr "INFO: Waiting for stack create to complete for '${STACK_NAME}'"
+aws cloudformation wait stack-delete-complete \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    &>/dev/null &
+
+WAIT_PID=$!
+
+until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
+    STACK_STATUS=$(stack_status ${STACK_NAME})
+    echoerr "INFO: Stack status: ${STACK_STATUS}"
+    sleep ${SLEEP_DELAY}
+done
+
+echoerr "INFO: $(basename $0) completed in '$(($(date +%s) - ${START_SECONDS}))' seconds"
+

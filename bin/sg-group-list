@@ -12,7 +12,7 @@ else
     ENVIRONMENT=$1
 fi
 
-export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 echoerr "INFO: Finding all security group names in '${STACK_NAME}'"
 SECURITY_GROUPS=($(sg_group_list ${STACK_NAME}))

@@ -18,7 +18,7 @@ else
     OPTIONS=$*
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 case $EXE in
     s3-download)

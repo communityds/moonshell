@@ -14,7 +14,7 @@ else
     VERSION_ID=${3-}
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 s3_tag_delete ${STACK_NAME} "${S3_FILE}" "${VERSION_ID-}"
 

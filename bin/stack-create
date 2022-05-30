@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+# STACK_NAME
+stack_name
+# STACK_TEMPLATE_BUCKET
+stack_template_bucket
+# STACK_TEMPLATE_BUCKET_SCHEME
+stack_template_bucket_scheme
+# STACK_TEMPLATE_FILE
+stack_template_file
+# STACK_PARAMETER_FILE
+stack_parameter_file
+
+if [[ ${STACK_TEMPLATE_BUCKET_SCHEME} =~ file ]]; then
+    TEMPLATE_SWITCH="--template-body"
+else
+    TEMPLATE_SWITCH="--template-url"
+fi
+
+START_SECONDS=$(date +%s)
+SLEEP_DELAY=15
+
+echoerr "INFO: Parsing: ${PARAM_FILE}"
+declare -A PARAMS
+stack_parameter_file_parse ${PARAM_FILE} PARAMS
+
+
+#
+# Check for existing stack and a valid template
+#
+# see `aws cloudformation list-stacks help` for a list of statuses
+VALID_STATUSES=(DELETE_COMPLETE)
+
+if aws cloudformation describe-stacks --region ${AWS_REGION} --stack-name ${STACK_NAME} &>/dev/null; then
+    STACK_STATUS=$(stack_status ${STACK_NAME})
+
+    if [[ ${STACK_STATUS-} ]]; then
+        if contains ${STACK_STATUS} ${VALID_STATUSES[@]}; then
+            echoerr "WARNING: Stack found, but in status '${STACK_STATUS}', continuing"
+        else
+            echoerr "ERROR: Stack '${STACK_NAME}' is already created and is in state '${STACK_STATUS}'"
+            echoerr "INFO: Use 'stack-update' or 'stack-upgrade' instead"
+            exit 1
+        fi
+    fi
+fi
+
+stack_template_upload
+
+# This will exit non-zero if there are issues
+echoerr "INFO: Validating template"
+if ! aws cloudformation validate-template \
+    --region ${AWS_REGION} \
+    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/$(basename ${TEMPLATE_FILE}) &>/dev/null; then
+
+    echoerr "ERROR: Could not validate template"
+    aws cloudformation validate-template \
+        --region ${AWS_REGION} \
+        ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/$(basename ${TEMPLATE_FILE})
+fi
+
+
+#
+# Parse parameters and create stack
+#
+echoerr "INFO: Parsing parameters"
+for param in ${!PARAMS[@]}; do
+    PARAM_JSON+=",{\"ParameterKey\":\"${param}\",\"ParameterValue\":\"${PARAMS[$param]}\"}"
+done
+
+if prompt_no "Do you wish to create the '${STACK_NAME}' stack in the '${AWS_ACCOUNT_NAME}' account?"; then
+    echoerr "INFO: Exiting on user request"
+    exit
+fi
+
+echoerr "INFO: Creating  '${STACK_NAME}'"
+STACK_ID=$(aws cloudformation create-stack \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    --parameters "[${PARAM_JSON#,}]" \
+    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/$(basename ${TEMPLATE_FILE}) \
+    --template-body file://${TEMPLATE_FILE} \
+    --capabilities CAPABILITY_IAM \
+    --query "StackId" \
+    --output text \
+    2>&1 \
+    | sed -e '/^$/d')
+
+if [[ -z ${STACK_ID-} ]]; then
+    echoerr "ERROR: create-stack failed to return a stack ID"
+    echoerr "INFO: Run 'DEBUG=true $(basename $0)' for mor output"
+    exit 1
+elif [[ ! ${STACK_ID} =~ ^arn ]]; then
+    echoerr "ERROR: Failed to create stack"
+    echoerr "INFO: Returned message: '${STACK_ID}'"
+    exit 1
+fi
+
+echoerr "INFO: Waiting for stack create to complete for '${STACK_NAME}'"
+aws cloudformation wait stack-create-complete \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    &>/dev/null &
+
+WAIT_PID=$!
+
+until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
+    STACK_STATUS=$(stack_status ${STACK_NAME})
+    echoerr "INFO: Stack status: ${STACK_STATUS}"
+    sleep ${SLEEP_DELAY}
+done
+
+
+#
+# Validate stack post create
+#
+STACK_STATUS=$(stack_status_from_id ${STACK_ID})
+
+if ! contains ${STACK_STATUS} $(stack_status_ok); then
+    echoerr "ERROR: Stack '${STACK_NAME}' is in status '${STACK_STATUS}'"
+    exit 1
+else
+    echoerr "INFO: Stack '${STACK_NAME}' is in status '${STACK_STATUS}'"
+fi
+
+echoerr "INFO: $(basename $0) completed in '$(($(date +%s) - ${START_SECONDS}))' seconds"
+

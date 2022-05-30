@@ -10,10 +10,11 @@ if [[ $# -lt 3 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     S3_FILE=$2
     DESTINATION=$3
 fi
+
+stack_name
 
 VERSION_TIMESTAMPS=($(s3_file_versions ${STACK_NAME} "${S3_FILE}"))
 

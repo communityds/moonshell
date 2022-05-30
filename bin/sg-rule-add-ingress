@@ -35,7 +35,7 @@ else
     CIDR=$5
 fi
 
-export STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 
 #

@@ -14,7 +14,7 @@ sns_post () {
 
     local notification_arn=$(stack_value_output ${stack_name} NotificationTopicArn)
 
-    echoerr "INFO: Publishing to '${notification_arn}'"
+    echoerr "INFO: Publishing to: ${notification_arn}"
     aws sns publish \
         --topic-arn ${notification_arn} \
         --region ${AWS_REGION} \

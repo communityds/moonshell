@@ -13,7 +13,7 @@ bash_rc_file () {
         Linux) echo ".bashrc";;
         Darwin) echo ".bash_profile";;
         *)
-            echoerr "ERROR: Unsupported system '${uname}'"
+            echoerr "ERROR: Unsupported system: ${uname}"
             return 1
         ;;
     esac
@@ -53,14 +53,14 @@ choose () {
 
     if [[ ${REPLY-} =~ ^[0-9]+$ ]]; then
         if [[ -z ${items[$REPLY]-} ]]; then
-            echoerr "ERROR: Choice '${REPLY}' is invalid."
+            echoerr "ERROR: Choice is invalid: ${REPLY}"
             return 1
         else
             echo "${items[$REPLY]}"
             return 0
         fi
     else
-        echoerr "ERROR: Choice '${REPLY-}' is not numeric"
+        echoerr "ERROR: Choice is not numeric: ${REPLY-}"
         return 1
     fi
 }
@@ -88,7 +88,7 @@ choose_default () {
 
     if [[ ${REPLY-} =~ ^[0-9]+$ ]]; then
         if [[ -z ${items[$REPLY]-} ]]; then
-            echoerr "ERROR: Choice '${REPLY}' is invalid."
+            echoerr "ERROR: Choice is invalid: ${REPLY}"
             return 1
         else
             echo "${items[$REPLY]}"
@@ -141,7 +141,7 @@ prompt_boolean () {
     fi
 
     [[ ! ${default} =~ ^yes|no$ ]] \
-        && echoerr "WARNING: Invalid default '${default}'" \
+        && echoerr "WARNING: Invalid default: ${default}" \
         && echoerr "INFO: Assuming default of 'yes'" \
         && default=yes
 
@@ -165,8 +165,8 @@ prompt_boolean () {
             && return 0 \
             || return 1
     else
-        echoerr "WARNING: Invalid option '${REPLY}'"
-        echoerr "INFO: Assuming '${default}'"
+        echoerr "WARNING: Invalid option: ${REPLY}"
+        echoerr "INFO: Assuming: ${default}"
         return 0
     fi
 }

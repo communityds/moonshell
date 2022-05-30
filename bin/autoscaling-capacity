@@ -24,7 +24,7 @@ else
     DESIRED_CAPACITY=${3:-1}
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 echoerr "INFO: Finding all ASGs for stack '${STACK_NAME}'"
 AUTO_SCALING_GROUPS=($(stack_resource_type_id ${STACK_NAME} "AWS::AutoScaling::AutoScalingGroup"))

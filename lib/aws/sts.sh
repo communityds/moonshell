@@ -21,7 +21,7 @@ sts_assume_role () {
 
     local role_arn role_output role_resource_id role_session_name
 
-    role_resource_id=$(stack_resource_id ${stack_name} ${role} &>/dev/null)
+    role_resource_id=$(stack_resource_id ${stack_name} ${role} 2>/dev/null)
 
     if [[ -z ${role_resource_id-} ]]; then
         echoerr "ERROR: Can not find logical resource: ${role}"
@@ -54,4 +54,3 @@ sts_assume_role () {
 
     unset role_output
 }
-alias sts-assume-role=sts_assume_role

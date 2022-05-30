@@ -16,7 +16,7 @@ else
     OPTIONS=$*
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
 s3_mv ${STACK_NAME} "${SOURCE}" "${DESTINATION}" ${OPTIONS-}
 

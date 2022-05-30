@@ -7,6 +7,20 @@ source $(dirname $0)/../moon.sh
 
 BASENAME=$(basename $0)
 
+ACTION=${BASENAME##*-}
+ACTIONS=(list show)
+if ! contains ${ACTION} ${ACTIONS[@]}; then
+    echoerr "FATAL: Unsupported action: ${ACTION}"
+    exit 255
+fi
+
+COMPONENT=$(echo ${BASENAME%-*} | sed -e 's/stack-//')
+COMPONENTS=(output parameter)
+if ! contains ${COMPONENT} ${COMPONENTS[@]}; then
+    echoerr "FATAL: Unsupported component: ${COMPONENT}"
+    exit 255
+fi
+
 if [[ $# -lt 1 ]]; then
     echoerr "Usage: ${BASENAME} ENVIRONMENT"
     exit
@@ -14,15 +28,20 @@ else
     export ENVIRONMENT=$1
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 
-COMPONENTS=(output parameter)
-COMPONENT=$(echo ${BASENAME} | sed -e 's/stack-//' -e 's/-list//')
+STACK_JSON="$(stack_${COMPONENT}s ${STACK_NAME})"
 
-if ! contains ${COMPONENT} ${COMPONENTS[@]}; then
-    echoerr "FATAL: Unsupported option '${COMPONENT}'"
-    exit 255
-fi
+KEYS=($(printf "${STACK_JSON}" | jq -r ".[].${COMPONENT^}Key"))
 
-stack_list_${COMPONENT} ${STACK_NAME}
+for key in ${KEYS[@]}; do
+    if [[ ${ACTION} == "list" ]]; then
+        echo ${key}
+    else
+        echo "${key}%%\"$(printf "${STACK_JSON}" | jq -r ".[] | select(.${COMPONENT^}Key == \"${key}\") | .${COMPONENT^}Value")\""
+    fi
+done \
+    | column --table --separator %%
+
+
 

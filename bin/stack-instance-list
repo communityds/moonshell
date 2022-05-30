@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+
+AUTOSCALING_GROUPS=($(stack_resource_type_id ${STACK_NAME} "AWS::AutoScaling::AutoScalingGroup"))
+
+for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
+    autoscaling_group_json=$(aws autoscaling describe-auto-scaling-groups \
+        --auto-scaling-group-names ${autoscaling_group})
+
+    echoerr "INFO: AutoScalingGroupName:  $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].AutoScalingGroupName')"
+    echoerr "INFO: MinSize:               $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].MinSize')"
+    echoerr "INFO: MaxSize:               $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].MaxSize')"
+    echoerr "INFO: DesiredCapacity:       $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].DesiredCapacity')"
+    echoerr "INFO: LoadBalancerNames:     $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LoadBalancerNames[]')"
+
+    instance_ids=($(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].Instances[].InstanceId'))
+
+    instances_json=$(aws ec2 describe-instances \
+        --instance-ids ${instance_ids[@]} \
+        --query "Reservations[].Instances[]")
+
+    for instance_id in ${instance_ids[@]}; do
+        instance_json=$(echo ${instances_json} | jq ".[] | select(.InstanceId == \"${instance_id}\")")
+        instance_asg_json=$(echo ${autoscaling_group_json} | jq ".AutoScalingGroups[].Instances[] | select(.InstanceId == \"${instance_id}\")")
+
+        echoerr "INFO:     InstanceId:              ${instance_id}"
+        echoerr "INFO:          PrivateIpAddress:        $(echo ${instance_json} | jq -r '.PrivateIpAddress')"
+        echoerr "INFO:          PublicIpAddress:         $(echo ${instance_json} | jq -r '.PublicIpAddress')"
+        echoerr "INFO:          ImageId:                 $(echo ${instance_json} | jq -r '.ImageId')"
+        echoerr "INFO:          InstanceType:            $(echo ${instance_asg_json} | jq -r '.InstanceType')"
+        echoerr "INFO:          AvailabilityZone:        $(echo ${instance_asg_json} | jq -r '.AvailabilityZone')"
+        echoerr "INFO:          LifecycleState:          $(echo ${instance_asg_json} | jq -r '.LifecycleState')"
+        echoerr "INFO:          HealthStatus:            $(echo ${instance_asg_json} | jq -r '.HealthStatus')"
+        # An instance does not always have a LaunchConfiguration
+        echoerr "INFO:          LaunchConfigurationName: $(echo ${instance_asg_json} | jq -r '.LaunchConfigurationName' 2>/dev/null)"
+    done
+
+    if [[ ${#AUTOSCALING_GROUPS[@]} -gt 1 ]] && [[ ! ${autoscaling_group} == ${AUTOSCALING_GROUPS[-1]} ]]; then
+        echoerr "INFO:"
+    fi
+done

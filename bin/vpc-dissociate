@@ -30,7 +30,7 @@ if [[ $# -lt 1 ]]; then
 else
     export ENVIRONMENT=$1
     export TARGET_STACK_NAME=${2-}
-    export SELF_STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+    export SELF_STACK_NAME=$(stack_name)
 fi
 
 #

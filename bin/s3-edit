@@ -17,7 +17,7 @@ else
     FILE_PATH="$(s3_path_sanitise ${2})"
 fi
 
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 
 [[ -z ${S3_BUCKET-} ]] \

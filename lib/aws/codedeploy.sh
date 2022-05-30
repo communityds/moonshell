@@ -28,18 +28,18 @@ codedeploy_overlay () {
         | jq -r '.deployments[0]')
 
     if [[ ! -d "${deployment_base}/${deployment_id}" ]]; then
-        echoerr "WARNING: Preferred deployment path does not exist '${deployment_base}/${deployment_id}'"
+        echoerr "WARNING: Preferred deployment path does not exist: ${deployment_base}/${deployment_id}"
         local test_deployment_id=$(ls -t1 ${deployment_base} | head -n1)
 
         if [[ -z ${test_deployment_id-} ]]; then
             echoerr "ERROR: Codedeploy has not succeeded"
             return 1
         else
-            echoerr "INFO: Found alternate deployment '${test_deployment_id}'"
+            echoerr "INFO: Found alternate deployment: ${test_deployment_id}"
             local deployment_path="${deployment_base}/${test_deployment_id}/deployment-archive"
         fi
     else
-        echoerr "INFO: Found preferred deployment '${deployment_id}'"
+        echoerr "INFO: Found preferred deployment: ${deployment_id}"
         local deployment_path="${deployment_base}/${deployment_id}/deployment-archive"
     fi
 
@@ -47,7 +47,7 @@ codedeploy_overlay () {
         echoerr "ERROR: Deployment has not completed"
         return 1
     else
-        echoerr "INFO: Overlaying deployment path '${deployment_path}'"
+        echoerr "INFO: Overlaying deployment path: ${deployment_path}"
         overlay_dir ${deployment_path}
     fi
 }

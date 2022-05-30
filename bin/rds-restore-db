@@ -10,10 +10,11 @@ if [[ $# -lt 3 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
     DATABASE=$2
     IN_FILE=$3
 fi
+
+stack_name
 
 rds_restore_db ${STACK_NAME} ${DATABASE} ${IN_FILE}
 

@@ -14,7 +14,7 @@ else
 fi
 
 echoerr "INFO: Setting variables"
-STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
+stack_name
 export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 
 echoerr "INFO: Gathering all versions of '${S3_FILE}'"
