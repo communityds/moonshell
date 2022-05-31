@@ -382,10 +382,16 @@ stack_template_upload () {
     stack_template_bucket
     stack_template_file
 
-    echoerr "INFO: Uploading templates: ${STACK_TEMPLATE_FILE}"
+    local template_dir="$(dirname ${STACK_TEMPLATE_FILE})"
+    if [[ -z ${template_dir-} ]] || [[ ! -d ${template_dir} ]]; then
+        echoerr "FATAL: Can not resolve the directory from: ${STACK_TEMPLATE_FILE}"
+        return 255
+    fi
+
+    echoerr "INFO: Uploading templates from: ${template_dir}"
     aws s3 sync \
         --delete \
-        $(dirname ${STACK_TEMPLATE_FILE})/ \
+        ${template_dir}/ \
         s3://${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/
 }
 
