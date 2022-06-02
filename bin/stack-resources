@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+
+echoerr "INFO: Describing stack resources for: ${STACK_NAME}"
+aws cloudformation describe-stack-resources \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    | jq -r '.StackResources[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
+    | column --table
+
