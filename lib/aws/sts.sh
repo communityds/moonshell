@@ -53,5 +53,7 @@ sts_assume_role () {
     export AWS_SECRET_ACCESS_KEY=$(echo ${role_output} | jq -r '.Credentials.SecretAccessKey')
     export AWS_SESSION_TOKEN=$(echo ${role_output} | jq -r '.Credentials.SessionToken')
 
+    echoerr "INFO: Assumed role of: ${AWS_ASSUMED_ROLE_USER_ARN}"
+
     unset role_output
 }
