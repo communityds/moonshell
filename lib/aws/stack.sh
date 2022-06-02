@@ -389,8 +389,10 @@ stack_template_upload () {
     fi
 
     echoerr "INFO: Uploading templates from: ${template_dir}"
+    # TODO Remove the exclude once Moonshot is fully removed
     aws s3 sync \
         --delete \
+        --exclude "params/*" \
         ${template_dir}/ \
         s3://${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/
 }
