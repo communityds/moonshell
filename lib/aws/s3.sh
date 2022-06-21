@@ -144,8 +144,6 @@ s3_get_delete_markers () {
         --bucket ${s3_bucket_name} \
         --prefix "${s3_prefix-}" \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" 2>/dev/null
-
-    return ${PIPESTATUS[0]}
 }
 
 s3_get_file_version () {
@@ -206,8 +204,6 @@ s3_get_versions () {
         --bucket ${s3_bucket_name} \
         --prefix "${prefix}" \
         --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" 2>/dev/null
-
-    return ${PIPESTATUS[0]}
 }
 
 s3_ls () {
