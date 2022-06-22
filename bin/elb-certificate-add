@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+#
+# This script adds or deletes a certificate to or from an ELBv2 listener
+#
+
+source $(dirname $0)/../moon.sh
+
+BASENAME=$(basename $0)
+
+ACTION=${BASENAME##*-}
+ACTIONS=(add delete)
+if ! contains ${ACTION} ${ACTIONS[@]}; then
+    echoerr "FATAL: Unsupported action: ${ACTION}"
+    exit 255
+fi
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT [CERTIFICATE_NAME]"
+    exit 0
+else
+    ENVIRONMENT=$1
+    IAM_CERT_NAME=${2-}
+fi
+
+stack_name
+
+echoerr "INFO: Enumerating available server certificates"
+IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
+    --query "ServerCertificateMetadataList[].ServerCertificateName" \
+    --output text))
+
+[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
+    && echoerr "ERROR: Could not find any server certificates.." \
+    && exit 1
+
+if [[ ${IAM_CERT_NAME-} ]]; then
+    if ! contains ${IAM_CERT_NAME} ${IAM_SERVER_CERTIFICATES[@]}; then
+        echoerr "ERROR: Certificate '${IAM_CERT_NAME}' does not exist"
+        exit 1
+    fi
+else
+    echo "Choose a certificate to use:"
+    IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+fi
+
+if [[ ${ACTION} == add ]]; then
+    echoerr "INFO: Outputting certificate details:"
+    iam-certificate-details ${IAM_CERT_NAME}
+fi
+
+echoerr "INFO: Querying certificate ARN"
+IAM_CERT_ARN="$(aws iam list-server-certificates \
+    --region ${AWS_REGION} \
+    --query "ServerCertificateMetadataList[?ServerCertificateName=='${IAM_CERT_NAME}'].Arn" \
+    --output text)"
+echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
+
+echoerr "INFO: Finding stack resources"
+STACK_RESOURCES_JSON=$(aws cloudformation list-stack-resources \
+    --region ${AWS_REGION} \
+    --stack-name "${STACK_NAME}" \
+    --query "StackResourceSummaries[]")
+STACK_RESOURCE_TYPES=($(echo ${STACK_RESOURCES_JSON} \
+    | jq -r '.[].ResourceType'))
+
+if ! contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}; then
+    echoerr "ERROR: ${BASENAME} is only for V2 load balancers"
+    exit 1
+fi
+
+echoerr "INFO: Finding Listeners to update"
+ELB_LISTENERS=($(echo ${STACK_RESOURCES_JSON} | jq -r '.[] | select(.ResourceType == "AWS::ElasticLoadBalancingV2::Listener") | .LogicalResourceId'))
+
+if [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
+    # Try to find a Listener labelled as "https"
+    for listener in ${ELB_LISTENERS[@]}; do
+        if [[ ${listener} =~ HTTPS|https ]]; then
+            echoerr "INFO: Found HTTPS Listener: '${listener}'"
+            ELB_LISTENER=${listener}
+            break
+        fi
+    done
+    if [[ -z ${ELB_LISTENER-} ]]; then
+        echoerr "Choose the Listener to update:" \
+        ELB_LISTENER=$(choose ${ELB_LISTENERS[@]})
+    fi
+else
+    echoerr "INFO: Using default Listener"
+    ELB_LISTENER=${ELB_LISTENERS}
+fi
+
+ELB_LISTENER_ARN=$(echo ${STACK_RESOURCES_JSON} | jq -r ".[] | select(.LogicalResourceId == \"${ELB_LISTENER}\") | .PhysicalResourceId")
+echoerr "INFO: Listener ARN: '${ELB_LISTENER_ARN}'"
+
+if [[ ${ACTION} == add ]]; then
+    echoerr "INFO: Adding a non-default certificate"
+    aws elbv2 add-listener-certificates \
+        --listener-arn ${ELB_LISTENER_ARN} \
+        --certificates CertificateArn=${IAM_CERT_ARN}
+elif [[ ${ACTION} == delete ]]; then
+    echoerr "INFO: Removing certificate"
+    aws elbv2 remove-listener-certificates \
+        --listener-arn ${ELB_LISTENER_ARN} \
+        --certificates CertificateArn=${IAM_CERT_ARN}
+fi
+
