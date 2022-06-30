@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# This script sets an ELB with a previously uploaded server certificate
+# This script updates the default certificate for an ELB
 #
 
 source $(dirname $0)/../moon.sh

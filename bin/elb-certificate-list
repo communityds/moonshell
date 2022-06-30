@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# This script lists the ARN of all certificates on an ELB
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit 0
+else
+    ENVIRONMENT=$1
+fi
+
+stack_name
+
+echoerr "INFO: Finding stack resources"
+STACK_RESOURCES_JSON=$(aws cloudformation list-stack-resources \
+    --region ${AWS_REGION} \
+    --stack-name "${STACK_NAME}" \
+    --query "StackResourceSummaries[]")
+STACK_RESOURCE_TYPES=($(echo ${STACK_RESOURCES_JSON} \
+    | jq -r '.[].ResourceType'))
+
+# ELB or ELBv2?
+if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}; then
+    echoerr "INFO: Finding Listeners"
+    ELB_LISTENERS=($(echo ${STACK_RESOURCES_JSON} | jq -r '.[] | select(.ResourceType == "AWS::ElasticLoadBalancingV2::Listener") | .LogicalResourceId'))
+
+    if [[ ${ELB_LOGICAL_ID-} ]]; then
+        if contains ${ELB_LOGICAL_ID} ${ELB_LISTENERS[@]-} 2>/dev/null; then
+            echoerr "INFO: Found defined Listener"
+            ELB_LISTENER=${ELB_LOGICAL_ID}
+        else
+            echoerr "ERROR: Listener '${ELB_LOGICAL_ID}' is not a resource of '${STACK_NAME}'"
+            exit 1
+        fi
+    elif [[ ${#ELB_LISTENERS[@]} -gt 1 ]]; then
+        # Try to find a Listener labelled as "https"
+        for listener in ${ELB_LISTENERS[@]}; do
+            if [[ ${listener} =~ HTTPS|https ]]; then
+                ELB_LISTENER=${listener}
+                break
+            fi
+        done
+        if [[ -z ${ELB_LISTENER-} ]]; then
+            echoerr "Choose the Listener to update:" \
+            ELB_LISTENER=$(choose ${ELB_LISTENERS[@]})
+        fi
+    else
+        echoerr "INFO: Using default Listener"
+        ELB_LISTENER=${ELB_LISTENERS}
+    fi
+
+    ELB_LISTENER_ARN=$(echo ${STACK_RESOURCES_JSON} | jq -r ".[] | select(.LogicalResourceId == \"${ELB_LISTENER}\") | .PhysicalResourceId")
+
+    echoerr "INFO: Listing certificates"
+    aws elbv2 describe-listener-certificates --listener-arn ${ELB_LISTENER_ARN} \
+        | jq -r '.Certificates[].CertificateArn'
+else
+    STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
+    echoerr "INFO: Listing certificates"
+    aws elb describe-load-balancers \
+        --region ${AWS_REGION} \
+        --load-balancer-names ${STACK_ELBS[@]} \
+        | jq -r ".LoadBalancerDescriptions[].ListenerDescriptions[] | select(.Listener.Protocol == \"HTTPS\") | .Listener.SSLCertificateId"
+fi
+
