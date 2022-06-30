@@ -2,6 +2,19 @@
 #
 # STACK FUNCTIONS
 #
+_stack_codedeploy_changed_files () {
+    if [[ $# -lt 2 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} GIT_COMMIT GIT_COMMIT"
+        return 1
+    fi
+    local commit_1="$1"
+    local commit_2="$2"
+
+    git diff-tree --no-commit-id --name-only -r ${commit_1} ${commit_2} \
+        | grep -E "^codedeploy/" \
+        || true
+}
+
 stack_id () {
     if [[ $# -lt 1 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
@@ -395,6 +408,20 @@ stack_template_upload () {
         --exclude "params/*" \
         ${template_dir}/ \
         s3://${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/
+}
+
+_stack_update_changed_files () {
+    if [[ $# -lt 2 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} GIT_COMMIT GIT_COMMIT"
+        return 1
+    fi
+    local commit_1="$1"
+    local commit_2="$2"
+
+    # TODO Remove Moonshot things
+    git diff-tree --no-commit-id --name-only -r ${commit_1} ${commit_2} \
+        | grep -E "^(Moonfile.rb|moonshot/(template.yml|nest.*yml|params/${ENVIRONMENT}.yml)|moonshell/(${ENVIRONMENT}.sh|moonshell.sh|templates/))" \
+        || true
 }
 
 stack_value () {
