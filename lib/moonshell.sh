@@ -3,10 +3,6 @@
 # MOONSHELL FUNCTIONS
 #
 
-# 'moonshell' is a tab completion conflict with 'moonshot' and it's rare that a
-# person should need to use this function during their every day, but it is a
-# nice to have for when you are developing it. In the mean time, however, we
-# 'hide' it as '_moonshell' to not impact functionality and use.
 _moonshell () {
     local options=($@)
     [[ -z ${options} ]] \

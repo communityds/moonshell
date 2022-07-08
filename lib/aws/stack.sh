@@ -402,10 +402,8 @@ stack_template_upload () {
     fi
 
     echoerr "INFO: Uploading templates from: ${template_dir}"
-    # TODO Remove the exclude once Moonshot is fully removed
     aws s3 sync \
         --delete \
-        --exclude "params/*" \
         ${template_dir}/ \
         s3://${STACK_TEMPLATE_BUCKET}/${STACK_NAME}/
 }
@@ -418,9 +416,8 @@ _stack_update_changed_files () {
     local commit_1="$1"
     local commit_2="$2"
 
-    # TODO Remove Moonshot things
     git diff-tree --no-commit-id --name-only -r ${commit_1} ${commit_2} \
-        | grep -E "^(Moonfile.rb|moonshot/(template.yml|nest.*yml|params/${ENVIRONMENT}.yml)|moonshell/(${ENVIRONMENT}.sh|moonshell.sh|templates/))" \
+        | grep -E "^moonshell/(${ENVIRONMENT}.sh|moonshell.sh|templates/)" \
         || true
 }
 

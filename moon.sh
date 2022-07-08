@@ -141,15 +141,8 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
             echoerr "ERROR: APP_NAME may only contain alpha-numeric characters and underscores"
             exit 1
         fi
-    # TODO Remove Moonfile.rb once fully deprecated
-    elif [[ -f ${PWD}/Moonfile.rb ]]; then
-        export APP_NAME=$(grep app_name Moonfile.rb | tr -d "'" | awk '{print $NF}')
-        if [[ ! ${APP_NAME} =~ ^[a-z0-9A-Z_]*$ ]]; then
-            echoerr "ERROR: APP_NAME may only contain alpha-numeric characters and underscores"
-            exit 1
-        fi
     else
-        echoerr "ERROR: Moonfile is not present in '${PWD}'"
+        echoerr "ERROR: Can not find: moonshell/moonshell.sh"
         exit 1
     fi
 
