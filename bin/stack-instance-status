@@ -29,10 +29,10 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
     instance_ids=($(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].Instances[].InstanceId'))
 
     instances_json=$(aws ec2 describe-instances \
-        --instance-ids ${instance_ids[@]} \
+        --instance-ids ${instance_ids[@]-} \
         --query "Reservations[].Instances[]")
 
-    for instance_id in ${instance_ids[@]}; do
+    for instance_id in ${instance_ids[@]-}; do
         instance_json=$(echo ${instances_json} | jq ".[] | select(.InstanceId == \"${instance_id}\")")
         instance_asg_json=$(echo ${autoscaling_group_json} | jq ".AutoScalingGroups[].Instances[] | select(.InstanceId == \"${instance_id}\")")
 
