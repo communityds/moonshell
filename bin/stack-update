@@ -103,10 +103,16 @@ aws cloudformation wait \
 WAIT_PID=$!
 
 until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
+    sleep ${SLEEP_DELAY}
     STACK_STATUS=$(stack_status ${STACK_NAME})
     echoerr "INFO: Stack status: ${STACK_STATUS}"
-    sleep ${SLEEP_DELAY}
 done
 
+if [[ ! ${STACK_STATUS} == "UPDATE_COMPLETE" ]]; then
+    echoerr "WARNING: Stack did not update successfully"
+    EXIT=1
+fi
+
 echoerr "INFO: $(basename $0) completed with status '$(stack_status ${STACK_NAME})' in '$(($(date +%s) - ${START_SECONDS}))' seconds"
+exit ${EXIT-0}
 
