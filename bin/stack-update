@@ -30,7 +30,7 @@ else
 fi
 
 START_SECONDS=$(date +%s)
-SLEEP_DELAY=15
+SLEEP_DELAY=10
 
 
 echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
