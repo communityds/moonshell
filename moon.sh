@@ -111,9 +111,13 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # we appropriate it here. We make the assumption that your bastion hosts,
     # as defined in ~/.ssh/config, follow the naming convention of
     # "bastion-${AWS_ACCOUNT_NAME}"
-    [[ -z ${AWS_ACCOUNT_NAME-} ]] \
-        && echoerr "ERROR: Unset variable: AWS_ACCOUNT_NAME" \
-        && exit 1
+    if [[ -z ${AWS_ACCOUNT_NAME-} ]] || [[ ! ${AWS_ACCOUNT_NAME} == false  ]]; then
+        INSTANCE_URL="http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance"
+        if [[ -z ${AWS_ACCESS_KEY_ID-} ]] && ! curl -s ${INSTANCE_URL} | grep -q AccessKeyId; then
+            echoerr "ERROR: Can not locate credentials"
+            exit 1
+        fi
+    fi
 
     # AWS_REGION is required by the majority of AWS cli commands, so we should
     # set a default.
