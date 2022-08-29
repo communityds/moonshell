@@ -14,10 +14,30 @@ fi
 
 stack_name
 
-echoerr "INFO: Describing stack resources for: ${STACK_NAME}"
-aws cloudformation describe-stack-resources \
-    --region ${AWS_REGION} \
-    --stack-name ${STACK_NAME} \
-    | jq -r '.StackResources[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
-    | column --table
+echoerr "INFO: Finding stack: ${STACK_NAME}"
+STACKS_JSON=$(aws cloudformation list-stacks)
+
+PARENT_STACK=$(echo ${STACKS_JSON} \
+    | jq -r ".StackSummaries[] | select(.StackName == \"${STACK_NAME}\")")
+PARENT_STACK_ID=$(echo ${PARENT_STACK} \
+    | jq -r ".StackId")
+
+echoerr "INFO: Finding child stacks"
+CHILD_STACKS=$(echo ${STACKS_JSON} \
+    | jq -r ".StackSummaries[] | select(.ParentId == \"${PARENT_STACK_ID}\")")
+CHILD_STACK_NAMES=($(echo ${CHILD_STACKS} \
+    | jq -r ".StackName"))
+
+for stack_name in ${STACK_NAME} ${CHILD_STACK_NAMES[@]-}; do
+    echoerr "INFO: Describing stack resources for: ${stack_name}"
+    aws cloudformation describe-stack-resources \
+        --region ${AWS_REGION} \
+        --stack-name ${stack_name} \
+        | jq -r '.StackResources[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
+        | column --table
+
+    if [[ ${CHILD_STACK_NAMES-} ]] && [[ ! ${stack_name} == ${CHILD_STACK_NAMES[-1]} ]]; then
+        echoerr
+    fi
+done
 
