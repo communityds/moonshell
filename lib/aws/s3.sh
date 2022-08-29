@@ -263,8 +263,8 @@ s3_path_sanitise () {
 }
 
 s3_purge_versions () {
-    if [[ $# -lt 2 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET PREFIX"
+    if [[ $# -lt 1 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET [PREFIX]"
         return 1
     fi
     # Iterate over all versions of all objects inside ${s3_bucket_name} and
