@@ -30,8 +30,9 @@ if [[ $# -lt 1 ]]; then
 else
     export ENVIRONMENT=$1
     export TARGET_STACK_NAME=${2-}
-    export SELF_STACK_NAME=$(stack_name)
 fi
+
+stack_name
 
 #
 # VARIABLES
@@ -53,22 +54,22 @@ PEERING_STATUS_CODES=(\
 #
 # MAIN
 #
-echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
-SELF_VPC_ID=$(stack_resource_type_id ${SELF_STACK_NAME} "AWS::EC2::VPC")
-SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
-SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
+echoerr "INFO: Setting ${STACK_NAME} variables"
+SELF_VPC_ID=$(stack_resource_type_id ${STACK_NAME} "AWS::EC2::VPC")
+SELF_VPC_NETWORK=$(stack_value_parameter ${STACK_NAME} VPCNetwork)
+SELF_VPC_ROUTE_TABLE=$(stack_value_output ${STACK_NAME} RouteTableId)
 
 echoerr "INFO: Discovering existing peering connections"
 PEERING_CONNECTIONS=($(vpc_peers_from_requester ${SELF_VPC_ID}))
 
 if [[ -z ${PEERING_CONNECTIONS[@]-} ]]; then
-    echoerr "INFO: No peering connections found for ${SELF_STACK_NAME}"
+    echoerr "INFO: No peering connections found for ${STACK_NAME}"
     exit 0
 fi
 
 echoerr
 if [[ -z ${TARGET_STACK_NAME-} ]]; then
-    echo "Choose a stack to dissociate ${SELF_STACK_NAME} from:"
+    echo "Choose a stack to dissociate ${STACK_NAME} from:"
     # We avoid using $(choose) here becase we want extra custom output
     for ((i = 0; i < ${#PEERING_CONNECTIONS[@]}; i += 1)); do
         echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
@@ -119,7 +120,7 @@ echoerr "INFO: Setting ${TARGET_VPC_ID} variables"
 TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
 TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
 
-echoerr "INFO: Removing routes from ${SELF_STACK_NAME}"
+echoerr "INFO: Removing routes from ${STACK_NAME}"
 echoerr "INFO: Failure to delete route is not fatal"
 aws ec2 delete-route \
     --region ${AWS_REGION} \
