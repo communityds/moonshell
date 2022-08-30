@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# .Stacks[].EnableTerminationProtection is true|false and so is this script.
+# This script does not use the normal add/set/delete/remove actions to logically
+# separate this action from "normal" use given the potential impact of TP being
+# disabled on a production environment.
+#
+
+source $(dirname $0)/../moon.sh
+
+BASENAME=$(basename $0)
+
+ACTION=${BASENAME##*-}
+ACTIONS=(true false get)
+
+if ! contains ${ACTION} ${ACTIONS[@]}; then
+    echoerr "FATAL: Unsupported action: ${ACTION}"
+    exit 255
+fi
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: ${BASENAME} ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+
+echoerr "INFO: Getting current termination protection status of: ${STACK_NAME}"
+TP_CURRENT=$(aws cloudformation describe-stacks \
+    --region ${AWS_REGION} \
+    --stack-name ${STACK_NAME} \
+    | jq '.Stacks[].EnableTerminationProtection')
+
+if [[ ${ACTION} == get ]]; then
+    echoerr "INFO: Stack termination protection is: ${TP_CURRENT}"
+else
+    if [[ ${TP_CURRENT} == ${ACTION} ]]; then
+        echoerr "ERROR: Termination protection is already: ${ACTION}"
+        exit 1
+    elif [[ ${ACTION} == false ]]; then
+        NO="no-"
+    fi
+
+    read -s -n 1 -p "Are you sure you wish to set termination protection for '${STACK_NAME}' to: ${ACTION}? (y/N)"
+    echoerr
+    if [[ ! ${REPLY-} == y ]]; then
+        echoerr "INFO: Exiting on user request"
+        exit
+    fi
+
+    echoerr "INFO: Setting termination protection to: ${ACTION}"
+    aws cloudformation update-termination-protection \
+        --region ${AWS_REGION} \
+        --stack-name ${STACK_NAME} \
+        --${NO-}enable-termination-protection
+fi
+
