@@ -34,7 +34,7 @@ TP_CURRENT=$(aws cloudformation describe-stacks \
     | jq '.Stacks[].EnableTerminationProtection')
 
 if [[ ${ACTION} == get ]]; then
-    echoerr "INFO: Stack termination protection is: ${TP_CURRENT}"
+    echo "${TP_CURRENT}"
 else
     if [[ ${TP_CURRENT} == ${ACTION} ]]; then
         echoerr "ERROR: Termination protection is already: ${ACTION}"
