@@ -630,7 +630,7 @@ _s3_upload_multipart_part() {
             echoerr "INFO: Upload of part failed on attempt: ${retry}"
             if [[ ${retry} -lt ${max_retries} ]]; then
                 echoerr "INFO: retrying..."
-                 # Wait a few seconds in case of temporary connectivity loss
+                # Wait a few seconds in case of temporary connectivity loss
                 sleep 3
             fi
             continue
