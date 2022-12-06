@@ -42,8 +42,18 @@ STACK_PARAMETERS=($(aws cloudformation get-template-summary \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME}  \
     | jq -r '.Parameters[].ParameterKey'))
+if [[ -z ${STACK_PARAMETERS-} ]]; then
+    echoerr "ERROR: Could not find any parameters"
+    exit 1
+fi
 
 echoerr "INFO: Parsing parameters"
+for param in ${!PARAMS[@]}; do
+    if ! contains ${param} ${STACK_PARAMETERS[@]-}; then
+        STACK_PARAMETERS+=(${param})
+    fi
+done
+
 for param in ${STACK_PARAMETERS[@]-}; do
     if grep -q ${param} ${STACK_TEMPLATE_FILE}; then
         if contains ${param} ${!PARAMS[@]}; then
