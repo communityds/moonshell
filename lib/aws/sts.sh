@@ -12,12 +12,23 @@ sts_account_id () {
 
 sts_assume_role () {
     if [[ $# -lt 2 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME ROLE_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME ROLE_NAME [DURATION_SECONDS]"
         return 1
     fi
 
     local stack_name="$1"
     local role="$2"
+    local duration="${3:-3600}"
+
+    # See: aws sts assume-role help
+    if [[ ! ${duration} =~ ^[0-9]+$ ]]; then
+        echoerr "ERROR: Duration is not an integer"
+        return 1
+    elif [[ ${duration} -lt 900 ]]; then
+        duration=900
+    elif [[ ${duration} -gt 43200 ]]; then
+        duration=43200
+    fi
 
     local role_arn role_output role_resource_id role_session_name
 
