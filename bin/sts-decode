@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) MESSAGE"
+    exit
+else
+    MESSAGE=$1
+fi
+
+DECODED_MESSAGE=$(aws sts decode-authorization-message \
+    --encoded-message "${MESSAGE}")
+
+echo -e "${DECODED_MESSAGE}" \
+    | jq -r '.DecodedMessage' \
+    | jq '.'
+
