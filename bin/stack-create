@@ -32,9 +32,9 @@ fi
 START_SECONDS=$(date +%s)
 SLEEP_DELAY=15
 
-echoerr "INFO: Parsing: ${PARAM_FILE}"
+echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
 declare -A PARAMS
-stack_parameter_file_parse ${PARAM_FILE} PARAMS
+stack_parameter_file_parse ${STACK_PARAMETER_FILE} PARAMS
 
 
 #
