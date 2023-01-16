@@ -29,6 +29,7 @@ else
     TEMPLATE_SWITCH="--template-url"
 fi
 
+AWS_S3_DOMAIN_SUFFIX=.s3.amazonaws.com
 START_SECONDS=$(date +%s)
 SLEEP_DELAY=15
 
@@ -63,12 +64,12 @@ stack_template_upload
 echoerr "INFO: Validating template"
 if ! aws cloudformation validate-template \
     --region ${AWS_REGION} \
-    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) &>/dev/null; then
+    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}${AWS_S3_DOMAIN_SUFFIX}/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) &>/dev/null; then
 
     echoerr "ERROR: Could not validate template"
     aws cloudformation validate-template \
         --region ${AWS_REGION} \
-        ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE})
+        ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}${AWS_S3_DOMAIN_SUFFIX}/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE})
 fi
 
 
@@ -90,7 +91,7 @@ STACK_ID=$(aws cloudformation create-stack \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME} \
     --parameters "[${PARAM_JSON#,}]" \
-    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
+    ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}${AWS_S3_DOMAIN_SUFFIX}/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
     --capabilities CAPABILITY_IAM \
     --query "StackId" \
     --output text \
