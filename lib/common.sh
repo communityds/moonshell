@@ -2,6 +2,15 @@
 #
 # COMMON FUNCTIONS
 #
+csv () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} ARRAY"
+        return 1
+    fi
+    local IFS=","
+    echo "$*"
+}
+
 echoerr () {
     # echo a message to STDERR instead of STDOUT
     echo "${@-}" >&2
