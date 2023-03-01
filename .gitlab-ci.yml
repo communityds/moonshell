@@ -5,7 +5,8 @@ setup:
     - if: $CI_COMMIT_BRANCH == "master"
   script:
     - source /opt/rh/rh-ruby27/enable
-    - if ! which mdl &>/dev/null; then
+    - |
+      if ! which mdl &>/dev/null; then
           gem install mdl --no-document
       fi
 
@@ -18,7 +19,8 @@ bashate linting:
         - bin/*
         - codedeploy/bin/*
   script:
-    - for shell_file in $(grep -slIR "#\\!/.*bash$" {bin,etc,lib}/); do
+    - |
+      for shell_file in $(grep -slIR "#\\!/.*bash$" {bin,etc,lib}/); do
           bashate -v -i E006,E042 ${shell_file};
       done
 
