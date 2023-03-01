@@ -1,4 +1,14 @@
 ---
+setup:
+  stage: .pre
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+  script:
+    - source /opt/rh/rh-ruby27/enable
+    - if ! which mdl &>/dev/null; then
+          gem install mdl --no-document
+      fi
+
 bashate linting:
   stage: test
   rules:
@@ -19,4 +29,5 @@ markdown linting:
     - changes:
         - "*.md"
   script:
+    - source /opt/rh/rh-ruby27/enable
     - mdl -v $(find . -name '*.md' -not -path './vendor*')
