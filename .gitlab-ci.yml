@@ -1,0 +1,22 @@
+---
+bashate linting:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - changes:
+        - "*.sh"
+        - bin/*
+        - codedeploy/bin/*
+  script:
+    - for shell_file in $(grep -slIR "#\\!/.*bash$" {bin,etc,lib}/); do
+          bashate -v -i E006,E042 ${shell_file};
+      done
+
+markdown linting:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - changes:
+        - "*.md"
+  script:
+    - mdl -v $(find . -name '*.md' -not -path './vendor*')
