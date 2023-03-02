@@ -76,11 +76,16 @@ This file contains all global variables to use with every environment of every
 stack for this product.
 
 Mandatory minimum contents:
+
 * `APP_NAME` Is the name of your product which matches `^[a-zA-Z0-9_]*$`
+
 * `STACK_TEMPLATE_BUCKET` Is the short name of your preconfigured bucket
 
 Optional
-* `STACK_TEMPLATE_FILE` Overrides the default location of the parent stack template: `moonshell/templates/template.yml`
+
+* `STACK_TEMPLATE_FILE` Overrides the default location of the parent stack
+    template: `moonshell/templates/template.yml`
+
 * `STACK_TEMPLATE_BUCKET_SCHEME` is one of `s3://`(default) or `file://`.
 
 ### moonshell/${environment}.sh
@@ -185,9 +190,9 @@ Moonshell tries to adhere to Linux FHS best practice:
 
 * etc/
 
-    * completion.d/ - Bash completion functions suffixed with `.sh`
+      * completion.d/ - Bash completion functions suffixed with `.sh`
 
-    * profile.d/ - Definitions of variables and other statically set things
+      * profile.d/ - Definitions of variables and other statically set things
 
 * usr/ - Extra supporting files for applications
 
@@ -304,8 +309,8 @@ Per stack there must only be one Code Deploy application. We tar ball the
 bucket. All nodes which are to deploy the artefact must have read access to
 that location, and the host buliding the artefact must be able to write to it.
 
-Inside of the `codedeploy/` directory you must have an `appspec.yml` file per:
-https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html#appspec-reference-server
+Inside of the `codedeploy/` directory you must have an `appspec.yml` file per
+[the appspec reference](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html#appspec-reference-server)
 
 Example S3 IAM policy written in YAML
 
@@ -356,7 +361,7 @@ aws kms list-aliases
 ```
 
 * NOTE: You should specify a KMS key as the key UUID and not the alias, this is
-because IAM policy can only be set on a key's UUID.
+    because IAM policy can only be set on a key's UUID.
 
 ### SSH with a Jump Host / Bastion
 
@@ -423,4 +428,3 @@ of a script and it will be used thereafter. We assume this variable is
 ```
 export S3_BUCKET="$(s3_stack_bucket_name ${STACK_NAME})"
 ```
-
