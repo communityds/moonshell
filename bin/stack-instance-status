@@ -24,7 +24,8 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
     echoerr "INFO: MinSize:               $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].MinSize')"
     echoerr "INFO: MaxSize:               $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].MaxSize')"
     echoerr "INFO: DesiredCapacity:       $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].DesiredCapacity')"
-    echoerr "INFO: LoadBalancerNames:     $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LoadBalancerNames[]')"
+    echoerr "INFO: LoadBalancerName:      $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LoadBalancerNames[]')"
+    echoerr "INFO: TargetGroupARNs:       $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].TargetGroupARNs[]')"
 
     instance_ids=($(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].Instances[].InstanceId'))
 
