@@ -48,7 +48,7 @@ codedeploy_overlay () {
             deployment_path="${deployment_base}/${deployment_id}/deployment-archive"
         fi
     else
-        deployment_path=${deployment_current}
+        deployment_path="${deployment_current}/deployment-archive"
     fi
 
     if [[ ! -d ${deployment_path} ]]; then
