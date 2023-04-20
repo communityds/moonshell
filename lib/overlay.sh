@@ -122,7 +122,12 @@ overlay_path_prepend () {
 }
 
 overlay_self () {
-    overlay_dir $(dirname $0)/../
+    local script="$0"
+    if [[ -L "${script}" ]]; then
+        local readlink=$(readlink ${script})
+        script="${readlink}"
+    fi
+    overlay_dir $(dirname "${script}")/../
 }
 
 overlay_source_dir () {
