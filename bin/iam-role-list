@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# List users
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT [all]"
+    echoerr
+    echoerr "By default only non-instance roles are displayed."
+    exit 0
+else
+    ENVIRONMENT=$1
+    ALL=${2-}
+fi
+
+stack_name
+
+echoerr "INFO: Finding role resources in: ${STACK_NAME}"
+STACK_ROLES=($(stack_resource_type_name ${STACK_NAME} AWS::IAM::Role))
+
+for ROLE in ${STACK_ROLES[@]-}; do
+    if [[ ${ALL-} == "all" ]]; then
+        echo ${ROLE}
+    elif [[ ! ${ROLE} =~ "Instance" ]]; then
+        echo ${ROLE}
+    fi
+done
+
