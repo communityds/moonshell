@@ -53,7 +53,8 @@ sts_assume_role () {
     echoerr "INFO: Assuming role for session: ${role_session_name}"
     role_output=$(aws sts assume-role \
         --role-arn ${role_arn} \
-        --role-session-name ${role_session_name})
+        --role-session-name ${role_session_name} \
+        --duration-seconds ${duration})
 
     if [[ -z ${role_output-} ]]; then
         echoerr "ERROR: Can not find an ARN for role: ${role_resource_id}"
