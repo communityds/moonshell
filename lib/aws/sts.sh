@@ -18,10 +18,20 @@ sts_assume_role () {
 
     local stack_name="$1"
     local role="$2"
-    local duration="${3:-3600}"
+    local duration="${3-}"
 
     # See: aws sts assume-role help
-    if [[ ! ${duration} =~ ^[0-9]+$ ]]; then
+    if [[ -z ${duration-} ]]; then
+        duration=$(aws iam list-roles \
+            | jq ".Roles[] \
+                | select(.Path == \"/${stack_name}/\") \
+                | select(.RoleName | test(\"${role}\")) \
+                | .MaxSessionDuration")
+        if [[ ! ${duration-} =~ ^[0-9]+$ ]]; then
+            echoerr "ERROR: Failed to define duration"
+            return 1
+        fi
+    elif [[ ! ${duration} =~ ^[0-9]+$ ]]; then
         echoerr "ERROR: Duration is not an integer"
         return 1
     elif [[ ${duration} -lt 900 ]]; then
@@ -50,7 +60,7 @@ sts_assume_role () {
 
     role_session_name="${USER}-${role}"
 
-    echoerr "INFO: Assuming role for session: ${role_session_name}"
+    echoerr "INFO: Assuming role for session with duration: ${role_session_name} ${duration}"
     role_output=$(aws sts assume-role \
         --role-arn ${role_arn} \
         --role-session-name ${role_session_name} \
