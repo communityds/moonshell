@@ -123,7 +123,8 @@ s3_file_versions () {
         --bucket ${s3_bucket_name} \
         --prefix "${file_path}" \
         --query "Versions[].LastModified" \
-        --output text))
+        --output text \
+        | sort -r))
 
     echo ${version_timestamps[@]}
 }
