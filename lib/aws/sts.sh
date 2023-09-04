@@ -20,17 +20,29 @@ sts_assume_role () {
     local role="$2"
     local duration="${3-}"
 
+    local role_json=$(aws iam list-roles \
+        | jq ".Roles[] \
+        | select(.Path == \"/${stack_name}/\") \
+        | select(.RoleName | test(\"${role}\"))")
+
+    if [[ -z ${role_json-} ]]; then
+        echoerr "ERROR: Could not find role: ${role}"
+    fi
+
+    local duration_max=$(echo ${role_json} \
+            | jq -r ".MaxSessionDuration")
+
+    local role_arn=$(echo ${role_json} \
+            | jq -r ".Arn")
+
+    local role_name=$(echo ${role_json} \
+            | jq -r ".RoleName")
+
+    local role_session_name="${USER}-${role}"
+
     # See: aws sts assume-role help
     if [[ -z ${duration-} ]]; then
-        duration=$(aws iam list-roles \
-            | jq ".Roles[] \
-                | select(.Path == \"/${stack_name}/\") \
-                | select(.RoleName | test(\"${role}\")) \
-                | .MaxSessionDuration")
-        if [[ ! ${duration-} =~ ^[0-9]+$ ]]; then
-            echoerr "ERROR: Failed to define duration"
-            return 1
-        fi
+        duration=${duration_max}
     elif [[ ! ${duration} =~ ^[0-9]+$ ]]; then
         echoerr "ERROR: Duration is not an integer"
         return 1
@@ -40,34 +52,14 @@ sts_assume_role () {
         duration=43200
     fi
 
-    local role_arn role_output role_resource_id role_session_name
-
-    echoerr "INFO: Finding resource id for logical resource: ${role}"
-    role_resource_id=$(stack_resource_id ${stack_name} ${role} 2>/dev/null)
-
-    if [[ -z ${role_resource_id-} ]]; then
-        echoerr "ERROR: Can not find logical resource: ${role}"
-        return 1
-    fi
-
-    echoerr "INFO: Finding ARN for logical resource: ${role_resource_id}"
-    role_arn=$(aws iam list-roles --query "Roles[?RoleName=='${role_resource_id}'].Arn" --output text)
-
-    if [[ -z ${role_arn-} ]]; then
-        echoerr "ERROR: Can not find an ARN for role: ${role_resource_id}"
-        return 1
-    fi
-
-    role_session_name="${USER}-${role}"
-
     echoerr "INFO: Assuming role for session with duration: ${role_session_name} ${duration}"
-    role_output=$(aws sts assume-role \
+    local role_output=$(aws sts assume-role \
         --role-arn ${role_arn} \
         --role-session-name ${role_session_name} \
         --duration-seconds ${duration})
 
     if [[ -z ${role_output-} ]]; then
-        echoerr "ERROR: Can not find an ARN for role: ${role_resource_id}"
+        echoerr "ERROR: Can not assume role: ${role_name}"
         return 1
     fi
 
