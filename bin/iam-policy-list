@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 #
-# List all Custom policies
+# List policies of a stack
 #
-
-export MOON_FILE=false
 
 source $(dirname $0)/../moon.sh
 
-echoerr "INFO: Finding all customer managed policies"
-IAM_POLICIES=($(iam_policy_list_customer))
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    exit
+else
+    export ENVIRONMENT=$1
+fi
+
+stack_name
+
+echoerr "INFO: Finding policies for: ${STACK_NAME}"
+IAM_POLICIES=($(iam_policy_list_path ${STACK_NAME}))
 
 for policy in ${IAM_POLICIES[@]}; do
     echo "${policy}"

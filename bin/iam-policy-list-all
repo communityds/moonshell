@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# List all Custom policies
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Finding all customer managed policies"
+IAM_POLICIES=($(iam_policy_list_customer))
+
+for policy in ${IAM_POLICIES[@]}; do
+    echo "${policy}"
+done
+

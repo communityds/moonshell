@@ -96,18 +96,69 @@ iam_groups () {
         --output text
 }
 
+iam_policy_get () {
+    if [[ $# -lt 1 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME POLICY_NAME"
+        return 1
+    fi
+    local stack_name="$1"
+    local policy_name="$2"
+
+    local policy=$(iam_policy_list_name ${stack_name} ${policy_name})
+
+    if [[ -z ${policy-} ]]; then
+        echoerr "ERROR: Can not find policy in stack: ${policy_name}"
+        return 1
+    fi
+
+    local policy_arn=$(echo ${policy} \
+        | jq -r '.Arn')
+
+    local policy_version=$(echo ${policy} \
+        | jq -r '.DefaultVersionId')
+
+    aws iam get-policy-version \
+        --policy-arn ${policy_arn} \
+        --version-id ${policy_version}
+}
+
 iam_policy_list_aws () {
     aws iam list-policies \
         --scope AWS \
-        --query "Policies[].PolicyName" \
-        | jq -r '. | sort | .[]'
+        | jq -r '.Policies | sort | .[].PolicyName'
 }
 
 iam_policy_list_customer () {
     aws iam list-policies \
         --scope Local \
-        --query "Policies[].PolicyName" \
-        | jq -r '. | sort | .[]'
+        | jq -r '.Policies | sort | .[].PolicyName'
+}
+
+iam_policy_list_name () {
+    if [[ $# -lt 2 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME POLICY_NAME"
+        return 1
+    fi
+    local stack_name="$1"
+    local policy_name="$2"
+
+    aws iam list-policies \
+        --path-prefix "/${stack_name}/" \
+        --scope Local \
+        | jq ".Policies[] | select(.PolicyName == \"${policy_name}\")"
+}
+
+iam_policy_list_path () {
+    if [[ $# -lt 1 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+    local stack_name=$1
+
+    aws iam list-policies \
+        --path-prefix "/${STACK_NAME}/" \
+        --scope Local \
+        | jq -r '.Policies | sort | .[].PolicyName'
 }
 
 iam_user_arn () {

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# Get the latest policy from a stack
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT POLICY_NAME"
+    exit
+else
+    export ENVIRONMENT=$1
+    export POLICY_NAME=$2
+fi
+
+stack_name
+
+iam_policy_get ${STACK_NAME} ${POLICY_NAME}
+
