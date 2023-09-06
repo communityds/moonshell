@@ -6,11 +6,27 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [OPTIONS]"
+    echoerr
+    echoerr "Options:"
+    echoerr "   -d        DEBUG=true. Default: false"
+    echoerr "   -y        Assume yes. Default: prompt"
     exit
 else
     export ENVIRONMENT=$1
+    shift 1
 fi
+
+ASSUME_YES=false
+while getopts "dy" option; do
+    case ${option} in
+        d)
+            DEBUG=true
+            set -x ;;
+        y) ASSUME_YES=true ;;
+    esac
+done
+
 
 # STACK_NAME
 stack_name
@@ -66,9 +82,11 @@ for param in ${STACK_PARAMETERS[@]-}; do
     fi
 done
 
-if prompt_no "Do you wish to update '${STACK_NAME}'?"; then
-    echoerr "INFO: Exiting on user request"
-    exit
+if [[ ${ASSUME_YES-} == false ]]; then
+    if prompt_no "Do you wish to update '${STACK_NAME}'?"; then
+        echoerr "INFO: Exiting on user request"
+        exit
+    fi
 fi
 
 stack_template_upload
