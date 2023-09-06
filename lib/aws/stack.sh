@@ -227,7 +227,7 @@ stack_parameter_set () {
         --stack-name ${stack_name} \
         --parameters "[${parameter_json#,}]" \
         --use-previous-template \
-        --capabilities CAPABILITY_IAM \
+        --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
         >/dev/null \
         && echoerr "INFO: Waiting for update to complete" \
         && aws cloudformation wait stack-update-complete \
