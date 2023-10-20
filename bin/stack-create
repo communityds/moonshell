@@ -92,7 +92,7 @@ STACK_ID=$(aws cloudformation create-stack \
     --stack-name ${STACK_NAME} \
     --parameters "[${PARAM_JSON#,}]" \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}${AWS_S3_DOMAIN_SUFFIX}/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
-    --capabilities CAPABILITY_IAM \
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
     --query "StackId" \
     --output text \
     2>&1 \
