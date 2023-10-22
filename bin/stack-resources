@@ -18,7 +18,9 @@ echoerr "INFO: Finding stack: ${STACK_NAME}"
 STACKS_JSON=$(aws cloudformation list-stacks)
 
 PARENT_STACK=$(echo ${STACKS_JSON} \
-    | jq -r ".StackSummaries[] | select(.StackName == \"${STACK_NAME}\")")
+    | jq -r ".StackSummaries[] \
+        | select(.StackName == \"${STACK_NAME}\") \
+        | select(.StackStatus | IN(\"$(stack_status_ok | sed -e 's/ /","/g')\"))")
 PARENT_STACK_ID=$(echo ${PARENT_STACK} \
     | jq -r ".StackId")
 
