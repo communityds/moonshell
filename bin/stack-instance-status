@@ -14,7 +14,13 @@ fi
 
 stack_name
 
-AUTOSCALING_GROUPS=($(stack_resource_type_id ${STACK_NAME} "AWS::AutoScaling::AutoScalingGroup"))
+echoerr "INFO: Discovering nested stacks"
+NESTED_STACKS=($(stack_list_nested ${STACK_NAME}))
+
+echoerr "INFO: Discovering autoscaling groups"
+for stack in ${STACK_NAME} ${NESTED_STACKS[@]-}; do
+    AUTOSCALING_GROUPS+=($(stack_resource_type_id ${stack} "AWS::AutoScaling::AutoScalingGroup" 2>/dev/null || true))
+done
 
 for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
     autoscaling_group_json=$(aws autoscaling describe-auto-scaling-groups \
