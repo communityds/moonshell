@@ -5,7 +5,7 @@ setup:
     - if: $CI_COMMIT_BRANCH == "master"
   script:
     - |
-      source /opt/rh/rh-ruby27/enable
+      source /opt/rh/rh-ruby30/enable
       if ! which mdl &>/dev/null; then
           gem install mdl --no-document
       fi
