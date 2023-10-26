@@ -16,15 +16,16 @@
 source $(dirname $0)/../moon.sh
 
 if [[ $# -lt 1 ]]; then
-    echoerr "Usage: $(basename $0) ENVIRONMENT [STACK_NAME]"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [STACK_NAME] [TARGET_ACCOUNT_ID]"
     echoerr
     echoerr "Example:"
     echoerr "  $ $(basename $0) dev"
     echoerr "  $ $(basename $0) staging core-staging"
     exit
 else
-    export ENVIRONMENT=$1
-    export TARGET_STACK_NAME=${2-}
+    ENVIRONMENT=$1
+    TARGET_STACK_NAME=${2-}
+    TARGET_ACCOUNT_ID=${3-}
 fi
 
 stack_name
@@ -36,15 +37,37 @@ if [[ -z ${TARGET_STACK_NAME-} ]]; then
     TARGET_STACK_NAME=$(choose ${TARGET_STACKS[@]})
 fi
 
+if [[ ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "WARNING: You are opting to create a cross-account VPC peering connection"
+    echoerr "INFO: You must open a separate terminal session and ensure correct credentials are loaded"
+    echoerr "INFO: Accepter commands will be prefixed with: \"INFO: [${TARGET_ACCOUNT_ID-}] CMD:\""
+    echoerr "INFO: In your second session prepare the environment"
+    echoerr "INFO: [${TARGET_ACCOUNT_ID-}] CMD:"
+    echoerr "source \${MOON_LIB}/aws.sh"
+
+    if prompt_no "Are you ready to continue?"; then
+        echoerr "INFO: Exiting on user request"
+        exit 0
+    fi
+fi
+
 echoerr "INFO: Setting ${SELF_STACK_NAME} variables"
 SELF_VPC_ID=$(stack_resource_type_id ${SELF_STACK_NAME} "AWS::EC2::VPC")
 SELF_VPC_NETWORK=$(stack_value_parameter ${SELF_STACK_NAME} VPCNetwork)
 SELF_VPC_ROUTE_TABLE=$(stack_value_output ${SELF_STACK_NAME} RouteTableId)
 
 echoerr "INFO: Setting ${TARGET_STACK_NAME} variables"
-TARGET_VPC_ID=$(stack_resource_type_id ${TARGET_STACK_NAME} "AWS::EC2::VPC")
-TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
-TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
+if [[ ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "WARNING: User input required"
+    read -p "Input Target VPC Id: " TARGET_VPC_ID
+    read -p "Input Target VPC Network CIDR: " TARGET_VPC_NETWORK
+    read -p "Input Target VPC Route Table Id: " TARGET_VPC_ROUTE_TABLE
+    read -p "Input Target Private Hosted Zone Id: " TARGET_HOSTED_ZONE_ID
+else
+    TARGET_VPC_ID=$(stack_resource_type_id ${TARGET_STACK_NAME} "AWS::EC2::VPC")
+    TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
+    TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
+fi
 
 echoerr "INFO: Finding existing peering connections"
 
@@ -57,22 +80,34 @@ if [[ ${EXISTING_PEERING_CONNECTIONS[@]-} ]]; then
     exit 255
 fi
 
-VPC_PEERING_ID=$(vpc_peer_associate ${SELF_VPC_ID} ${TARGET_VPC_ID})
+VPC_PEERING_ID=$(vpc_peer_associate ${SELF_VPC_ID} ${TARGET_VPC_ID} ${TARGET_ACCOUNT_ID-})
 
 echoerr "INFO: Setting Peering Options"
 #        \"AllowEgressFromLocalClassicLinkToRemoteVpc\": true,
 #        \"AllowEgressFromLocalVpcToRemoteClassicLink\": true,
 #        \"AllowDnsResolutionFromRemoteVpc\": true
-retr=$(aws ec2 modify-vpc-peering-connection-options \
+aws ec2 modify-vpc-peering-connection-options \
     --region ${AWS_REGION} \
     --vpc-peering-connection-id ${VPC_PEERING_ID} \
     --requester-peering-connection-options "{
         \"AllowDnsResolutionFromRemoteVpc\": true
     }" \
-    --accepter-peering-connection-options "{\
-        \"AllowDnsResolutionFromRemoteVpc\": true
-    }" \
-    || true)
+    || true
+
+if [[ ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "INFO: [${TARGET_ACCOUNT_ID-}] CMD:"
+    echoerr "aws ec2 modify-vpc-peering-connection-options --region ${AWS_REGION} --vpc-peering-connection-id ${VPC_PEERING_ID} --accepter-peering-connection-options '{\"AllowDnsResolutionFromRemoteVpc\": true}'"
+    read -s -n1 -p "INFO: Press any key when ready to proceed"
+    echoerr
+else
+    aws ec2 modify-vpc-peering-connection-options \
+        --region ${AWS_REGION} \
+        --vpc-peering-connection-id ${VPC_PEERING_ID} \
+        --accepter-peering-connection-options "{\
+            \"AllowDnsResolutionFromRemoteVpc\": true
+        }" \
+        || true
+fi
 
 echoerr "INFO: Tagging resource: ${VPC_PEERING_ID}"
 aws ec2 create-tags \
@@ -86,25 +121,33 @@ echoerr "INFO: Creating Route to ${TARGET_STACK_NAME}"
 echoerr "INFO: Failure to create route is not fatal"
 aws ec2 create-route \
     --region ${AWS_REGION} \
-    --route-table-id ${SELF_VPC_ROUTE_TABLE}\
-    --destination-cidr-block ${TARGET_VPC_NETWORK}\
+    --route-table-id ${SELF_VPC_ROUTE_TABLE} \
+    --destination-cidr-block ${TARGET_VPC_NETWORK} \
     --vpc-peering-connection-id ${VPC_PEERING_ID} \
     --query "Return" \
     --output text \
     >/dev/null \
     || true
 
-echoerr "INFO: Creating Route from ${TARGET_STACK_NAME}"
-echoerr "INFO: Failure to create route is not fatal"
-aws ec2 create-route \
-    --region ${AWS_REGION} \
-    --route-table-id ${TARGET_VPC_ROUTE_TABLE}\
-    --destination-cidr-block ${SELF_VPC_NETWORK}\
-    --vpc-peering-connection-id ${VPC_PEERING_ID} \
-    --query "Return" \
-    --output text \
-    >/dev/null \
-    || true
+if [[ ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "INFO: [${TARGET_ACCOUNT_ID-}] CMD:"
+    echoerr "aws ec2 create-route --region ${AWS_REGION} --route-table-id ${TARGET_VPC_ROUTE_TABLE} --destination-cidr-block ${SELF_VPC_NETWORK} --vpc-peering-connection-id ${VPC_PEERING_ID}"
+    echoerr "INFO: Failure to create route is not fatal"
+    read -s -n1 -p  "INFO: Press any key when ready to proceed"
+    echoerr
+else
+    echoerr "INFO: Creating Route from ${TARGET_STACK_NAME}"
+    echoerr "INFO: Failure to create route is not fatal"
+    aws ec2 create-route \
+        --region ${AWS_REGION} \
+        --route-table-id ${TARGET_VPC_ROUTE_TABLE}\
+        --destination-cidr-block ${SELF_VPC_NETWORK}\
+        --vpc-peering-connection-id ${VPC_PEERING_ID} \
+        --query "Return" \
+        --output text \
+        >/dev/null \
+        || true
+fi
 
 echoerr "INFO: Describing ${SELF_STACK_NAME} routes"
 aws ec2 describe-route-tables \
@@ -112,13 +155,28 @@ aws ec2 describe-route-tables \
     --query "RouteTables[?RouteTableId=='${SELF_VPC_ROUTE_TABLE}'].Routes" \
     --output table
 
-echoerr "INFO: Describing ${TARGET_STACK_NAME} routes"
-aws ec2 describe-route-tables \
-    --region ${AWS_REGION} \
-    --query "RouteTables[?RouteTableId=='${TARGET_VPC_ROUTE_TABLE}'].Routes" \
-    --output table
+if [[ -z ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "INFO: Describing ${TARGET_STACK_NAME} routes"
+    aws ec2 describe-route-tables \
+        --region ${AWS_REGION} \
+        --query "RouteTables[?RouteTableId=='${TARGET_VPC_ROUTE_TABLE}'].Routes" \
+        --output table
+fi
 
 echoerr "INFO: Associating route53"
-route53_vpc_associate $(vpc_internal_hosted_zone_id ${TARGET_VPC_ID}) ${SELF_VPC_ID}
-route53_vpc_associate $(vpc_internal_hosted_zone_id ${SELF_VPC_ID}) ${TARGET_VPC_ID}
+if [[ ${TARGET_ACCOUNT_ID-} ]]; then
+    echoerr "INFO: [${TARGET_ACCOUNT_ID-}] CMD:"
+    echoerr "aws route53 create-vpc-association-authorization --hosted-zone-id ${TARGET_HOSTED_ZONE_ID} --vpc VPCRegion=${AWS_REGION},VPCId=${SELF_VPC_ID}"
+    read -s -n1 -p  "INFO: Press any key when ready to proceed"
+    echoerr
 
+    aws route53 associate-vpc-with-hosted-zone \
+        --hosted-zone-id ${TARGET_HOSTED_ZONE_ID} \
+        --vpc VPCRegion=${AWS_REGION},VPCId=${SELF_VPC_ID}
+else
+    route53_vpc_associate $(vpc_internal_hosted_zone_id ${SELF_VPC_ID}) ${TARGET_VPC_ID}
+
+    route53_vpc_associate $(vpc_internal_hosted_zone_id ${TARGET_VPC_ID}) ${SELF_VPC_ID}
+fi
+
+echoerr "INFO: VPC association created: ${VPC_PEERING_ID}"

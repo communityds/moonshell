@@ -27,7 +27,7 @@ vpc_internal_hosted_zone_id () {
 
 vpc_peer_associate () {
     if [[ $# -lt 2 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID"
+        echoerr "Usage: ${FUNCNAME[0]} SOURCE_VPC_ID TARGET_VPC_ID [TARGET_ACCOUNT_ID]"
         return 1
     fi
     # Create and accept a peering connection between two VPCs. The active
@@ -35,24 +35,35 @@ vpc_peer_associate () {
     # target VPC
     local source_vpc_id="$1"
     local target_vpc_id="$2"
+    local target_account="${3-}"
 
     echoerr "INFO: Creating peering connection from ${source_vpc_id} to ${target_vpc_id}"
     local peering_id=$(aws ec2 create-vpc-peering-connection \
         --region ${AWS_REGION} \
         --vpc-id ${source_vpc_id} \
         --peer-vpc-id ${target_vpc_id} \
+        $([[ ${target_account-} ]] && echo "--peer-owner-id ${target_account}") \
         --query "VpcPeeringConnection.VpcPeeringConnectionId" \
         --output text)
     [[ -z ${peering_id-} ]] \
         && echoerr "ERROR: failed to create a peering connection" \
         && return 1
 
-    echoerr "INFO: Accepting Peering Connection"
-    aws ec2 accept-vpc-peering-connection \
-        --region ${AWS_REGION} \
-        --vpc-peering-connection-id ${peering_id} \
-        >/dev/null
-    local retr=$?
+    local retr=1
+    if [[ ${target_account-} ]]; then
+        echoerr "INFO: [${target_account-}] CMD:"
+        echoerr "aws ec2 accept-vpc-peering-connection --region ${AWS_REGION} --vpc-peering-connection-id ${peering_id}"
+        read -s -n1 -p  "INFO: Press any key when ready to proceed"
+        echoerr
+        retr=0
+    else
+        echoerr "INFO: Accepting Peering Connection"
+        aws ec2 accept-vpc-peering-connection \
+            --region ${AWS_REGION} \
+            --vpc-peering-connection-id ${peering_id} \
+            >/dev/null
+        retr=$?
+    fi
 
     if [[ ${retr} == 0 ]]; then
         echo ${peering_id}
