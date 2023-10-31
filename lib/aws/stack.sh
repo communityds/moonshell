@@ -62,6 +62,7 @@ stack_list_nested () {
     local stack_name="$1"
 
     local stack_id=$(stack_id ${stack_name})
+    local -a stack_status_ok=($(stack_status_ok))
 
     local nested_stacks=($(aws cloudformation list-stacks \
         --region ${AWS_REGION} \
