@@ -190,9 +190,9 @@ Moonshell tries to adhere to Linux FHS best practice:
 
 * etc/
 
-  * completion.d/ - Bash completion functions suffixed with `.sh`
+   * completion.d/ - Bash completion functions suffixed with `.sh`
 
-  * profile.d/ - Definitions of variables and other statically set things
+   * profile.d/ - Definitions of variables and other statically set things
 
 * usr/ - Extra supporting files for applications
 
