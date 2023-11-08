@@ -17,9 +17,9 @@ source $(dirname $0)/../moon.sh
 
 for instance_id in ${INSTANCES[@]}; do
     if [[ ${instance_id} =~ ^i-[a-f0-9]*$ ]]; then
-        ELB_JSON=$(aws elb describe-load-balancers --region ${AWS_REGION})
+        ELB_JSON=$(aws elb describe-load-balancers --region ${AWS_REGION} 2>/dev/null || true)
 
-        ELB_NAME=$(echo $ELB_JSON \
+        ELB_NAME=$(echo ${ELB_JSON-} \
             | jq -r ".LoadBalancerDescriptions[] | select(.Instances[].InstanceId == \"${instance_id}\") | .LoadBalancerName")
 
         if [[ ${ELB_NAME-} ]]; then
