@@ -27,8 +27,10 @@ s3_purge_versions ${S3_BUCKET_NAME}
 echoerr "INFO: Finding remaining files"
 remnants=($(aws s3api list-object-versions \
     --region ${AWS_REGION} \
-    --bucket ${S3_BUCKET_NAME}))
-if [[ ${remnants[@]-} ]]; then
+    --bucket ${S3_BUCKET_NAME} \
+    | jq -r 'del(.RequestCharged)'))
+
+if [[ ${remnants[@]-} ]] && [[ ! ${remnants} == "{}" ]]; then
     echoerr "ERROR: Found remnants. Re-run $(basename $0)"
 else
     echoerr "INFO: No remnants found"
