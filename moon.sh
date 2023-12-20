@@ -11,14 +11,17 @@
 # Copyright: Phil Ingram (pingramdotau@gmaildotcom)
 #
 
-[[ ${DEBUG-} == true ]] && set -x
+if [[ ${DEBUG-} == true ]]; then
+    set -x
+fi
 
 
 #
 # GLOBAL VARIABLES
 #
-[[ -z ${MOON_ROOT-} ]] \
-    && export MOON_ROOT="$(dirname ${BASH_SOURCE[0]})"
+if [[ -z ${MOON_ROOT-} ]]; then
+    export MOON_ROOT="$(dirname ${BASH_SOURCE[0]})"
+fi
 # realpath resolves symlinks which can be handy
 export MOON_ROOT_REALPATH="$(realpath ${MOON_ROOT})"
 
@@ -32,7 +35,9 @@ export MOON_USR="${MOON_ROOT}/usr"
 # Not all users on a system can write to their ${HOME}
 if [[ -w ${HOME} ]]; then
     export MOON_HOME="${HOME}/.moonshell"
-    [[ ! -d ${MOON_HOME} ]] && mkdir -m 0700 -p ${MOON_HOME}
+    if [[ ! -d ${MOON_HOME} ]]; then
+        mkdir -m 0700 -p ${MOON_HOME}
+    fi
 else
     export MOON_HOME="${MOON_ROOT}"
 fi
@@ -115,7 +120,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     if [[ -z ${AWS_AUTH-} ]] || [[ ! ${AWS_AUTH} == false ]]; then
         # The script/process requires credentials
         if [[ -z ${AWS_ACCESS_KEY_ID-} ]]; then
-            if curl -I http://169.254.169.254 | grep -q 'HTTP/1.1 200 OK'; then
+            if curl -sI --connect-timeout 1 http://169.254.169.254 | grep -q 'HTTP/1.1 200 OK'; then
                 # Is an AWS server
                 INSTANCE_ROLE_ARN="$(curl -s http://169.254.169.254/latest/meta-data/iam/info \
                     | jq -r '.InstanceProfileArn')"
@@ -142,8 +147,9 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
 
     # AWS_REGION is required by the majority of AWS cli commands, so we should
     # set a default.
-    [[ -z ${AWS_REGION-} ]] \
-        && export AWS_REGION="ap-southeast-2"
+    if [[ -z ${AWS_REGION-} ]]; then
+        export AWS_REGION="ap-southeast-2"
+    fi
 
     # Most scripts in bin/ build off of ${APP_NAME} which is programatically
     # set below. For those that don't need APP_NAME, i.e. can be run from
@@ -177,8 +183,10 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
 
     # Auto-source the CWD, unless we are in /
     # /etc/profile.d/*.sh can not be sourced with `set -u`
-    [[ ! $(realpath ${PWD}) =~ ^/$ ]] \
-        && overlay_dir ${PWD} \
-        || true
+    if [[ ! $(realpath ${PWD}) =~ ^/$ ]]; then
+        overlay_dir ${PWD}
+    else
+        true
+    fi
 fi
 
