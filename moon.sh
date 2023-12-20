@@ -106,14 +106,39 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # non-zero exit codes as serious and exit.
     set -eu
 
-    # We require a way of differentiating accounts and bastion hosts , so we
-    # set AWS_ACCOUNT_NAME. This variable is not used by any AWS tools, so
-    # we appropriate it here. We make the assumption that your bastion hosts,
-    # as defined in ~/.ssh/config, follow the naming convention of
-    # "bastion-${AWS_ACCOUNT_NAME}"
-    [[ -z ${AWS_ACCOUNT_NAME-} ]] \
-        && echoerr "ERROR: Unset variable: AWS_ACCOUNT_NAME" \
-        && exit 1
+    # Several AWS env vars already exist, but for consistency of namespacing
+    # we are creating some extras. For a list of currently supported variables:
+    # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html
+    #
+    # AWS_AUTH is default true, but it can be set to false to signal that a script
+    # does not require credentials and authentication.
+    if [[ -z ${AWS_AUTH-} ]] || [[ ! ${AWS_AUTH} == false ]]; then
+        # The script/process requires credentials
+        if [[ -z ${AWS_ACCESS_KEY_ID-} ]]; then
+            if curl -I http://169.254.169.254 | grep -q 'HTTP/1.1 200 OK'; then
+                # Is an AWS server
+                INSTANCE_ROLE_ARN="$(curl -s http://169.254.169.254/latest/meta-data/iam/info \
+                    | jq -r '.InstanceProfileArn')"
+                echoerr "INFO: Using instance profile: ${INSTANCE_ROLE_ARN##*/}"
+                unset INSTANCE_ROLE_ARN
+            else
+                # TODO remove the test for AWS_ACCOUNT_NAME once AWS_AUTH is ubiquitous
+                if [[ -z ${AWS_ACCOUNT_NAME-} ]]; then
+                    echoerr "ERROR: AWS authentication is required and no AWS_ACCESS_KEY_ID was found"
+                    exit 1
+                fi
+            fi
+        else
+            # TODO remove the test for AWS_ACCOUNT_NAME once AWS_AUTH is ubiquitous
+            if [[ -z ${AWS_ACCOUNT_NAME-} ]]; then
+                if [[ -z ${AWS_SECRET_ACCESS_KEY-} ]]; then
+                    echoerr "ERROR: Unset AWS_SECRET_ACCESS_KEY"
+                    exit 1
+                fi
+            fi
+        fi
+
+    fi
 
     # AWS_REGION is required by the majority of AWS cli commands, so we should
     # set a default.
