@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# There are other slowquery.log files available, but there is no apparent way
+# to enumerate the logs available, so we default to the first, and most
+# current, one.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT [OPTIONS]"
+    echoerr
+    echoerr "Options:"
+    echoerr "  -f   Log file. Default: enumerate all available logs for user choice"
+    echoerr "  -o   Output file. Default: /tmp/\$STACK_NAME.slowlog"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) dev -o /tmp/foo.log"
+    echoerr "  $ $(basename $0) uat"
+    exit 0
+else
+    ENVIRONMENT=$1
+    shift
+fi
+
+stack_name
+OUT_FILE="/tmp/${STACK_NAME}.slowlog"
+
+while getopts ':f:i:o:' OPT; do
+    case "${OPT}" in
+        f)  LOG_FILE=${OPTARG} ;;
+        o)  if [[ -d $(dirname ${OPTARG}) ]]; then
+                OUT_FILE="$(realpath ${OPTARG})"
+            else
+                echoerr "ERROR: Not a directory '$(dirname ${OPTARG})'"
+                exit 1
+            fi ;;
+        # Handle erroneous input
+        \?)
+            echoerr "ERROR: Unexpected option -${OPTARG}";
+            usage
+            ;;
+        :)
+            echoerr "ERROR: Option -${OPTARG} requires an argument."
+            usage
+            ;;
+    esac
+done
+
+if [[ -z ${LOG_FILE-} ]]; then
+    echoerr "INFO: Enumerating available log files"
+    LOG_FILE=$(choose $(rds_log_files ${STACK_NAME}))
+fi
+
+echoerr "INFO: Downloading log file: ${LOG_FILE}"
+
+rds_log_download ${STACK_NAME} ${LOG_FILE} ${OUT_FILE}
+
+echoerr "INFO: Log saved as: ${OUT_FILE}"
+

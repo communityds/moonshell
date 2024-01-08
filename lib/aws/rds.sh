@@ -108,6 +108,54 @@ rds_list_dbs () {
     return $?
 }
 
+rds_log_download () {
+    if [[ $# -lt 3 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME LOG_FILE DUMP_FILE"
+        return 1
+    fi
+    local stack_name="$1"
+    local log_file="$2"
+    local dump_file="$3"
+
+    local instance=$(rds_instance_select ${stack_name})
+    [[ ${instance-} ]] \
+        && echoerr "INFO: Found DB instance: ${instance}" \
+        || return 1
+
+    aws rds download-db-log-file-portion \
+        --region ${AWS_REGION} \
+        --db-instance-identifier ${instance} \
+        --starting-token 0 \
+        --log-file-name ${log_file} \
+        --output text \
+        > ${dump_file}
+
+    return $?
+}
+
+rds_log_files () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
+
+    local stack_name="$1"
+
+    local instance=$(rds_instance_select ${stack_name})
+    if [[ ${instance-} ]]; then
+        echoerr "INFO: Found DB instance: ${instance}"
+    else
+        return 1
+    fi
+
+    aws rds describe-db-log-files \
+        --region ${AWS_REGION} \
+        --db-instance-identifier ${instance} \
+        | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | .[].LogFileName'
+
+    return $?
+}
+
 rds_mysql_dump_db () {
     if [[ $# -lt 3 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME DATABASE OUT_FILE [OPTIONS]"
