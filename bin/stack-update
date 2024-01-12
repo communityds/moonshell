@@ -101,8 +101,8 @@ CFN_CMD="aws cloudformation update-stack \
     --parameters '[${PARAM_JSON#,}]' \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3-${AWS_REGION}.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
-${CFN_CMD} \
-    2>&1 \
+
+eval ${CFN_CMD} 2>&1 \
     | grep -q 'No updates are to be performed' \
     | true
 STATUS=(${PIPESTATUS[@]})
