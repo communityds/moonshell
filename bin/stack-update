@@ -95,12 +95,13 @@ echoerr "INFO: Updating: ${STACK_NAME}"
 # If when updating a stack the uploaded template does not precipitate change,
 # the return code is 255, so we have to test both the command and its output to
 # decipher if there is actually no change
-aws cloudformation update-stack \
+CFN_CMD="aws cloudformation update-stack \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME} \
-    --parameters "[${PARAM_JSON#,}]" \
+    --parameters '[${PARAM_JSON#,}]' \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3-${AWS_REGION}.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
-    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+${CFN_CMD} \
     2>&1 \
     | grep -q 'No updates are to be performed' \
     | true
@@ -117,7 +118,8 @@ elif [[ ${STATUS[0]} == 255 ]] && [[ ${STATUS[1]} == 0 ]]; then
     exit
 else
     echoerr "ERROR: Failed to update stack '${STACK_NAME}'"
-    echoerr "INFO: Run with 'DEBUG=true' for more output"
+    echoerr "INFO: Attempted command:"
+    echo ${CFN_CMD}
     exit ${STATUS[0]}
 fi
 
