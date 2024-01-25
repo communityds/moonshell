@@ -123,7 +123,8 @@ The functionality of Moonshell differs between whether it is in an interractive
 shell, or a script. There are two main switches you may need to use in custom
 scripts depending on the level of integration required.
 
-* `AWS_ACCOUNT_NAME` if `false` does not pre-load any AWS specific libraries
+* `AWS_AUTH` if `false` does not pre-load any AWS specific libraries
+
 * `MOON_FILE` if `false` disables the need to be in the root of a repo to operate
 
 The majority of Moonshell's functionality relies upon a `moonshell/moonshell.sh`
