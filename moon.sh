@@ -173,7 +173,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
             exit 1
         fi
     else
-        echoerr "ERROR: Can not find: moonshell/moonshell.sh"
+        echoerr "ERROR: You must be in the root of a product's repo"
         exit 1
     fi
 
