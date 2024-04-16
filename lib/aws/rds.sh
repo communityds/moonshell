@@ -51,10 +51,11 @@ rds_engine_type () {
 
 rds_instance_select () {
     if [[ $# -lt 1 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME [REPLICA]"
         return 1
     fi
     local stack_name="$1"
+    local replica="${2-}"
 
     local instance replica
     local -a instances=($(rds_stack_resources ${stack_name}))
@@ -64,19 +65,28 @@ rds_instance_select () {
             echo ${instances}
             return 0
         else
-            # At this point in time we don't have a need to support finding a
-            # replica, so are purely concerned only with finding the master.
-            # if the slave is required, then this needs some `choose` action,
-            # but that will impact the user experience for rds-dump-db et al.
             for instance in ${instances[@]}; do
-                replica=$(aws rds describe-db-instances \
+                db_instance=$(aws rds describe-db-instances \
                     --region ${AWS_REGION} \
                     --db-instance-identifier ${instance} \
-                    --query "DBInstances[].ReadReplicaDBInstanceIdentifiers" \
-                    --output text)
+                    | jq '.DBInstances[]')
+
                 if [[ ${replica-} ]]; then
-                    echo ${instance}
-                    return 0
+                    has_source=$(echo ${db_instance} \
+                        | jq -r '.ReadReplicaSourceDBInstanceIdentifier // ""')
+
+                    if [[ ${has_source-} ]]; then
+                        echo ${instance}
+                        return 0
+                    fi
+                else
+                    has_replica=$(echo ${db_instance} \
+                        | jq -r '.ReadReplicaDBInstanceIdentifiers[] // ""')
+
+                    if [[ ${has_replica-} ]]; then
+                        echo ${instance}
+                        return 0
+                    fi
                 fi
             done
 
@@ -110,14 +120,15 @@ rds_list_dbs () {
 
 rds_log_download () {
     if [[ $# -lt 3 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME LOG_FILE DUMP_FILE"
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME LOG_FILE DUMP_FILE [REPLICA]"
         return 1
     fi
     local stack_name="$1"
     local log_file="$2"
     local dump_file="$3"
+    local replica="${4-}"
 
-    local instance=$(rds_instance_select ${stack_name})
+    local instance=$(rds_instance_select ${stack_name} ${replica-})
     [[ ${instance-} ]] \
         && echoerr "INFO: Found DB instance: ${instance}" \
         || return 1
