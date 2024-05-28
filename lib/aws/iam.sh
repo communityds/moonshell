@@ -90,6 +90,18 @@ iam_access_key_list () {
         --output text
 }
 
+iam_group_users () {
+    if [[ $# -lt 1 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} GROUP_NAME"
+        return 1
+    fi
+    local group_name="$1"
+
+    aws iam get-group \
+        --group-name ${group_name} \
+        | jq -r '.Users.[].UserName'
+}
+
 iam_groups () {
     aws iam list-groups \
         --query "Groups[].GroupName" \

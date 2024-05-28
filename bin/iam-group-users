@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# List groups
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) IAM_GROUP_NAME"
+    exit
+else
+    IAM_GROUP="$1"
+fi
+
+echoerr "INFO: Listing group members"
+iam_group_users ${IAM_GROUP}
+
