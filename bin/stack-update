@@ -58,10 +58,6 @@ STACK_PARAMETERS=($(aws cloudformation get-template-summary \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME}  \
     | jq -r '.Parameters[].ParameterKey'))
-if [[ -z ${STACK_PARAMETERS-} ]]; then
-    echoerr "ERROR: Could not find any parameters"
-    exit 1
-fi
 
 echoerr "INFO: Parsing parameters"
 for param in ${!PARAMS[@]}; do
@@ -98,7 +94,9 @@ echoerr "INFO: Updating: ${STACK_NAME}"
 CFN_CMD="aws cloudformation update-stack \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME} \
-    --parameters '[${PARAM_JSON#,}]' \
+    $(if [[ ${PARAM_JSON-} ]]; then
+        printf "--parameters '[${PARAM_JSON#,}]'"
+    fi) \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3-${AWS_REGION}.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 
