@@ -91,7 +91,7 @@ STACK_ID=$(aws cloudformation create-stack \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME} \
     $(if [[ ${PARAM_JSON-} ]]; then
-        printf "--parameters '[${PARAM_JSON#,}]'"
+        echo "--parameters '[${PARAM_JSON#,}]'"
     fi) \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}${AWS_S3_DOMAIN_SUFFIX}/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
