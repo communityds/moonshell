@@ -42,7 +42,7 @@ s3_delete_objects () {
     local s3_bucket_name="$1"
     local json="$2"
 
-    if ! echo ${json} | jq '.' &>/dev/null; then
+    if ! echo "${json}" | jq '.' &>/dev/null; then
         echoerr "ERROR: JSON is invalid"
         return 1
     fi
@@ -130,7 +130,7 @@ s3_file_versions () {
 }
 
 s3_get_delete_markers () {
-    if [[ $# -lt 2 ]] ;then
+    if [[ $# -lt 1 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET PREFIX"
         return 1
     fi
@@ -143,7 +143,9 @@ s3_get_delete_markers () {
     aws s3api list-object-versions \
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
-        --prefix "${s3_prefix-}" \
+        $( if [[ ${s3_prefix-} ]]; then
+            echo "--prefix \"${s3_prefix-}\""
+        fi) \
         --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" 2>/dev/null
 }
 

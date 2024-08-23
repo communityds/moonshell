@@ -32,7 +32,7 @@ fi
 
 echoerr "INFO: Deletion of ${OBJECTS} objects from '${S3_BUCKET}' will commence in ${SLEEP} seconds (ctrl-C to cancel)"
 sleep ${SLEEP}
-s3_delete_objects ${S3_BUCKET} ${OLD_FILE_JSON}
+s3_delete_objects ${S3_BUCKET} "${OLD_FILE_JSON}"
 
 echoerr "INFO: Deletion complete. Have a nice day :)"
 
