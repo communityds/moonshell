@@ -33,6 +33,13 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
     echoerr "INFO: LoadBalancerName:      $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LoadBalancerNames[]')"
     echoerr "INFO: TargetGroupARNs:       $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].TargetGroupARNs[]')"
 
+    if [[ ${autoscaling_group_json} =~ "LaunchTemplate" ]]; then
+        launch_template_version=$(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LaunchTemplate.Version')
+
+        echoerr "INFO: LaunchTemplateId:      $(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].LaunchTemplate.LaunchTemplateId')"
+        echoerr "INFO: LaunchTemplateVersion: ${launch_template_version}"
+    fi
+
     instance_ids=($(echo ${autoscaling_group_json} | jq -r '.AutoScalingGroups[].Instances[].InstanceId'))
 
     instances_json=$(aws ec2 describe-instances \
@@ -51,9 +58,22 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
         echoerr "INFO:          AvailabilityZone:        $(echo ${instance_asg_json} | jq -r '.AvailabilityZone')"
         echoerr "INFO:          LifecycleState:          $(echo ${instance_asg_json} | jq -r '.LifecycleState')"
         echoerr "INFO:          HealthStatus:            $(echo ${instance_asg_json} | jq -r '.HealthStatus')"
-        # An instance does not always have a LaunchConfiguration
-        echoerr "INFO:          LaunchConfigurationName: $(echo ${instance_asg_json} | jq -r '.LaunchConfigurationName' 2>/dev/null)"
+
+        if [[ ${launch_template_version-} ]]; then
+            template_version=$(jq -r '.LaunchTemplate.Version' <<<${instance_asg_json})
+            template_id=$(jq -r '.LaunchTemplate.LaunchTemplateId' <<<${instance_asg_json})
+            if [[ ${launch_template_version} == ${template_version} ]]; then
+                echoerr "INFO:          LaunchTemplateVersion:   ${template_version}"
+            else
+                echoerr "INFO:          LaunchTemplateVersion:   out-of-date"
+            fi
+        else
+            # An instance does not always have a LaunchConfiguration
+            echoerr "INFO:          LaunchConfigurationName: $(echo ${instance_asg_json} | jq -r '.LaunchConfigurationName' 2>/dev/null)"
+        fi
     done
+
+    unset launch_template_version
 
     if [[ ${#AUTOSCALING_GROUPS[@]} -gt 1 ]] && [[ ! ${autoscaling_group} == ${AUTOSCALING_GROUPS[-1]} ]]; then
         echoerr "INFO:"
