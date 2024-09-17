@@ -24,8 +24,13 @@ OUTPUT_FILE=$(mktemp -t $(basename $0)_${STACK_NAME}_.XXXXXX)
 TEMP_DIR=$(mktemp -p /tmp -d $(basename $0)_${STACK_NAME}_.XXXXXX)
 GIT_URL=$(git remote get-url origin)
 GIT_COMMIT=$(git rev-parse HEAD)
-export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME} 2>/dev/null)
 DEPLOY_FILE="codedeploy/$(date +%s).tgz"
+
+if [[ -z ${S3_BUCKET-} ]]; then
+    echoerr "ERROR: Failed to resolve an S3 bucket name for stack: ${STACK_NAME}"
+    exit 1
+fi
 
 pushd ${TEMP_DIR} >/dev/null
     echoerr "INFO: Cloning '${APP_NAME}' to: ${TEMP_DIR}"
