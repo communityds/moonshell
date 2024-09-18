@@ -51,6 +51,7 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
         instance_asg_json=$(echo ${autoscaling_group_json} | jq ".AutoScalingGroups[].Instances[] | select(.InstanceId == \"${instance_id}\")")
 
         echoerr "INFO:     InstanceId:              ${instance_id}"
+        echoerr "INFO:          LaunchTime:              $(echo ${instance_json} | jq -r '.LaunchTime')"
         echoerr "INFO:          PrivateIpAddress:        $(echo ${instance_json} | jq -r '.PrivateIpAddress')"
         echoerr "INFO:          PublicIpAddress:         $(echo ${instance_json} | jq -r '.PublicIpAddress')"
         echoerr "INFO:          ImageId:                 $(echo ${instance_json} | jq -r '.ImageId')"
