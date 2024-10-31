@@ -48,6 +48,9 @@ fi
 START_SECONDS=$(date +%s)
 SLEEP_DELAY=10
 
+echoerr "INFO: Parsing: ${STACK_TEMPLATE_FILE}"
+TEMPLATE_PARAMETERS=($(sed -n '/^Parameters:/,/^Mappings/p' ${STACK_TEMPLATE_FILE} \
+    | grep -Po '^\s{2}\w+'))
 
 echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
 declare -A PARAMS
@@ -72,7 +75,7 @@ for param in ${!PARAMS[@]}; do
 done
 
 for param in ${STACK_PARAMETERS[@]-}; do
-    if grep -q ${param} ${STACK_TEMPLATE_FILE}; then
+    if contains ${param} ${TEMPLATE_PARAMETERS[@]}; then
         if contains ${param} ${!PARAMS[@]}; then
             PARAM_JSON+=",{\"ParameterKey\":\"${param}\",\"ParameterValue\":\"${PARAMS[$param]}\"}"
         else
