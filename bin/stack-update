@@ -50,7 +50,8 @@ SLEEP_DELAY=10
 
 echoerr "INFO: Parsing: ${STACK_TEMPLATE_FILE}"
 TEMPLATE_PARAMETERS=($(sed -n '/^Parameters:/,/^Mappings/p' ${STACK_TEMPLATE_FILE} \
-    | grep -Po '^\s{2}\w+'))
+    | grep -Po '^\s{2}\w+' \
+    || true))
 
 echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
 declare -A PARAMS
@@ -61,11 +62,6 @@ STACK_PARAMETERS=($(aws cloudformation get-template-summary \
     --region ${AWS_REGION} \
     --stack-name ${STACK_NAME} 2>/dev/null \
     | jq -r '.Parameters[].ParameterKey'))
-
-if [[ -z ${STACK_PARAMETERS-} ]]; then
-    echoerr "ERROR: Unable to gather parameters for stack: ${STACK_NAME}"
-    exit 1
-fi
 
 echoerr "INFO: Parsing parameters"
 for param in ${!PARAMS[@]}; do
