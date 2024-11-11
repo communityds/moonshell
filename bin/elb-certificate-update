@@ -91,8 +91,56 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
         | jq -r '.Certificates[] | select(.IsDefault == true) | .CertificateArn')
     echoerr "INFO: Found default certificate ARN: '${DEFAULT_CERTIFICATE}'"
 
-    echoerr "INFO: Setting default certificate"
-    aws elbv2 modify-listener --listener-arn ${ELB_LISTENER_ARN} --certificates CertificateArn=${IAM_CERT_ARN}
+    if [[ ${DEFAULT_CERTIFICATE} == ${IAM_CERT_ARN} ]]; then
+        echoerr "WARNING: Updating default certificate"
+        DEFAULT=true
+    else
+        DEFAULT=false
+    fi
+
+    ELB_CERTIFICATES=($(aws elbv2 describe-listener-certificates \
+        --listener-arn ${ELB_LISTENER_ARN} \
+        | jq -r '.Certificates[].CertificateArn'))
+
+    if contains ${IAM_CERT_ARN} ${ELB_CERTIFICATES[@]-}; then
+        ELB_CERTIFICATES=(${ELB_CERTIFICATES[@]/$IAM_CERT_ARN})
+        TMP_DEFAULT=${ELB_CERTIFICATES[0]}
+
+        if [[ ${DEFAULT} == true ]]; then
+            if [[ ${TMP_DEFAULT-} ]]; then
+                echoerr "WARNING: Switching default certificate"
+                aws elbv2 modify-listener \
+                    --listener-arn ${ELB_LISTENER_ARN} \
+                    --certificates CertificateArn=${TMP_DEFAULT}
+
+                echoerr "INFO: Removing existing certificate"
+                aws elbv2 remove-listener-certificates \
+                    --listener-arn ${ELB_LISTENER_ARN} \
+                    --certificates CertificateArn=${IAM_CERT_ARN}
+                aws elbv2 remove-listener-certificates \
+                    --listener-arn ${ELB_LISTENER_ARN} \
+                    --certificates CertificateArn=${IAM_CERT_ARN} \
+                    || true
+            fi
+        else
+            echoerr "INFO: Removing existing certificate"
+            aws elbv2 remove-listener-certificates \
+                --listener-arn ${ELB_LISTENER_ARN} \
+                --certificates CertificateArn=${IAM_CERT_ARN}
+        fi
+    fi
+
+    echoerr "INFO: Adding certificate to Listener"
+    aws elbv2 add-listener-certificates \
+        --listener-arn ${ELB_LISTENER_ARN} \
+        --certificates CertificateArn=${IAM_CERT_ARN}
+
+    if [[ ${DEFAULT} == true ]]; then
+        echoerr "INFO: Setting certificate as default"
+        aws elbv2 modify-listener \
+            --listener-arn ${ELB_LISTENER_ARN} \
+            --certificates CertificateArn=${IAM_CERT_ARN}
+    fi
 else
     STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
     HTTPS_ELBS=($(aws elb describe-load-balancers \
