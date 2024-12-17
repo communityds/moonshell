@@ -195,13 +195,13 @@ stack_parameter_file_parse () {
 }
 
 stack_parameter_set () {
-    if [[ $# -lt 3 ]] ;then
+    if [[ $# -lt 2 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME PARAM_KEY PARAM_VALUE"
         return 1
     fi
     local stack_name="$1"
     local parameter_key="$2"
-    local parameter_value="$3"
+    local parameter_value="${3-}"
 
     local parameters=($(aws cloudformation get-template-summary \
         --region ${AWS_REGION} \
@@ -216,7 +216,7 @@ stack_parameter_set () {
     local parameter parameter_json
     for parameter in ${parameters[@]}; do
         if [[ ${parameter} == ${parameter_key} ]]; then
-            parameter_json+=",{\"ParameterKey\":\"${parameter}\",\"ParameterValue\":\"${parameter_value}\"}"
+            parameter_json+=",{\"ParameterKey\":\"${parameter}\",\"ParameterValue\":\"${parameter_value-}\"}"
         else
             parameter_json+=",{\"ParameterKey\":\"${parameter}\",\"UsePreviousValue\":true}"
         fi
