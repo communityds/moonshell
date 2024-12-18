@@ -57,6 +57,11 @@ echoerr "INFO: Parsing: ${STACK_PARAMETER_FILE}"
 declare -A PARAMS
 stack_parameter_file_parse ${STACK_PARAMETER_FILE} PARAMS
 
+if ! stack_exists; then
+    echoerr "ERROR: Unable to find stack: ${STACK_NAME}"
+    exit 1
+fi
+
 echoerr "INFO: Gathering existing parameters"
 STACK_PARAMETERS=($(aws cloudformation get-template-summary \
     --region ${AWS_REGION} \

@@ -15,6 +15,17 @@ _stack_codedeploy_changed_files () {
         || true
 }
 
+stack_exists () {
+    local stack_name=$(aws cloudformation list-stacks \
+        | jq -r ".StackSummaries[] | select(.StackName == \"${STACK_NAME}\") | .StackName")
+
+    if [[ ${stack_name-} ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
 stack_id () {
     if [[ $# -lt 1 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
