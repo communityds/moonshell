@@ -104,7 +104,7 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
 
     if contains ${IAM_CERT_ARN} ${ELB_CERTIFICATES[@]-}; then
         ELB_CERTIFICATES=(${ELB_CERTIFICATES[@]/$IAM_CERT_ARN})
-        TMP_DEFAULT=${ELB_CERTIFICATES[0]}
+        TMP_DEFAULT=${ELB_CERTIFICATES[0]-}
 
         if [[ ${DEFAULT} == true ]]; then
             if [[ ${TMP_DEFAULT-} ]]; then
