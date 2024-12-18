@@ -15,6 +15,17 @@ _stack_codedeploy_changed_files () {
         || true
 }
 
+stack_exists () {
+    local stack_name=$(aws cloudformation list-stacks \
+        | jq -r ".StackSummaries[] | select(.StackName == \"${STACK_NAME}\") | .StackName")
+
+    if [[ ${stack_name-} ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
 stack_id () {
     if [[ $# -lt 1 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
@@ -431,19 +442,19 @@ stack_value () {
     local resource="$2"
     local param="$3"
 
-    local resource_id=$(aws cloudformation describe-stacks \
+    local stack_output=$(aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        --query "Stacks[].${param}s[?${param}Key=='${resource}'].${param}Value" \
-        --output text)
+        | jq -c '.')
 
-    if [[ ${resource_id-} ]]; then
-        echo "${resource_id}"
-        return 0
-    else
-        echoerr "ERROR: Could not resolve ${param} resource: ${resource}"
+    local value_array=$(jq -c ".Stacks[].${param}s[] | select(.${param}Key == \"${resource}\")" <<<${stack_output})
+
+    if [[ -z ${value_array-} ]]; then
+        echoerr "ERROR: Could not find ${param} resource: ${resource}"
         return 1
     fi
+
+    jq -r ".${param}Value" <<<${value_array}
 }
 
 stack_value_input () {
