@@ -442,19 +442,20 @@ stack_value () {
     local resource="$2"
     local param="$3"
 
-    local stack_output="$(aws cloudformation describe-stacks \
+    local stack_output=$(aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
-        --stack-name ${stack_name} \
-        | jq -c '.')"
+        --stack-name ${stack_name})
 
-    local value_array="$(jq -rc ".Stacks[].${param}s.[] | select(.${param}Key == \"${resource}\")" <<<${stack_output})"
+    local value_array=$(echo ${stack_output} \
+        | jq -c ".Stacks[].${param}s.[] | select(.${param}Key == \"${resource}\")")
 
     if [[ -z ${value_array-} ]]; then
         echoerr "ERROR: Could not find ${param} resource: ${resource}"
         return 1
     fi
 
-    jq -r ".${param}Value" <<<${value_array}
+    echo ${value_array} \
+        | jq -r ".${param}Value"
 }
 
 stack_value_input () {
