@@ -444,9 +444,10 @@ stack_value () {
 
     local stack_output=$(aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
-        --stack-name ${stack_name})
+        --stack-name ${stack_name} \
+        | jq -c '.')
 
-    local value_array=$(jq -r ".Stacks[].${param}s.[] | select(.${param}Key == \"${resource}\")" <<<"${stack_output}")
+    local value_array=$(jq -rc ".Stacks[].${param}s.[] | select(.${param}Key == \"${resource}\")" <<<"${stack_output}")
 
     if [[ -z ${value_array-} ]]; then
         echoerr "ERROR: Could not find ${param} resource: ${resource}"
