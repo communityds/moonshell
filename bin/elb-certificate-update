@@ -121,12 +121,17 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
                     --listener-arn ${ELB_LISTENER_ARN} \
                     --certificates CertificateArn=${IAM_CERT_ARN} \
                     || true
+            else
+                aws elbv2 remove-listener-certificates \
+                    --listener-arn ${ELB_LISTENER_ARN} \
+                    --certificates CertificateArn=${IAM_CERT_ARN}
             fi
         else
             echoerr "INFO: Removing existing certificate"
             aws elbv2 remove-listener-certificates \
                 --listener-arn ${ELB_LISTENER_ARN} \
-                --certificates CertificateArn=${IAM_CERT_ARN}
+                --certificates CertificateArn=${IAM_CERT_ARN} \
+                || true
         fi
     fi
 
