@@ -17,7 +17,26 @@ stack_name
 echoerr "INFO: Discovering nested stacks"
 NESTED_STACKS=($(stack_list_nested ${STACK_NAME}))
 
-echoerr "INFO: Discovering autoscaling groups"
+echoerr "INFO: Discovering instances"
+for stack in ${STACK_NAME} ${NESTED_STACKS[@]-}; do
+    INSTANCES+=($(stack_resource_type_id ${stack} "AWS::EC2::Instance" 2>/dev/null || true))
+done
+
+for instance_id in ${INSTANCES[@]}; do
+    instance_json=$(aws ec2 describe-instances --instance-ids ${instance_id} | jq -r '.Reservations[].Instances[]')
+
+    echoerr "INFO: InstanceId:        ${instance_id}"
+    echoerr "INFO:      LaunchTime:       $(echo ${instance_json} | jq -r '.LaunchTime')"
+    echoerr "INFO:      PrivateIpAddress: $(echo ${instance_json} | jq -r '.PrivateIpAddress')"
+    echoerr "INFO:      PublicIpAddress:  $(echo ${instance_json} | jq -r '.PublicIpAddress')"
+    echoerr "INFO:      ImageId:          $(echo ${instance_json} | jq -r '.ImageId')"
+    echoerr "INFO:      InstanceType:     $(echo ${instance_json} | jq -r '.InstanceType')"
+    echoerr "INFO:      AvailabilityZone: $(echo ${instance_json} | jq -r '.Placement.AvailabilityZone')"
+    echoerr "INFO:      State:            $(echo ${instance_json} | jq -r '.State.Name')"
+    echoerr "INFO:"
+done
+
+echoerr "INFO: Discovering ASGs"
 for stack in ${STACK_NAME} ${NESTED_STACKS[@]-}; do
     AUTOSCALING_GROUPS+=($(stack_resource_type_id ${stack} "AWS::AutoScaling::AutoScalingGroup" 2>/dev/null || true))
 done
