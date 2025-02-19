@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# Display domains on an IAM server-certificate
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) CERT_NAME"
+    exit
+else
+    CERT_NAME=$1
+fi
+
+echoerr "INFO: Testing: ${CERT_NAME}"
+CERT=$(aws acm list-certificates \
+    --region ${AWS_REGION} \
+    --includes keyTypes=["RSA_2048","RSA_4096"] \
+    | jq -r ".CertificateSummaryList[] | select(.DomainName == \"${CERT_NAME}\")")
+
+if [[ -z ${CERT-} ]]; then
+    echoerr "ERROR: Certificate not found: ${CERT_NAME}"
+    exit 1
+fi
+
+jq -r '.' <<<${CERT}
+

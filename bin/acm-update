@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# This script uses provided input files to update or create an certificate in ACM
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 3 ]]; then
+    echoerr "Usage: $(basename $0) CERTIFICATE_NAME CERT_FILE KEY_FILE [CA_FILE]"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ $(basename $0) star.example.com /path/to/star.example.com.crt /path/to/star.example.com.key"
+    echoerr "  $ $(basename $0) example.com /path/to/example.com.crt /path/to/example.com.key /path/to/intermediateCA.crt"
+    exit
+else
+    CERT_NAME=$1
+    CERT_FILE=$2
+    KEY_FILE=$3
+    CA_FILE=${4-}
+fi
+
+for file in ${CERT_FILE} ${KEY_FILE} ${CA_FILE-}; do
+    [[ ! -f ${file} ]] \
+        && echoerr "ERROR: Not a file '${file}'" \
+        && exit 1
+done
+
+echoerr "INFO: Testing: ${CERT_NAME}"
+CERT_ARN=$(aws acm list-certificates \
+    --region ${AWS_REGION} \
+    --includes keyTypes=["RSA_2048","RSA_4096"] \
+    | jq -r ".CertificateSummaryList[] | select(.DomainName == \"${CERT_NAME}\") | .CertificateArn")
+
+if [[ -z ${CERT_ARN-} ]] ; then
+    if [[ ! ${CERT_NAME} =~ ^[a-z0-9=,.@-]+$ ]]; then
+        echoerr "ERROR: Illegal characters used. Name must match regex: ^[a-z0-9=,.@-]+$ "
+        exit 1
+    fi
+    echoerr "INFO: Certificate '${CERT_NAME}' does not exist, creating"
+fi
+
+echoerr "INFO: Importing certificate material"
+aws acm import-certificate \
+    --region ${AWS_REGION} \
+    $(if [[ ${CERT_ARN-} ]]; then echo " --certificate-arn ${CERT_ARN}"; fi) \
+    --certificate fileb://$(realpath ${CERT_FILE}) \
+    --private-key fileb://$(realpath ${KEY_FILE}) \
+    $(if [[ ${CA_FILE-} ]]; then echo " --certificate-chain fileb://$(realpath ${CA_FILE})"; fi) \
+    | jq -r '.'
+

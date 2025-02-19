@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# List all server certificates
+#
+
+export MOON_FILE=false
+
+source $(dirname $0)/../moon.sh
+
+echoerr "INFO: Listing all certificates"
+ACM_CERTIFICATES=($(aws acm list-certificates \
+    --includes keyTypes=["RSA_2048","RSA_4096"] \
+    | jq -r '.CertificateSummaryList[].DomainName' ))
+
+if [[ -z ${ACM_CERTIFICATES-} ]]; then
+    echoerr "ERROR: Could not find any server certificates"
+    exit 1
+fi
+
+for cert in ${ACM_CERTIFICATES[@]}; do
+    echo ${cert}
+done
+
