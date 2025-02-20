@@ -10,7 +10,7 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    IAM_CERT_NAME=${2-}
+    CERT_NAME=${2-}
     ELB_LOGICAL_ID=${3-}
 fi
 
@@ -18,33 +18,42 @@ stack_name
 ELB_PORT=443
 
 echoerr "INFO: Enumerating available server certificates"
-IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
-    --query "ServerCertificateMetadataList[].ServerCertificateName" \
-    --output text))
+ACM_CERTIFICATES=($(acm-list))
+IAM_CERTIFICATES=($(iam-certificate-list))
 
-[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
-    && echoerr "ERROR: Could not find any server certificates.." \
-    && exit 1
+CERTIFICATES=(${ACM_CERTIFICATES[@]} ${IAM_CERTIFICATES[@]})
 
-if [[ ${IAM_CERT_NAME-} ]]; then
-    if ! contains ${IAM_CERT_NAME} ${IAM_SERVER_CERTIFICATES[@]}; then
-        echoerr "ERROR: Certificate '${IAM_CERT_NAME}' does not exist"
+if [[ -z ${CERTIFICATES-} ]]; then
+    echoerr "ERROR: Could not find any server certificates.."
+    exit 1
+fi
+
+if [[ ${CERT_NAME-} ]]; then
+    if ! contains ${CERT_NAME} ${CERTIFICATES[@]}; then
+        echoerr "ERROR: Certificate '${CERT_NAME}' does not exist"
         exit 1
     fi
 else
     echo "Choose a certificate to use:"
-    IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
+    CERT_NAME="$(choose ${CERTIFICATES[@]})"
 fi
 
 echoerr "INFO: Outputting certificate details:"
-iam-certificate-details ${IAM_CERT_NAME}
+if contains ${CERT_NAME} ${ACM_CERTIFICATES[@]}; then
+    CERT_DETAILS=$(acm-details ${CERT_NAME})
+    jq '.' <<<${CERT_DETAILS}
 
-echoerr "INFO: Querying certificate ARN"
-IAM_CERT_ARN="$(aws iam list-server-certificates \
-    --region ${AWS_REGION} \
-    --query "ServerCertificateMetadataList[?ServerCertificateName=='${IAM_CERT_NAME}'].Arn" \
-    --output text)"
-echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
+    CERT_ARN=$(jq '.CertificateArn' <<<${CERT_DETAILS})
+else
+    iam-certificate-details ${CERT_NAME}
+
+    echoerr "INFO: Querying certificate ARN"
+    CERT_ARN=$(aws iam list-server-certificates \
+        --region ${AWS_REGION} \
+        --query "ServerCertificateMetadataList[?ServerCertificateName=='${CERT_NAME}'].Arn" \
+        --output text)
+    echoerr "INFO: Certificate ARN: ${CERT_ARN}"
+fi
 
 echoerr "INFO: Finding stack resources"
 STACK_RESOURCES_JSON=$(aws cloudformation list-stack-resources \
@@ -91,7 +100,7 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
         | jq -r '.Certificates[] | select(.IsDefault == true) | .CertificateArn')
     echoerr "INFO: Found default certificate ARN: '${DEFAULT_CERTIFICATE}'"
 
-    if [[ ${DEFAULT_CERTIFICATE} == ${IAM_CERT_ARN} ]]; then
+    if [[ ${DEFAULT_CERTIFICATE} == ${CERT_ARN} ]]; then
         echoerr "WARNING: Updating default certificate"
         DEFAULT=true
     else
@@ -102,8 +111,8 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
         --listener-arn ${ELB_LISTENER_ARN} \
         | jq -r '.Certificates[].CertificateArn'))
 
-    if contains ${IAM_CERT_ARN} ${ELB_CERTIFICATES[@]-}; then
-        ELB_CERTIFICATES=(${ELB_CERTIFICATES[@]/$IAM_CERT_ARN})
+    if contains ${CERT_ARN} ${ELB_CERTIFICATES[@]-}; then
+        ELB_CERTIFICATES=(${ELB_CERTIFICATES[@]/$CERT_ARN})
         TMP_DEFAULT=${ELB_CERTIFICATES[0]-}
 
         if [[ ${DEFAULT} == true ]]; then
@@ -116,21 +125,21 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
                 echoerr "INFO: Removing existing certificate"
                 aws elbv2 remove-listener-certificates \
                     --listener-arn ${ELB_LISTENER_ARN} \
-                    --certificates CertificateArn=${IAM_CERT_ARN}
+                    --certificates CertificateArn=${CERT_ARN}
                 aws elbv2 remove-listener-certificates \
                     --listener-arn ${ELB_LISTENER_ARN} \
-                    --certificates CertificateArn=${IAM_CERT_ARN} \
+                    --certificates CertificateArn=${CERT_ARN} \
                     || true
             else
                 aws elbv2 remove-listener-certificates \
                     --listener-arn ${ELB_LISTENER_ARN} \
-                    --certificates CertificateArn=${IAM_CERT_ARN}
+                    --certificates CertificateArn=${CERT_ARN}
             fi
         else
             echoerr "INFO: Removing existing certificate"
             aws elbv2 remove-listener-certificates \
                 --listener-arn ${ELB_LISTENER_ARN} \
-                --certificates CertificateArn=${IAM_CERT_ARN} \
+                --certificates CertificateArn=${CERT_ARN} \
                 || true
         fi
     fi
@@ -138,13 +147,13 @@ if contains AWS::ElasticLoadBalancingV2::LoadBalancer ${STACK_RESOURCE_TYPES[@]}
     echoerr "INFO: Adding certificate to Listener"
     aws elbv2 add-listener-certificates \
         --listener-arn ${ELB_LISTENER_ARN} \
-        --certificates CertificateArn=${IAM_CERT_ARN}
+        --certificates CertificateArn=${CERT_ARN}
 
     if [[ ${DEFAULT} == true ]]; then
         echoerr "INFO: Setting certificate as default"
         aws elbv2 modify-listener \
             --listener-arn ${ELB_LISTENER_ARN} \
-            --certificates CertificateArn=${IAM_CERT_ARN}
+            --certificates CertificateArn=${CERT_ARN}
     fi
 else
     STACK_ELBS=($(stack_resource_type_id ${STACK_NAME} "AWS::ElasticLoadBalancing::LoadBalancer"))
@@ -165,6 +174,6 @@ else
         --region ${AWS_REGION} \
         --load-balancer-name ${ELB_NAME} \
         --load-balancer-port ${ELB_PORT} \
-        --ssl-certificate-id ${IAM_CERT_ARN}
+        --ssl-certificate-id ${CERT_ARN}
 fi
 
