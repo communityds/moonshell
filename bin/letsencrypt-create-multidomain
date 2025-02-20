@@ -3,7 +3,7 @@
 # Create a multi-domain certificate from letsencrypt
 #
 # Assumptions:
-#   * Multi-domain certificates are stored in IAM as the first domain name referenced.
+#   * Multi-domain certificates are stored in ACM as the first domain name referenced.
 #   * Stack parameters are set up to use the first domain name as the certificate name.
 #
 
@@ -82,11 +82,11 @@ pushd ${MOON_VAR} >/dev/null
         --fullchain-file /dev/null \
         || clean_exit 1
 
-    echoerr "INFO: Uploading to IAM"
-    iam-certificate-update ${DOMAINS[0]} ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
+    echoerr "INFO: Uploading to ACM"
+    acm-update ${DOMAINS[0]} ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
 
     if [[ $? -gt 0 ]]; then
-        echoerr "WARNING: iam-certificate-update did not exit 0. Keeping temporary files."
+        echoerr "WARNING: acm-update did not exit 0. Keeping temporary files."
     else
         clean_exit
     fi

@@ -3,7 +3,7 @@
 # Create a wildcard certificate from letsencrypt
 #
 # Assumptions:
-#   * Wildcard certificates are stored in IAM as "star.${DOMAIN_SUFFIX}"
+#   * Wildcard certificates are stored in ACM as "star.${DOMAIN_SUFFIX}"
 #   * Stack parameters are set up to use a cert name of "star.${DOMAIN_SUFFIX}"
 #
 
@@ -85,8 +85,8 @@ pushd ${MOON_VAR} >/dev/null
         ${ACME_ARGS} \
         || clean_exit 1
 
-    echoerr "INFO: Uploading to IAM"
-    iam-certificate-update star.${DOMAIN_NAME} ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
+    echoerr "INFO: Uploading to ACM"
+    acm-update ${DOMAIN_NAME} ${CERT_FILE} ${KEY_FILE} ${CA_FILE}
 
     if [[ $? -gt 0 ]]; then
         echoerr "WARNING: iam-certificate-update did not exit 0. Keeping temporary files."
