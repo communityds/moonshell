@@ -19,41 +19,51 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    IAM_CERT_NAME=${2-}
+    CERT_NAME=${2-}
 fi
 
 stack_name
 
 echoerr "INFO: Enumerating available server certificates"
-IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
-    --query "ServerCertificateMetadataList[].ServerCertificateName" \
-    --output text))
 
-[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
-    && echoerr "ERROR: Could not find any server certificates.." \
-    && exit 1
+ACM_CERTIFICATES=($(acm-list))
+IAM_CERTIFICATES=($(iam-certificate-list))
 
-if [[ ${IAM_CERT_NAME-} ]]; then
-    if ! contains ${IAM_CERT_NAME} ${IAM_SERVER_CERTIFICATES[@]}; then
-        echoerr "ERROR: Certificate '${IAM_CERT_NAME}' does not exist"
+CERTIFICATES=(${ACM_CERTIFICATES[@]} ${IAM_CERTIFICATES[@]})
+
+
+if [[ -z ${CERTIFICATES-} ]]; then
+    echoerr "ERROR: Could not find any server certificates.."
+    exit 1
+fi
+
+if [[ ${CERT_NAME-} ]]; then
+    if ! contains ${CERT_NAME} ${CERTIFICATES[@]}; then
+        echoerr "ERROR: Certificate '${CERT_NAME}' does not exist"
         exit 1
     fi
 else
     echo "Choose a certificate to use:"
-    IAM_CERT_NAME="$(choose ${IAM_SERVER_CERTIFICATES[@]})"
-fi
-
-if [[ ${ACTION} == add ]]; then
-    echoerr "INFO: Outputting certificate details:"
-    iam-certificate-details ${IAM_CERT_NAME}
+    CERT_NAME="$(choose ${CERTIFICATES[@]})"
 fi
 
 echoerr "INFO: Querying certificate ARN"
-IAM_CERT_ARN="$(aws iam list-server-certificates \
-    --region ${AWS_REGION} \
-    --query "ServerCertificateMetadataList[?ServerCertificateName=='${IAM_CERT_NAME}'].Arn" \
-    --output text)"
-echoerr "INFO: Certificate ARN: ${IAM_CERT_ARN}"
+if contains ${CERT_NAME} ${ACM_CERTIFICATES[@]}; then
+    CERT_DETAILS=$(acm-details ${CERT_NAME})
+    jq '.' <<<${CERT_DETAILS}
+
+    CERT_ARN=$(jq '.CertificateArn' <<<${CERT_DETAILS})
+else
+    echoerr "INFO: Outputting certificate details:"
+    iam-certificate-details ${CERT_NAME}
+
+    CERT_ARN="$(aws iam list-server-certificates \
+        --region ${AWS_REGION} \
+        --query "ServerCertificateMetadataList[?ServerCertificateName=='${CERT_NAME}'].Arn" \
+        --output text)"
+fi
+
+echoerr "INFO: Certificate ARN: ${CERT_ARN}"
 
 echoerr "INFO: Finding stack resources"
 STACK_RESOURCES_JSON=$(aws cloudformation list-stack-resources \
@@ -96,11 +106,11 @@ if [[ ${ACTION} == add ]]; then
     echoerr "INFO: Adding a non-default certificate"
     aws elbv2 add-listener-certificates \
         --listener-arn ${ELB_LISTENER_ARN} \
-        --certificates CertificateArn=${IAM_CERT_ARN}
+        --certificates CertificateArn=${CERT_ARN}
 elif [[ ${ACTION} == delete ]]; then
     echoerr "INFO: Removing certificate"
     aws elbv2 remove-listener-certificates \
         --listener-arn ${ELB_LISTENER_ARN} \
-        --certificates CertificateArn=${IAM_CERT_ARN}
+        --certificates CertificateArn=${CERT_ARN}
 fi
 
