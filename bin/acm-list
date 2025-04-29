@@ -19,5 +19,6 @@ fi
 
 for cert in ${ACM_CERTIFICATES[@]}; do
     echo ${cert}
-done
+done \
+    | sort
 
