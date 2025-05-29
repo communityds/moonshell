@@ -9,13 +9,15 @@ if [[ $# -lt 1 ]]; then
     echoerr "Usage: $(basename $0) ENVIRONMENT [OPTIONS]"
     echoerr
     echoerr "Options:"
-    echoerr "  -f   Log file. Default: enumerate all available logs for user choice"
+    echoerr "  -f   Log file for 'startswith' match. Default: enumerate all logs for user choice"
     echoerr "  -o   Output file. Default: /tmp/\$STACK_NAME.slowlog"
     echoerr "  -r   Use the replica: Default: undefined"
     echoerr
     echoerr "Example:"
     echoerr "  $ $(basename $0) dev -o /tmp/foo.log"
-    echoerr "  $ $(basename $0) uat"
+    echoerr "  $ $(basename $0) uat -f slowquery/mysql-slowquery.log.2025-05-22.12 -r"
+    echoerr "  $ $(basename $0) production00 -f slowquery/mysql-slowquery.log.2025-05-22"
+    echoerr "  $ $(basename $0) production01 -f slowquery/mysql-slowquery.log.2025-05"
     exit 0
 else
     ENVIRONMENT=$1
@@ -52,9 +54,8 @@ if [[ -z ${LOG_FILE-} ]]; then
     LOG_FILE=$(choose $(rds_log_files ${STACK_NAME}))
 fi
 
-echoerr "INFO: Downloading log file: ${LOG_FILE}"
+echoerr "INFO: Downloading log(s) matching: ${LOG_FILE}"
+echoerr "INFO: Outputting log(s) to: ${OUT_FILE}"
 
 rds_log_download ${STACK_NAME} ${LOG_FILE} ${OUT_FILE} ${REPLICA-}
-
-echoerr "INFO: Log saved as: ${OUT_FILE}"
 

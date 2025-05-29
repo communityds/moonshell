@@ -133,13 +133,29 @@ rds_log_download () {
         && echoerr "INFO: Found DB instance: ${instance}" \
         || return 1
 
-    aws rds download-db-log-file-portion \
+    echoerr "INFO: Discovering log files"
+    log_file_names=($(aws rds describe-db-log-files \
         --region ${AWS_REGION} \
         --db-instance-identifier ${instance} \
-        --starting-token 0 \
-        --log-file-name ${log_file} \
-        --output text \
-        > ${dump_file}
+        | jq -r ".DescribeDBLogFiles | sort_by(.LastWritten) | .[] | select(.LogFileName | startswith(\"${log_file}\")) | .LogFileName"))
+
+    if [[ -z ${log_file_names-} ]]; then
+        echoerr "ERROR: No log files found matching: ${log_file}"
+        return 1
+    fi
+
+    truncate -s0 ${dump_file}
+
+    for log_file_name in ${log_file_names[@]}; do
+        echoerr "INFO: Downloading log file: ${log_file_name}"
+        aws rds download-db-log-file-portion \
+            --region ${AWS_REGION} \
+            --db-instance-identifier ${instance} \
+            --starting-token 0 \
+            --log-file-name ${log_file_name} \
+            --output text \
+            >> ${dump_file}
+    done
 
     return $?
 }
