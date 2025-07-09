@@ -22,7 +22,7 @@ for stack in ${STACK_NAME} ${NESTED_STACKS[@]-}; do
     INSTANCES+=($(stack_resource_type_id ${stack} "AWS::EC2::Instance" 2>/dev/null || true))
 done
 
-for instance_id in ${INSTANCES[@]}; do
+for instance_id in ${INSTANCES[@]-}; do
     instance_json=$(aws ec2 describe-instances --instance-ids ${instance_id} | jq -r '.Reservations[].Instances[]')
 
     echoerr "INFO: InstanceId:        ${instance_id}"
