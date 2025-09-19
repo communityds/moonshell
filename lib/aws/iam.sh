@@ -99,7 +99,7 @@ iam_group_users () {
 
     aws iam get-group \
         --group-name ${group_name} \
-        | jq -r '.Users.[].UserName'
+        | jq -r '.Users[].UserName'
 }
 
 iam_groups () {
