@@ -29,6 +29,33 @@ s3_cp () {
     return $?
 }
 
+s3_delete_keys () {
+    if [[ $# -lt 2 ]] ;then
+        echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET JSON"
+        return 1
+    fi
+
+    local s3_bucket_name="$1"
+    local object_json="$2"
+
+    # out_file is required because of command line length limits
+    local out_file=$(mktemp -p /tmp s3_delete_keys.XXXX)
+
+    printf '{"Objects":' >${out_file}
+
+    jq '[.[] | {"Key": .Key, "VersionId": .VersionId }]' <<<${object_json} >>${out_file}
+
+    printf ',"Quiet": true}' >>${out_file}
+
+    echoerr "INFO: Deleting keys"
+    aws s3api delete-objects \
+        --region ${AWS_REGION} \
+        --bucket ${s3_bucket_name} \
+        --delete file://${out_file}
+
+    rm -f ${out_file}
+}
+
 s3_delete_objects () {
     if [[ $# -lt 2 ]] ;then
         echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET JSON"
