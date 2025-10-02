@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#
+# Over time versioned S3 buckets will accumulate detritus which costs money and
+# is just plain messy. This script purges files that are deleted.
+#
+
+source $(dirname $0)/../moon.sh
+
+BASENAME=$(basename $0)
+OBJECT_TYPE=${BASENAME#s3-purge-}
+
+if [[ $# -lt 1 ]]; then
+    echoerr "This script deletes all ${OBJECT_TYPE/-/ } from a stack's S3 bucket."
+    if [[ ${OBJECT_TYPE} == delete-markers ]]; then
+        echoerr "s3-purge-delete-markers should only be run after s3-purge-old-versions."
+    fi
+    echoerr
+    echoerr "Usage: $(basename $0) ENVIRONMENT [PREFIX]"
+    exit
+else
+    ENVIRONMENT=$1
+    PREFIX=${2-}
+fi
+
+stack_name
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+
+echoerr "INFO: Gathering all object versions"
+OBJECT_JSON=$(aws s3api list-object-versions \
+    --region ${AWS_REGION} \
+    $([[ ${PREFIX-} ]] && echo "--prefix ${PREFIX}") \
+    --bucket ${S3_BUCKET})
+
+echoerr "INFO: Selecting ${OBJECT_TYPE/-/ }"
+case ${OBJECT_TYPE} in
+    delete-markers)   DELETE_JSON=$(jq -c '[.DeleteMarkers // [] | .[]]' <<<${OBJECT_JSON}) ;;
+    old-versions)     DELETE_JSON=$(jq -c '[.Versions // [] | .[] | select(.IsLatest == false)]' <<<${OBJECT_JSON}) ;;
+    current-versions)
+        DELETE_JSON=$(jq -c '[.Versions // [] | .[] | select(.IsLatest == true)]' <<<${OBJECT_JSON})
+        echoerr "WARNING: This action will delete $(jq '. | length' <<<${DELETE_JSON}) current files"
+        echoerr "WARNING: You have 10 seconds to cancel this process"
+        sleep 10
+    ;;
+    *)
+        echoerr "ERROR: Unsupported type: ${OBJECT_TYPE}"
+        exit 1
+    ;;
+esac
+
+echoerr "INFO: Found $(jq '. | length' <<<${DELETE_JSON}) keys"
+
+INDEX_START=0
+INCREMENT=1000
+while true; do
+    ((INDEX_END=INDEX_START+INCREMENT))
+
+    SELECTION=$(jq ".[${INDEX_START}:${INDEX_END}]" <<<${DELETE_JSON})
+
+    if [[ -z $(jq '.[]' <<<${SELECTION-}) ]]; then
+        break
+    fi
+    echoerr "INFO: Keys found in selection: ${INDEX_START}:${INDEX_END}"
+    s3_delete_keys ${S3_BUCKET} "${SELECTION}"
+
+    INDEX_START=${INDEX_END}
+done
+
+echoerr "INFO: No more ${OBJECT_TYPE} to delete. Have a nice day :)"
+

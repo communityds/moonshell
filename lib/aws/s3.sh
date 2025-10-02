@@ -38,6 +38,11 @@ s3_delete_keys () {
     local s3_bucket_name="$1"
     local object_json="$2"
 
+    if [[ ! ${object_json:0:1} == "[" ]] && [[ ! ${object_json:0-1} == "]" ]]; then
+        echoerr "ERROR: Input JSON is not an array"
+        return 1
+    fi
+
     # out_file is required because of command line length limits
     local out_file=$(mktemp -p /tmp s3_delete_keys.XXXX)
 
@@ -54,47 +59,6 @@ s3_delete_keys () {
         --delete file://${out_file}
 
     rm -f ${out_file}
-}
-
-s3_delete_objects () {
-    if [[ $# -lt 2 ]] ;then
-        echoerr "Usage: ${FUNCNAME[0]} S3_BUCKET JSON"
-        return 1
-    fi
-    # Sample JSON input:
-    # [{
-    #   "VersionId":"nkfayP3f3lLFmrBanFSNl4pc8ytT8ZY4",
-    #   "Key":"dummy-prefix/file.name"
-    # }]
-    local s3_bucket_name="$1"
-    local json="$2"
-
-    if ! echo "${json}" | jq '.' &>/dev/null; then
-        echoerr "ERROR: JSON is invalid"
-        return 1
-    fi
-
-    # The JSON string can be so long that the maximum command length can be
-    # exceeded. Also, the delete-objects action only accepts a maximum of
-    # 1000 objects at a time. To get around this we must use some tmp files.
-    local nwise_json=$(mktemp)
-    echo "${json}" \
-        | jq -c '. | _nwise(1000)' >${nwise_json}
-
-    local line_json=$(mktemp)
-    while read line; do
-        echo "{\"Objects\": ${line}, \"Quiet\": true}" >${line_json}
-
-        aws s3api delete-objects \
-            --region ${AWS_REGION} \
-            --bucket ${s3_bucket_name} \
-            --delete "file://${line_json}"
-
-        truncate -s0 ${line_json}
-    done <${nwise_json}
-
-    rm -f ${nwise_json}
-    rm -f ${line_json}
 }
 
 s3_download () {
