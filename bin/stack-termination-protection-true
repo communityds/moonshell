@@ -37,17 +37,10 @@ if [[ ${ACTION} == get ]]; then
     echo "${TP_CURRENT}"
 else
     if [[ ${TP_CURRENT} == ${ACTION} ]]; then
-        echoerr "ERROR: Termination protection is already: ${ACTION}"
-        exit 1
+        echoerr "WARNING: Termination protection is already: ${ACTION}"
+        exit
     elif [[ ${ACTION} == false ]]; then
         NO="no-"
-    fi
-
-    read -s -n 1 -p "Are you sure you wish to set termination protection for '${STACK_NAME}' to: ${ACTION}? (y/N)"
-    echoerr
-    if [[ ! ${REPLY-} == y ]]; then
-        echoerr "INFO: Exiting on user request"
-        exit
     fi
 
     echoerr "INFO: Setting termination protection to: ${ACTION}"
