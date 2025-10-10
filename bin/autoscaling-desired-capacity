@@ -17,6 +17,8 @@ if [[ $# -lt 2 ]]; then
     echoerr "  $ $(basename $0) dev app"
     echoerr "  $ $(basename $0) staging cache 2"
     echoerr "  $ $(basename $0) production Utility"
+    echoerr ""
+    echoerr "DESIRED_CAPACITY defaults to: 1"
     exit
 else
     ENVIRONMENT=$1
