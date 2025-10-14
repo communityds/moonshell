@@ -65,5 +65,5 @@ while true; do
     INDEX_START=${INDEX_END}
 done
 
-echoerr "INFO: No more ${OBJECT_TYPE} to delete. Have a nice day :)"
+echoerr "INFO: ${OBJECT_TYPE^} deletion complete"
 

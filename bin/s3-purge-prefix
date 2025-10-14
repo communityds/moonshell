@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+# Over time versioned S3 buckets will accumulate detritus which costs money and
+# is just plain messy. This script purges files that are deleted.
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "This script permanently and irrecoverably deletes all objects, versions and delete markers from a named prefix"
+    echoerr
+    echoerr "Usage: $(basename $0) ENVIRONMENT PREFIX"
+    exit
+else
+    ENVIRONMENT=$1
+    PREFIX=$2
+fi
+
+stack_name
+S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+
+OBJECT_COUNT=$(aws s3api list-object-versions \
+    --region ${AWS_REGION} \
+    --bucket $S3_BUCKET \
+    --prefix "${PREFIX}" \
+    --max-items 1 \
+    | jq -r '.Versions // ""')
+
+if [[ -z ${OBJECT_COUNT-} ]]; then
+    echoerr "INFO: Zero objects found under prefix: ${PREFIX}"
+    exit 0
+fi
+
+echoerr "INFO: Permanently deleting all current versions from prefix: ${PREFIX}"
+s3-purge-current-versions ${ENVIRONMENT} "${PREFIX}"
+
+echoerr "INFO: Permanently deleting all old versions from prefix: ${PREFIX}"
+s3-purge-old-versions ${ENVIRONMENT} "${PREFIX}"
+
+echoerr "INFO: Permanently deleting all delete markers from prefix: ${PREFIX}"
+s3-purge-delete-markers ${ENVIRONMENT} "${PREFIX}"
+
+echoerr "INFO: Purge of prefix completed"
