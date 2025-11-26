@@ -24,9 +24,9 @@ OBJECT_COUNT=$(aws s3api list-object-versions \
     --bucket $S3_BUCKET \
     --prefix "${PREFIX}" \
     --max-items 1 \
-    | jq -r '.Versions // ""')
+    | jq -r '.Versions | length')
 
-if [[ -z ${OBJECT_COUNT-} ]]; then
+if [[ ${#OBJECT_COUNT} == 0 ]]; then
     echoerr "INFO: Zero objects found under prefix: ${PREFIX}"
     exit 0
 fi
@@ -39,5 +39,16 @@ s3-purge-old-versions ${ENVIRONMENT} "${PREFIX}"
 
 echoerr "INFO: Permanently deleting all delete markers from prefix: ${PREFIX}"
 s3-purge-delete-markers ${ENVIRONMENT} "${PREFIX}"
+
+OBJECT_COUNT=$(aws s3api list-object-versions \
+    --region ${AWS_REGION} \
+    --bucket $S3_BUCKET \
+    --prefix "${PREFIX}" \
+    | jq -r '.Versions | length')
+
+if [[ ${#OBJECT_COUNT} == 0 ]]; then
+    echoerr "INFO: Zero objects found under prefix: ${PREFIX}"
+    exit 0
+fi
 
 echoerr "INFO: Purge of prefix completed"
