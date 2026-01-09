@@ -162,8 +162,8 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     if [[ ${MOON_FILE-} == false ]]; then
         # Nothing to see here
         true
-    elif [[ -f ${PWD}/moonshell/moonshell.sh ]]; then
-        source ${PWD}/moonshell/moonshell.sh
+    elif [[ -f "${PWD}/moonshell/moonshell.sh" ]]; then
+        source "${PWD}/moonshell/moonshell.sh"
 
         if [[ -z ${APP_NAME-} ]]; then
             echoerr "FATAL: Unset variable: APP_NAME"
@@ -183,8 +183,8 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
 
     # Auto-source the CWD, unless we are in /
     # /etc/profile.d/*.sh can not be sourced with `set -u`
-    if [[ ! $(realpath ${PWD}) =~ ^/$ ]]; then
-        overlay_dir ${PWD}
+    if [[ ! $(realpath "${PWD}") =~ ^/$ ]]; then
+        overlay_dir "${PWD}"
     else
         true
     fi

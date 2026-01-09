@@ -68,9 +68,9 @@ overlay_dir () {
         return
     fi
 
-    if [[ -d ${dir}/bin ]]; then
-        overlay_path_prepend "$(realpath ${dir}/bin)"
-    elif [[ ! -d ${dir} ]]; then
+    if [[ -d "${dir}/bin" ]]; then
+        overlay_path_prepend "$(realpath "${dir}/bin")"
+    elif [[ ! -d "${dir}" ]]; then
         echoerr "ERROR: Directory does not exist or is not a directory: ${dir}"
         return 1
     fi
@@ -93,9 +93,9 @@ overlay_path_append () {
         return
     fi
 
-    if [[ -d ${bin_dir} ]]; then
+    if [[ -d "${bin_dir}" ]]; then
         if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
-            export PATH=${PATH}:$(realpath ${bin_dir})
+            export PATH=${PATH}:$(realpath "${bin_dir}")
         fi
     else
         echoerr "ERROR: Not a directory: ${bin_dir}"
@@ -111,9 +111,9 @@ overlay_path_prepend () {
         return
     fi
 
-    if [[ -d ${bin_dir} ]]; then
+    if [[ -d "${bin_dir}" ]]; then
         if [[ ! "${PATH}" =~ "${bin_dir}" ]]; then
-            export PATH=$(realpath ${bin_dir}):${PATH}
+            export PATH=$(realpath "${bin_dir}"):${PATH}
         fi
     else
         echoerr "ERROR: Not a directory: ${bin_dir}'"
@@ -124,7 +124,7 @@ overlay_path_prepend () {
 overlay_self () {
     local script="$0"
     if [[ -L "${script}" ]]; then
-        local readlink=$(readlink ${script})
+        local readlink=$(readlink "${script}")
         script="${readlink}"
     fi
     overlay_dir $(dirname "${script}")/../
@@ -140,13 +140,13 @@ overlay_source_dir () {
         return
     fi
 
-    if [[ ! -d ${source_dir} ]]; then
+    if [[ ! -d "${source_dir}" ]]; then
         echoerr "ERROR: Not a directory: ${source_dir}"
         return 1
     fi
 
     local source_file
-    local -a source_files=($(find ${source_dir}/ ${find_opts} -name '*.sh'))
+    local -a source_files=($(find "${source_dir}/" ${find_opts} -name '*.sh'))
 
     for source_file in ${source_files[@]-}; do
         source "${source_file}"
