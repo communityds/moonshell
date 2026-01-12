@@ -20,6 +20,17 @@ fi
 
 if [[ ! ${ALIAS_NAME} =~ ^[a-zA-Z0-9/_-]+$ ]] || [[ ${#ALIAS_NAME} -gt 250 ]]; then
     echoerr "ERROR: Invalid alias name: ${ALIAS_NAME}"
+    exit 1
+fi
+
+if [[ ! -f "${POLICY_FILE}" ]]; then
+    echoerr "ERROR: File does not exist: ${POLICY_FILE}"
+    exit 1
+fi
+
+if kms-key-detail ${ALIAS_NAME} &>/dev/null; then
+    echoerr "ERROR: KMS key exists"
+    exit 1
 fi
 
 echoerr "INFO: Creating key"
