@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+#
+# Trigger a single Lifecycle hook for an instance in an AutoScaling Group
+#
+export MOON_FILE=false
+
+source /opt/moonshell/moon.sh
+
+if [[ $# -lt 1 ]]; then
+    echoerr "Usage: $(basename $0) INSTANCE_ID"
+    exit
+else
+    INSTANCE_ID=$1
+fi
+
+echoerr "INFO: Getting current instance state"
+AUTO_SCALING_INSTANCE_STATE=$(aws autoscaling describe-auto-scaling-instances \
+    --region ${AWS_REGION} \
+    --instance-ids ${INSTANCE_ID} \
+    | jq -r '.AutoScalingInstances[].LifecycleState')
+
+if [[ ! ${AUTO_SCALING_INSTANCE_STATE-} =~ Pending ]]; then
+    echoerr "INFO: Instance is not in a pending state: ${AUTO_SCALING_INSTANCE_STATE-}"
+    exit
+fi
+
+echoerr "INFO: Getting AutoScalingGroup name"
+AUTO_SCALING_GROUP=$(aws autoscaling describe-auto-scaling-instances \
+    --region ${AWS_REGION} \
+    --instance-ids ${INSTANCE_ID} \
+    --query 'AutoScalingInstances[].AutoScalingGroupName' \
+    --output text)
+
+if [[ -z ${AUTO_SCALING_GROUP-} ]]; then
+    echoerr "WARNING: No ASG found for this instance: ${INSTANCE_ID}"
+    exit
+fi
+
+echoerr "INFO: Discovering lifecycle hooks for ASG: ${AUTO_SCALING_GROUP}"
+LIFE_CYCLE_HOOKS=$(aws autoscaling describe-lifecycle-hooks \
+    --region ${AWS_REGION} \
+    --auto-scaling-group-name ${AUTO_SCALING_GROUP})
+
+LENGTH=$(jq '.LifecycleHooks | length' <<<${LIFE_CYCLE_HOOKS})
+
+if [[ ${LENGTH} == 0 ]]; then
+    echoerr "INFO: No lifecycle hooks found for instance: ${INSTANCD_ID}"
+    exit
+elif [[ ${LENGTH} -gt 1 ]]; then
+    echoerr "ERROR: Found more than one lifecycle hooks: ${LENGTH}"
+    exit 1
+fi
+
+LIFE_CYCLE_HOOK_NAME=$(jq -r '.LifecycleHooks[].LifecycleHookName' <<<${LIFE_CYCLE_HOOKS})
+
+echoerr "INFO: Completing lifecycle action: ${LIFE_CYCLE_HOOK_NAME}"
+aws autoscaling complete-lifecycle-action \
+    --region ${AWS_REGION} \
+    --lifecycle-action-result CONTINUE \
+    --instance-id ${INSTANCE_ID} \
+    --auto-scaling-group-name ${AUTO_SCALING_GROUP} \
+    --lifecycle-hook-name ${LIFE_CYCLE_HOOK_NAME}
+
+echoerr "INFO: $(basename $0) completed"
