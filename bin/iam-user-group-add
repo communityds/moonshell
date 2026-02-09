@@ -34,9 +34,9 @@ if [[ ${USER_GROUPS[@]-} ]]; then
 fi
 
 echoerr "INFO: Adding '${IAM_USER}' to group '${IAM_GROUP}'"
-iam_user_group_add ${IAM_USER} ${IAM_GROUP}
-
-[[ $? == 0 ]] \
-    && echoerr "INFO: Done" \
-    || echoerr "ERROR: Failed"
+if iam_user_group_add ${IAM_USER} ${IAM_GROUP}; then
+    echoerr "INFO: Done"
+else
+    echoerr "ERROR: Failed"
+fi
 
