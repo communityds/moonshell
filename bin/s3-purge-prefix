@@ -6,14 +6,14 @@
 
 source $(dirname $0)/../moon.sh
 
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 1 ]]; then
     echoerr "This script permanently and irrecoverably deletes all objects, versions and delete markers from a named prefix"
     echoerr
-    echoerr "Usage: $(basename $0) ENVIRONMENT PREFIX"
+    echoerr "Usage: $(basename $0) ENVIRONMENT [PREFIX]"
     exit
 else
     ENVIRONMENT=$1
-    PREFIX=$2
+    PREFIX=${2-}
 fi
 
 stack_name
