@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+#
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT RESOURCE"
+    echoerr
+    echoerr "Example:"
+    echoerr "  $ stack-resource-get dev RDSSubnetGroup"
+    exit
+else
+    export ENVIRONMENT=$1
+    export RESOURCE=$2
+fi
+
+stack_name
+
+stack_resource_id ${STACK_NAME} ${RESOURCE}
+
