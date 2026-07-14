@@ -89,6 +89,23 @@ choose_default () {
     fi
 }
 
+collect () {
+    if [[ $# -lt 2 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} MATCH ARRAY[@]"
+        return 1
+    fi
+
+    local match=$1
+    shift
+    local -a array=($@)
+
+    for element in ${array[@]}; do
+        if [[ ${element} =~ ${match} ]]; then
+            echo ${element}
+        fi
+    done
+}
+
 contains () {
     if [[ $# -lt 2 ]]; then
         echoerr "Usage: ${FUNCNAME[0]} SEARCH_ITEM ARRAY[@]"
