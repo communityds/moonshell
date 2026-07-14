@@ -25,7 +25,7 @@ csv () {
 
 choose () {
     if [[ $# -lt 1 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} \${BASH_ARRAY[@]}"
+        echoerr "Usage: ${FUNCNAME[0]} ARRAY[@]"
         return 1
     fi
 
@@ -57,12 +57,12 @@ choose () {
 
 choose_default () {
     if [[ $# -lt 1 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} \${BASH_ARRAY[@]}"
+        echoerr "Usage: ${FUNCNAME[0]} DEFAULT ARRAY[@]"
         return 1
     fi
 
     # ARGV[0] is the default value to be returned.
-    # It does not have to exist in the array, that is the user's choice..
+    # It does not have to exist in the array, that is the user's choice.
     local default=$1
     shift
     local -a items=($@)
@@ -91,7 +91,7 @@ choose_default () {
 
 contains () {
     if [[ $# -lt 2 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}"
+        echoerr "Usage: ${FUNCNAME[0]} SEARCH_ITEM ARRAY[@]"
         echoerr "Returns 0 if search_item is in bash_array, 1 if not."
         return 1
     fi
@@ -128,7 +128,7 @@ generate_password () {
 
 matches () {
     if [[ $# -lt 2 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} \$MATCH_ITEM \${BASH_ARRAY[@]}"
+        echoerr "Usage: ${FUNCNAME[0]} MATCH_ITEM ARRAY[@]"
         echoerr "Returns 0 if match_item matches any element of the array, 1 if not."
         return 1
     fi
