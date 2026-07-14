@@ -2,20 +2,6 @@
 #
 # COMMON FUNCTIONS
 #
-csv () {
-    if [[ $# -lt 1 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} ARRAY"
-        return 1
-    fi
-    local IFS=","
-    echo "$*"
-}
-
-echoerr () {
-    # echo a message to STDERR instead of STDOUT
-    echo "${@-}" >&2
-}
-
 bash_rc_file () {
     local uname=$(uname)
     case ${uname} in
@@ -28,18 +14,13 @@ bash_rc_file () {
     esac
 }
 
-contains () {
-    if [[ $# -lt 2 ]]; then
-        echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}"
-        echoerr "Returns 0 if search_item is in bash_array, 1 if not."
+csv () {
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} ARRAY"
         return 1
     fi
-
-    local i
-    for i in "${@:2}"; do
-        [[ "$i" == "$1" ]] && return 0
-    done
-    return 1
+    local IFS=","
+    echo "$*"
 }
 
 choose () {
@@ -106,6 +87,25 @@ choose_default () {
     else
         echo "${default}"
     fi
+}
+
+contains () {
+    if [[ $# -lt 2 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} \$SEARCH_ITEM \${BASH_ARRAY[@]}"
+        echoerr "Returns 0 if search_item is in bash_array, 1 if not."
+        return 1
+    fi
+
+    local i
+    for i in "${@:2}"; do
+        [[ "$i" == "$1" ]] && return 0
+    done
+    return 1
+}
+
+echoerr () {
+    # echo a message to STDERR instead of STDOUT
+    echo "${@-}" >&2
 }
 
 generate_password () {
