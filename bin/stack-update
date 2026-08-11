@@ -109,25 +109,40 @@ CFN_CMD="aws cloudformation update-stack \
     ${TEMPLATE_SWITCH} ${STACK_TEMPLATE_BUCKET_SCHEME}${STACK_TEMPLATE_BUCKET}.s3-${AWS_REGION}.amazonaws.com/${STACK_NAME}/$(basename ${STACK_TEMPLATE_FILE}) \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 
-eval ${CFN_CMD} 2>&1 \
-    | grep -q 'No updates are to be performed' \
-    | true
-STATUS=(${PIPESTATUS[@]})
+# TODO Remove this jank once v1 is burried
+if aws --version | grep -q '^aws-cli/1'; then
+    eval ${CFN_CMD} 2>&1 \
+        | grep -q 'No updates are to be performed' \
+        | true
+    STATUS=(${PIPESTATUS[@]})
 
-# If the first process exited 255
-# And the output from the command matched the very specific grep
-# Or the first process exited 0
-# Then, we're cool
-if [[ ${STATUS[0]} == 0 ]]; then
-    echoerr "INFO: Update triggered. Waiting for stack update to complete"
-elif [[ ${STATUS[0]} == 255 ]] && [[ ${STATUS[1]} == 0 ]]; then
-    echoerr "INFO: No updates are to be performed"
-    exit
+    # If the first process exited 255
+    # And the output from the command matched the very specific grep
+    # Or the first process exited 0
+    # Then, we're cool
+    if [[ ${STATUS[0]} == 0 ]]; then
+        echoerr "INFO: Update triggered. Waiting for stack update to complete"
+    elif [[ ${STATUS[0]} == 255 ]] && [[ ${STATUS[1]} == 0 ]]; then
+        echoerr "INFO: No updates are to be performed"
+        exit
+    else
+        echoerr "ERROR: Failed to update stack '${STACK_NAME}'"
+        echoerr "INFO: Attempted command:"
+        echo ${CFN_CMD}
+        exit ${STATUS[0]}
+    fi
 else
-    echoerr "ERROR: Failed to update stack '${STACK_NAME}'"
-    echoerr "INFO: Attempted command:"
-    echo ${CFN_CMD}
-    exit ${STATUS[0]}
+    eval ${CFN_CMD}
+    STATUS=$?
+
+    if [[ ${STATUS} == 0 ]]; then
+        echoerr "INFO: Update triggered. Waiting for stack update to complete"
+    else
+        echoerr "ERROR: Failed to update stack '${STACK_NAME}'"
+        echoerr "INFO: Attempted command:"
+        echo ${CFN_CMD}
+        exit ${STATUS}
+    fi
 fi
 
 echoerr "INFO: Waiting for stack update to complete"
@@ -138,12 +153,21 @@ aws cloudformation wait \
     &>/dev/null &
 
 WAIT_PID=$!
+WAIT_START=$(date +%s)
 
 until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
     sleep ${SLEEP_DELAY}
     STACK_STATUS=$(stack_status ${STACK_NAME})
-    echoerr "INFO: Stack status: ${STACK_STATUS}"
+    NOW=$(date +%s)
+    WAIT_DURATION=$((${NOW} - ${WAIT_START}))
+
+    # The longest stack status string is 44 chars
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/view-stack-events.html
+    # The length of the status string changes between invocations, so we do a quick math hack to pad MESSAGE with blank space
+    MESSAGE="INFO: Stack is in status: ${STACK_STATUS} for ${WAIT_DURATION} seconds$(printf ' %.0s' $(seq 0 $(( 44 - ${#STACK_STATUS})) ))"
+    echo -en "$(printf '\b%.0s' $(seq 1 ${#MESSAGE}))${MESSAGE}" 1>&2
 done
+echo !>&2
 
 if [[ ! ${STACK_STATUS} == "UPDATE_COMPLETE" ]]; then
     echoerr "WARNING: Stack did not update successfully"
