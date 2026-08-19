@@ -40,8 +40,12 @@ sts_assume_role () {
 
     local role_session_name="${USER}-${role}"
 
+    local whoami=$(aws sts get-caller-identity)
+
     # See: aws sts assume-role help
-    if [[ -z ${duration-} ]]; then
+    if jq -r '.Arn' <<<${whoami} | grep -q "assumed-role"; then
+        duration=3600
+    elif [[ -z ${duration-} ]]; then
         duration=${duration_max}
     elif [[ ! ${duration} =~ ^[0-9]+$ ]]; then
         echoerr "ERROR: Duration is not an integer"
