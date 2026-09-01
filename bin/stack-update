@@ -167,7 +167,7 @@ until ! kill -s 0 ${WAIT_PID} &>/dev/null; do
     MESSAGE="INFO: Stack is in status: ${STACK_STATUS} for ${WAIT_DURATION} seconds$(printf ' %.0s' $(seq 0 $(( 44 - ${#STACK_STATUS})) ))"
     echo -en "$(printf '\b%.0s' $(seq 1 ${#MESSAGE}))${MESSAGE}" 1>&2
 done
-echo !>&2
+echo >&2
 
 if [[ ! ${STACK_STATUS} == "UPDATE_COMPLETE" ]]; then
     echoerr "WARNING: Stack did not update successfully"
