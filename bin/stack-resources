@@ -38,6 +38,11 @@ for stack_name in ${STACK_NAME} ${CHILD_STACK_NAMES[@]-}; do
         | jq -r '.StackResources[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
         | column --table
 
+    if pipe_failure ${PIPESTATUS[@]}; then
+        echoerr "ERROR: Failed to describe-stack-resources for: ${stack_name}"
+        exit 1
+    fi
+
     if [[ ${CHILD_STACK_NAMES-} ]] && [[ ! ${stack_name} == ${CHILD_STACK_NAMES[-1]} ]]; then
         echoerr
     fi
