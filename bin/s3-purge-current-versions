@@ -52,7 +52,7 @@ echoerr "INFO: Found $(jq '. | length' <<<${DELETE_JSON}) keys"
 INDEX_START=0
 INCREMENT=1000
 while true; do
-    ((INDEX_END=INDEX_START+INCREMENT))
+    INDEX_END=$(($INDEX_START + $INCREMENT))
 
     SELECTION=$(jq ".[${INDEX_START}:${INDEX_END}]" <<<${DELETE_JSON})
 

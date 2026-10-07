@@ -132,7 +132,7 @@ fi
 # Login Profile
 #
 echoerr "INFO: Finding login profiles"
-LOGIN=(aws iam get-login-profile \
+LOGIN=$(aws iam get-login-profile \
     --user-name ${IAM_USER} \
     | jq -r '.LoginProfile.UserName')
 
