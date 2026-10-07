@@ -113,8 +113,7 @@ s3_file_versions () {
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --prefix "${file_path}" \
-        --query "Versions[].LastModified" \
-        --output text \
+        | jq -r '.Versions[].LastModified' \
         | sort -r))
 
     echo ${version_timestamps[@]}
@@ -137,7 +136,7 @@ s3_get_delete_markers () {
         $( if [[ ${s3_prefix-} ]]; then
             echo "--prefix \"${s3_prefix-}\""
         fi) \
-        --query "DeleteMarkers[].{VersionId:VersionId,Key:Key}" 2>/dev/null
+        | jq -r '.DeleteMarkers[] | { "VersionId": .VersionId, "Key": .Key }' 2>/dev/null
 }
 
 s3_get_file_version () {
@@ -162,8 +161,7 @@ s3_get_file_version () {
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --prefix "${file_path}" \
-        --query "Versions[?LastModified=='${version_timestamp}'].VersionId" \
-        --output text)
+        | jq -r ".Versions[] | select(.LastModified == \"${version_timestamp}\") | .VersionId")
 
     echoerr "INFO: Getting version of '${file_path}': ${version_id}"
     aws s3api get-object \
@@ -197,7 +195,7 @@ s3_get_versions () {
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --prefix "${prefix}" \
-        --query "[Versions][?IsLatest==${is_latest}][].{VersionId:VersionId,Key:Key}" 2>/dev/null
+        | jq -r ".Versions[] | select(.IsLatest == ${is_latest}) | { "VersionId": .VersionId, "Key": .Key }" 2>/dev/null
 }
 
 s3_ls () {
@@ -394,7 +392,7 @@ s3_tag_set () {
         --region ${AWS_REGION} \
         --bucket ${s3_bucket_name} \
         --key "${s3_file}" \
-        --query "TagSet")
+        | jq -c '.TagSet')
 
     # TODO Add logic to handle the updating of tags
     if [[ -z ${current_tag_json-} ]] || [[ ${current_tag_json-} == "[]" ]]; then

@@ -43,8 +43,8 @@ vpc_peer_associate () {
         --vpc-id ${source_vpc_id} \
         --peer-vpc-id ${target_vpc_id} \
         $([[ ${target_account-} ]] && echo "--peer-owner-id ${target_account}") \
-        --query "VpcPeeringConnection.VpcPeeringConnectionId" \
-        --output text)
+        | jq -r '.VpcPeeringConnection.VpcPeeringConnectionId')
+
     [[ -z ${peering_id-} ]] \
         && echoerr "ERROR: failed to create a peering connection" \
         && return 1
@@ -92,8 +92,7 @@ vpc_peer_connection () {
             Name=requester-vpc-info.vpc-id,Values=${req_vpc_id} \
             Name=accepter-vpc-info.vpc-id,Values=${acc_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
-        --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
-        --output text))
+        | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId'))
 
     if [[ ${peering_connections[@]-} ]]; then
         if [[ ${#peering_connections[@]} == 1 ]]; then
@@ -133,9 +132,7 @@ vpc_peers_from_requester () {
         --filters \
             Name=requester-vpc-info.vpc-id,Values=${req_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
-        --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
-        --output text
-    return $?
+        | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId'
 }
 
 vpc_peers_to_accepter () {
@@ -150,8 +147,6 @@ vpc_peers_to_accepter () {
         --filters \
             Name=accepter-vpc-info.vpc-id,Values=${acc_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
-        --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
-        --output text
-    return $?
+        | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId'
 }
 

@@ -21,8 +21,7 @@ kms_id_from_key () {
 
         key_id=$(aws kms list-aliases \
             --region ${AWS_REGION} \
-            --query "Aliases[?AliasName=='${key}'].TargetKeyId" \
-            --output text)
+            | jq -r ".Aliases[] | select(.AliasName == \"${key}\") | .TargetKeyId")
 
         [[ -z ${key_id-} ]] \
             && echoerr "ERROR: Could not find ID for key alias: ${key}" \
@@ -36,9 +35,7 @@ kms_id_from_key () {
 kms_list_key_aliases () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
-        --query "Aliases[].AliasName" \
-        --output text
-    return $?
+        | jq -r ".Aliases[].AliasName"
 }
 
 kms_list_key_aliases_custom () {
@@ -46,15 +43,12 @@ kms_list_key_aliases_custom () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
         | jq -r '.Aliases[] | select(.AliasName | startswith("alias/aws") | not ) | .AliasName'
-    return $?
 }
 
 kms_list_key_ids () {
     aws kms list-keys \
         --region ${AWS_REGION} \
-        --query "Keys[].KeyId" \
-        --output text
-    return $?
+        | jq -r '.Keys[].KeyId'
 }
 
 kms_list_keys_detail () {
@@ -69,7 +63,8 @@ kms_list_keys_detail () {
             --region ${AWS_REGION} \
             --key-id ${key} \
             --output text \
-            --query "KeyMetadata.Origin")
+            | jq -r '.KeyMetadata.Origin')
+
         if [[ ${managed} == "AWS_KMS" ]]; then
             echoerr "INFO: Internal key: ${key}"
         elif [[ ${managed} == "EXTERNAL" ]]; then
@@ -77,8 +72,7 @@ kms_list_keys_detail () {
             aws kms describe-key \
                 --region ${AWS_REGION} \
                 --key-id ${key} \
-                --query "KeyMetadata.{Arn:Arn,CreationDate:CreationDate,Description:Description,KeyState:KeyState,ExpirationModel:ExpirationModel}" \
-                --output table
+                | jq ".KeyMetadata | { "Arn": .Arn, "CreationDate": .CreationDate, "Description": .Description, "KeyState": .KeyState, "ExpirationModel": .ExpirationModel }"
         else
             echoerr "ERROR: The key origin '${managed}' did not match"
             return 1
@@ -101,15 +95,13 @@ kms_stack_key_id () {
     local kms_key_id=$(aws kms describe-key \
         --region ${AWS_REGION} \
         --key-id ${kms_key_alias} \
-        --query "KeyMetadata.KeyId" \
-        --output text)
+        | jq -r '.KeyMetadata.KeyId')
 
     if [[ -z ${kms_key_id-} ]]; then
         kms_key_id="$(aws cloudformation describe-stacks \
             --region ${AWS_REGION} \
             --stack-name ${stack_name} \
-            --query "Stacks[].Parameters[?starts_with(ParameterValue,'arn:aws:kms')].ParameterValue" \
-            --output text)"
+            | jq -r '.Stacks[].Parameters[] | select(.ParameterValue | startswith("arn:aws:kms")) | .ParameterValue')"
     fi
 
     [[ ${kms_key_id-} ]] \

@@ -66,8 +66,7 @@ ami_info () {
     aws ec2 describe-images \
         --region ${AWS_REGION} \
         --image-ids ${ami_id} \
-        --query "Images[]" \
-        | jq '.'
+        | jq '.Images[]'
 }
 
 ami_list_sorted () {

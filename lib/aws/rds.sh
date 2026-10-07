@@ -33,8 +33,8 @@ rds_engine_type () {
     local engine=$(aws rds describe-db-instances \
         --region ${AWS_REGION} \
         --db-instance-identifier ${resource_name} \
-        --query "DBInstances[].Engine" \
-        --output text)
+        | jq -r '.DBInstances[].Engine')
+
     [[ -z ${engine-} ]] && return 1
 
     # We only support MySQL and PostgreSQL
@@ -255,8 +255,8 @@ rds_snapshot_list () {
     echoerr "INFO: Finding snapshots for DB instance"
     local snapshots=($(aws rds describe-db-snapshots \
         --region ${AWS_REGION} \
-        --query "DBSnapshots[?DBInstanceIdentifier=='${instance}'].DBSnapshotIdentifier" \
-        --output text))
+        | jq -r ".DBSnapshots[] | selectd(.DBInstanceIdentifier == \"${instance}\") | .DBSnapshotIdentifier"))
+
     [[ -z ${snapshots[@]-} ]] \
         && echoerr "INFO: No snapshots found for DB instance: ${instance}" \
         && return 1
@@ -280,14 +280,12 @@ rds_stack_resources () {
     local stack_id=$(aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter ${stack_status_ok[@]} \
-        --query "StackSummaries[?StackName=='${stack_name}'].StackId" \
-        --output text)
+        | jq -r ".StackSummaries[] | select(.StackName == \"${stack_name}\") | .StackId")
 
     local nested_stacks=($(aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter ${stack_status_ok[@]} \
-        --query "StackSummaries[?ParentId=='${stack_id}'].StackName" \
-        --output text))
+        | jq -r ".StackSummaries[] | select(.ParentId == \"${stack_id}\") | .StackName"))
 
     if [[ ${#nested_stacks[@]} -gt 0 ]]; then
         local nested_stack

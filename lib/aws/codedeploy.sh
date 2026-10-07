@@ -19,8 +19,7 @@ codedeploy_overlay () {
             --region ${AWS_REGION} \
             --deployment-group-name ${stack_name} \
             --application-name ${stack_name} \
-            --query "deploymentGroupInfo.deploymentGroupId" \
-            --output text)
+            | jq -r '.deploymentGroupInfo.deploymentGroupId')
 
         local deployment_base="/opt/codedeploy-agent/deployment-root/${deployment_uuid}"
 

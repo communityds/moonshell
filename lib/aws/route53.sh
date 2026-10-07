@@ -28,8 +28,7 @@ route53_change_resource_records () {
         \"ResourceRecordSet\":
             ${resource_record}
         }]}" \
-        --query "ChangeInfo.Id" \
-        --output text)
+        | jq -r '.ChangeInfo.Id')
 
     [[ -z ${change_id-} ]] \
         && echoerr "ERROR: Failed to submit change" \
@@ -39,8 +38,6 @@ route53_change_resource_records () {
     aws route53 wait resource-record-sets-changed \
         --region ${AWS_REGION} \
         --id ${change_id}
-    return $?
-
 }
 
 route53_delete_records () {
@@ -104,8 +101,7 @@ route53_external_hosted_zone_id () {
         && return 1
 
     local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
-        --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
-        --output text \
+        | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id" \
         | grep -Eo '(\w+)$')
 
     if [[ -z ${hosted_zone_id-} ]]; then
@@ -130,9 +126,7 @@ route53_fqdn_from_host () {
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
-        --query "ResourceRecordSets[?contains (Name, '${host}')].Name" \
-        --output text
-    return $?
+        | jq -r ".ResourceRecordSets[] | select(.Name | contains(\"${host}\")) | .Name"
 }
 
 route53_get_resource_record () {
@@ -146,19 +140,17 @@ route53_get_resource_record () {
     # The resource must be properly fully qualified
     [[ ! ${resource} =~ \.$ ]] && resource="${resource}."
 
-    local resource_record="$(aws route53 list-resource-record-sets \
+    local resource_record=$(aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
-        --query "ResourceRecordSets[?Name=='${resource}']" \
-        | jq -c '.[]')"
+        | jq -c ".ResourceRecordSets[] | select(.Name == \"${resource}\")")
 
     if [[ -z ${resource_record-} ]]; then
         echoerr "WARNING: No record found for resource: ${resource}"
         return 1
-    else
-        echo "${resource_record}"
-        return 0
     fi
+
+    echo "${resource_record}"
 }
 
 route53_id_from_zone_name () {
@@ -174,8 +166,7 @@ route53_id_from_zone_name () {
 
     local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
         --region ${AWS_REGION} \
-        --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
-        --output text)
+        | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id")
 
     [[ -z ${hosted_zone_id-} ]] \
         && echoerr "ERROR: No Id found for: ${hosted_zone_name}" \
@@ -203,8 +194,8 @@ route53_list_name () {
 
     local hosted_zone_id=$(aws route53 list-hosted-zones \
         --region ${AWS_REGION} \
-        --query "HostedZones[?Name=='${hosted_zone_name}'].Id" \
-        --output text)
+        | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id")
+
     [[ -z ${hosted_zone_id-} ]] \
         && echoerr "ERROR: Unable to find 'Id' for zone: ${hosted_zone_name}" \
         && return 1
@@ -214,8 +205,7 @@ route53_list_name () {
         aws route53 list-resource-record-sets \
             --region ${AWS_REGION} \
             --hosted-zone-id ${hosted_zone_id} \
-            --query "ResourceRecordSets[?Type=='${record_type}'].{Name:Name,${record_type}:ResourceRecords[].Value}" \
-            --output text
+            | jq -r ".ResourceRecordSets[] | select(.Type == \"${record_type}\") | { "Name": .Name, "${record_type}": .ResourceRecords[].Value }"
     done
 }
 
@@ -232,16 +222,14 @@ route53_list_host_records () {
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
-        --query "ResourceRecordSets[?ResourceRecords[?contains(Value, '${stack_name}')]].Name" \
-        --output text
+        | jq -r ".ResourceRecordSets[] | select(.ResourceRecords[].Value | contains(\"${stack_name}\")) | .Name"
 }
 
 route53_list_hosted_zones () {
     echoerr "INFO: Listing available hosted zones"
     aws route53 list-hosted-zones \
         --region ${AWS_REGION} \
-        --query "HostedZones[].Name" \
-        --output text
+        | jq -r '.HostedZones[].Name'
     return $?
 }
 
@@ -288,9 +276,7 @@ route53_list_type_records () {
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
-        --query "ResourceRecordSets[?Type=='${type}'].Name" \
-        --output text
-    return $?
+        | jq -r ".ResourceRecordSets[] | select(.Type == \"${type}\") | .Name"
 }
 
 route53_vpc_associate () {
@@ -309,8 +295,7 @@ route53_vpc_associate () {
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
-        --query "ChangeInfo.Id" \
-        --output text)
+        | jq -r '.ChangeInfo.Id')
 
     [[ -z ${change_id-} ]] \
         && echoerr "ERROR: Failed to submit change" \
@@ -336,8 +321,7 @@ route53_vpc_dissociate () {
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
-        --query "ChangeInfo.Id" \
-        --output text)
+        | jq -r '.ChangeInfo.Id')
 
     [[ -z ${change_id-} ]] \
         && echoerr "ERROR: Failed to submit change" \
@@ -356,8 +340,8 @@ route53_zone_name_from_id () {
 
     local hosted_zone_name=$(aws route53 list-hosted-zones \
         --region ${AWS_REGION} \
-        --query "HostedZones[?Id=='/hostedzone/${hosted_zone_id}'].Name" \
-        --output text)
+        | jq -r ".HostedZones[] | select(.Id == \"/hostedzone/${hosted_zone_id}\") | .Name" )
+
     [[ -z ${hosted_zone_name-} ]] \
         && echoerr "ERROR: No Name found for: ${hosted_zone_id}" \
         && return 1 \

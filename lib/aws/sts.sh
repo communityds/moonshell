@@ -5,9 +5,7 @@
 sts_account_id () {
     aws sts get-caller-identity \
         --region ${AWS_REGION} \
-        --query "Account" \
-        --output text
-    return $?
+        | jq -r '.Account'
 }
 
 sts_assume_role () {

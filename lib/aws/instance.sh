@@ -12,8 +12,7 @@ instance_public_ip () {
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
         --instance-ids ${instance_id} \
-        --query "Reservations[*].Instances[*].{IP:PublicIpAddress,ID:InstanceId}" \
-        --output text
+        | jq -r '.Reservations[].Instances[] | { "IP": .PublicIpAddress, "ID": .InstanceId }'
     return $?
 }
 
@@ -27,8 +26,7 @@ instance_private_ip () {
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
         --instance-ids ${instance_id} \
-        --query "Reservations[*].Instances[*].{IP:PrivateIpAddress,ID:InstanceId}" \
-        --output text
+        | jq -r '.Reservations[].Instances[] | { "IP": .PrivateIpAddress, "ID": .InstanceId }'
     return $?
 }
 
@@ -42,7 +40,6 @@ instances_running_ami () {
     aws ec2 describe-instances \
         --region ${AWS_REGION} \
         --filter Name=image-id,Values=${ami_id} \
-        --query "Reservations[].Instances[].InstanceId" \
-        --output text
+        | jq -r '.Reservations[].Instances[].InstanceId'
     return $?
 }

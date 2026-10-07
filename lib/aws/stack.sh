@@ -36,17 +36,14 @@ stack_id () {
     aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        --query "Stacks[].StackId" \
-        --output text
+        | jq -r '.Stacks[].StackId'
 }
 
 stack_list_app () {
     # List all stacks of the same type as the app you are administering
     aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
-        --query "Stacks[?contains (StackName, '${APP_NAME}')].StackName" \
-        --output text
-    return $?
+        | jq -r ".Stacks[] | select(.StackName | contains(\"${APP_NAME}\")) | .StackName"
 }
 
 stack_list_all () {
@@ -60,8 +57,7 @@ stack_list_all_parents () {
     aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
-        --query "StackSummaries[?not_null(TemplateDescription)].StackName" \
-        | jq -r '.[]' \
+        | jq -r '.StackSummaries[] | select(.TemplateDescription != null) | .StackName' \
         | sort
 }
 
@@ -78,8 +74,7 @@ stack_list_nested () {
     local nested_stacks=($(aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter ${stack_status_ok[@]} \
-        --query "StackSummaries[?ParentId=='${stack_id}'].StackName" \
-        --output text))
+        | jq -r ".StackSummaries[] | select(.ParentId == \"${stack_id}\") | .StackName"))
 
     if [[ -z ${nested_stacks-} ]]; then
         echoerr "WARNING: No nested stacks found "
@@ -151,8 +146,7 @@ stack_name_from_vpc_id () {
     local stack_name=$(aws ec2 describe-vpcs \
         --region ${AWS_REGION} \
         --filters Name=vpc-id,Values=${vpc_id} \
-        --query "Vpcs[].Tags[?Key=='aws:cloudformation:stack-name'].Value" \
-        --output text)
+        | jq -r '.Vpcs[].Tags[] | select(.Key == \"aws:cloudformation:stack-name\") | .Value')
 
     if [[ ! ${stack_name-} ]]; then
         echoerr "ERROR: Could not resolve 'aws:cloudformation:stack-name' tag key from vpc: ${vpc_id}"
@@ -169,7 +163,7 @@ stack_outputs () {
     aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        --query 'sort_by(Stacks[].Outputs[], &OutputKey)[]'
+        | jq '.Stacks[].Outputs | sort_by(.OutputKey)'
 }
 
 stack_parameter_file () {
@@ -255,7 +249,7 @@ stack_parameters () {
     aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        --query 'sort_by(Stacks[].Parameters[], &ParameterKey)[]'
+        | jq '.Stacks[].Parameters | sort_by(.ParameterKey)'
 }
 
 stack_resource_id () {
@@ -270,8 +264,7 @@ stack_resource_id () {
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
         --logical-resource-id ${resource} \
-        --query "StackResourceDetail.PhysicalResourceId" \
-        --output text)
+        | jq -r '.StackResourceDetail.PhysicalResourceId')
 
     if [[ ${resource_id-} ]]; then
         echo ${resource_id}
@@ -293,8 +286,7 @@ stack_resource_type_id () {
     local -a resource_ids=($(aws cloudformation list-stack-resources \
         --region ${AWS_REGION} \
         --stack-name "${stack_name}" \
-        --query "StackResourceSummaries[?ResourceType=='${resource_type}'].PhysicalResourceId" \
-        --output text))
+        | jq -r ".StackResourceSummaries[] | select(.ResourceType == \"${resource_type}\") | .PhysicalResourceId"))
 
     if [[ -z ${resource_ids[@]-} ]]; then
         echoerr "WARNING: No resources of type found: ${resource_type}"
@@ -316,8 +308,7 @@ stack_resource_type_name () {
     local -a resource_names=($(aws cloudformation list-stack-resources \
         --region ${AWS_REGION} \
         --stack-name "${stack_name}" \
-        --query "StackResourceSummaries[?ResourceType=='${resource_type}'].LogicalResourceId" \
-        --output text))
+        | jq -r ".StackResourceSummaries[] | select(.ResourceType == \"${resource_type}\") | .LogicalResourceId"))
 
     if [[ -z ${resource_names[@]-} ]]; then
         echoerr "WARNING: No resources of type found: ${resource_type}"
@@ -337,10 +328,8 @@ stack_status () {
 
     local status=$(aws cloudformation describe-stacks \
         --region ${AWS_REGION} \
-        --stack-name ${stack_name} \
-        --query "Stacks[].StackStatus" \
-        --output text \
-        2>/dev/null)
+        --stack-name ${stack_name} 2>/dev/null\
+        | jq -r '.Stacks[].StackStatus')
 
     if [[ -z ${status-} ]]; then
         echo NULL
@@ -359,8 +348,7 @@ stack_status_from_id () {
 
     aws cloudformation list-stacks \
         --region ${AWS_REGION} \
-        --query "StackSummaries[?StackId=='${stack_id}'].StackStatus" \
-        --output text
+        | jq -r ".StackSummaries[] | select(.StackId == \"${stack_id}\") | .StackStatus"
 }
 
 stack_status_ok () {

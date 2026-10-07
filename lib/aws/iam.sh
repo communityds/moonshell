@@ -50,7 +50,7 @@ iam_access_key_create () {
         echoerr "INFO: Creating API key and secret for: ${iam_user}"
         aws iam create-access-key \
             --user-name ${iam_user} \
-            --query "AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}"
+            | jq '.AccessKey | { "AccessKeyId", .AccessKeyId, "SecretAccessKey": .SecretAccessKey }'
     fi
 }
 
@@ -86,8 +86,7 @@ iam_access_key_list () {
 
     aws iam list-access-keys \
         --user-name ${iam_user} \
-        --query "AccessKeyMetadata[].AccessKeyId" \
-        --output text
+        | jq -r '.AccessKeyMetadata[].AccessKeyId'
 }
 
 iam_group_users () {
@@ -104,8 +103,7 @@ iam_group_users () {
 
 iam_groups () {
     aws iam list-groups \
-        --query "Groups[].GroupName" \
-        --output text
+        | jq -r '.Groups[].GroupName'
 }
 
 iam_policy_get () {
@@ -182,8 +180,7 @@ iam_user_arn () {
 
     aws iam get-user \
         --user-name ${iam_user} \
-        --query "User.Arn" \
-        --output text
+        | jq -r 'User.Arn'
 }
 
 iam_user_create () {
@@ -258,10 +255,7 @@ iam_user_group_list () {
 
     aws iam list-groups-for-user \
         --user-name ${iam_user} \
-        --query "Groups[].GroupName" \
-        --output text
-
-    return $?
+        | jq -r '.Groups[].GroupName'
 }
 
 iam_user_mfa_devices () {
@@ -273,8 +267,7 @@ iam_user_mfa_devices () {
 
     aws iam list-mfa-devices \
         --user-name ${iam_user} \
-        --query 'MFADevices[].SerialNumber' \
-        --output text
+        | jq -r '.MFADevices[].SerialNumber'
 }
 
 iam_user_policies () {
@@ -286,8 +279,7 @@ iam_user_policies () {
 
     aws iam list-attached-user-policies \
         --user-name ${iam_user} \
-        --query 'AttachedPolicies[].PolicyArn' \
-        --output text
+        | jq -r '.AttachedPolicies[].PolicyArn'
 }
 
 iam_user_ssc () {
@@ -299,8 +291,7 @@ iam_user_ssc () {
 
     aws iam list-service-specific-credentials \
         --user-name ${iam_user} \
-        --query 'ServiceSpecificCredentials[].ServiceSpecificCredentialId' \
-        --output text
+        | jq -r '.ServiceSpecificCredentials[].ServiceSpecificCredentialId'
 }
 
 iam_user_ssh_keys () {
@@ -312,13 +303,11 @@ iam_user_ssh_keys () {
 
     aws iam list-ssh-public-keys \
         --user-name ${iam_user} \
-        --query 'SSHPublicKeys[].SSHPublicKeyId' \
-        --output text
+        | jq -r '.SSHPublicKeys[].SSHPublicKeyId'
 }
 
 iam_users () {
     aws iam list-users \
-        --query "Users[].UserName" \
-        --output text
+        | jq -r '.Users[].UserName'
 }
 
