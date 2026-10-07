@@ -25,6 +25,13 @@ sts_assume_role () {
         | select(.Path == \"/${stack_name}/\") \
         | select(.RoleName | test(\"${role}\"))")
 
+    local -a pipe_status=${PIPESTATUS[@]}
+
+    if [[ ${pipe_status[0]} -gt 0 ]]; then
+        echoerr "ERROR: Failed to list roles. List-roles returned: ${pipe_status[0]}"
+        return ${pipe_status[0]}
+    fi
+
     if [[ -z ${role_json-} ]]; then
         echoerr "ERROR: Could not find role: ${role}"
     fi
