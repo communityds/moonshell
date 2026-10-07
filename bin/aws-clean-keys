@@ -12,8 +12,7 @@ source $(dirname $0)/../moon.sh
 
 echoerr "INFO: Finding packer launcher keys"
 LAUNCHER_KEYS=($(aws ec2 describe-key-pairs \
-    --query "KeyPairs[?contains (KeyName, 'packer')].KeyName" \
-    --output text))
+    | jq -r '.KeyPairs[] | select(.KeyName | contains("packer")) | .KeyName'))
 
 echoerr "INFO: Listing packer launcher keys"
 echo ${LAUNCHER_KEYS[@]} | sed 's/ /\n/g'

@@ -84,8 +84,7 @@ if [[ ${VOLUME_RESOURCE_ID-} ]]; then
     VOLUME_SNAPSHOT_IDS=($(aws ec2 describe-snapshots \
         --region ${AWS_REGION} \
         --filters Name=volume-id,Values=${VOLUME_RESOURCE_ID} \
-        --query "Snapshots[].SnapshotId" \
-        --output text))
+        | jq -r '.Snapshots[].SnapshotId'))
 
     if [[ ${#VOLUME_SNAPSHOT_IDS[@]} -gt 0 ]]; then
         echoerr "INFO: Found snapshots for volume '${VOLUME_RESOURCE_ID}'"

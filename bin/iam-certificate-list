@@ -9,8 +9,7 @@ source $(dirname $0)/../moon.sh
 
 echoerr "INFO: Listing all server certificates"
 IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
-    --query "ServerCertificateMetadataList[].ServerCertificateName" \
-    --output text))
+    | jq -r '.ServerCertificateMetadataList[].ServerCertificateName'))
 
 [[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
     && echoerr "ERROR: Could not find any server certificates" \

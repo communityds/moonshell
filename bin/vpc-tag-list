@@ -21,8 +21,7 @@ VPC_ID=$(stack_value_output ${STACK_NAME} VPCId)
 TAG_KEYS=($(aws ec2 describe-tags \
     --region ${AWS_REGION} \
     --filters Name=resource-id,Values=${VPC_ID} \
-    --query "Tags[].Key" \
-    --output text))
+    | jq -r '.Tags[].Key'))
 
 for key in ${TAG_KEYS[@]}; do
     echo ${key}

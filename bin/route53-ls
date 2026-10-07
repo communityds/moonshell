@@ -14,8 +14,7 @@ echoerr "INFO: Enumerating all hosted zones for account '${ACC_ID}'"
 
 HOSTED_ZONES=($(aws route53 list-hosted-zones-by-name \
     --region ${AWS_REGION} \
-    --query 'HostedZones[].Name' \
-    --output text))
+    | jq -r '.HostedZones[].Name'))
 
 HOSTED_ZONE_NAME=$(choose ${HOSTED_ZONES[@]})
 

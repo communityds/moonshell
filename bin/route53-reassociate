@@ -29,17 +29,16 @@ echoerr "INFO: ${STACK_NAME} InternalRoute53HostedZone: ${HOSTED_ZONE}"
 
 SELF_DOMAIN_NAME=$(aws route53 list-hosted-zones \
     --region ${AWS_REGION} \
-    --query "HostedZones[?Id=='/hostedzone/${HOSTED_ZONE}'].Name" \
-    --output text \
+    | jq -r ".HostedZones[] | select(.Id == \"/hostedzone/${HOSTED_ZONE}\") | .Name" \
     | sed 's/\.$//')
+
 echoerr "INFO: Hosted zone domain name: ${SELF_DOMAIN_NAME}"
 
 CLIENT_VPCS=($(aws ec2 describe-vpc-peering-connections \
     --filters \
         Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
         Name=status-code,Values=active,pending-acceptance,provisioning \
-    --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
-    --output text))
+    | jq -r '.VpcPeeringConnections[].AccepterVpcInfo.VpcId'))
 
 if ! contains ${TARGET_VPC_ID} ${CLIENT_VPCS[@]}; then
     echoerr "ERROR: VPC '${TARGET_VPC_ID}' is not associated with target '${TARGET_VPC_ID}'"

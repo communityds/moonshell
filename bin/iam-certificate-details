@@ -23,8 +23,7 @@ fi
 echoerr "INFO: Parsing certificate body"
 aws iam get-server-certificate \
     --server-certificate-name ${IAM_CERT_NAME} \
-    --query "ServerCertificate.CertificateBody" \
-    --output text \
+    | jq -r '.ServerCertificate.CertificateBody' \
     | openssl x509 -text -noout \
     | \grep -E "Issuer:|Not Before|Not After|Subject:|DNS:" \
     | sed -e 's/^ */  /g'

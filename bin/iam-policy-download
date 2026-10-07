@@ -34,5 +34,5 @@ echoerr "INFO: Downloading version '${VERSION_ID}' of policy '${POLICY_ARN}'"
 aws iam get-policy-version \
     --policy-arn ${POLICY_ARN} \
     --version-id ${VERSION_ID} \
-    --query "PolicyVersion.Document"
+    | jq -r '.PolicyVersion.Document'
 

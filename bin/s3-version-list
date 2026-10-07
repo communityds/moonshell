@@ -26,8 +26,7 @@ aws s3api list-object-versions \
     --region ${AWS_REGION} \
     --bucket ${S3_BUCKET} \
     --prefix "${S3_FILE}" \
-    --query "Versions[]" \
-    | jq -r ".[] | select(.Key == \"${S3_FILE}\") | [ .LastModified, .VersionId ] | @tsv"
+    | jq -r ".Versions[] | select(.Key == \"${S3_FILE}\") | [ .LastModified, .VersionId ] | @tsv"
 
 echoerr "INFO: Complete"
 

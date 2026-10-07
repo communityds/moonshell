@@ -28,7 +28,7 @@ STACKS=(${STACK_NAME} ${NESTED_STACKS[@]-})
 for stack in ${STACKS[@]}; do
     stack_json=$(aws cloudformation describe-stacks \
         --stack-name ${stack} \
-        --query "Stacks[]")
+        | jq -r '.Stacks[]')
 
     echoerr "INFO: StackName:       $(echo ${stack_json} | jq -r '.[].StackName')"
     echoerr "INFO: StackStatus:     $(echo ${stack_json} | jq -r '.[].StackStatus')"

@@ -23,8 +23,7 @@ fi
 echoerr "INFO: Finding all DNS names on certificate: ${IAM_CERT_NAME}"
 DNS_NAMES=($(aws iam get-server-certificate \
     --server-certificate-name ${IAM_CERT_NAME} \
-    --query "ServerCertificate.CertificateBody" \
-    --output text \
+    | jq -r '.ServerCertificate.CertificateBody' \
     | openssl x509 -text -noout \
     | grep DNS \
     | sed -e 's/\,//g' -e 's/DNS://g'))

@@ -23,6 +23,5 @@ echoerr "INFO: Resolving InstanceId from '${ADDRESS}'"
 aws ec2 describe-instances \
     --region ${AWS_REGION} \
     --filters Name=ip-address,Values=${ADDRESS} \
-    --query "Reservations[].Instances[].InstanceId" \
-    --output text
+    | jq -r '.Reservations[].Instances[].InstanceId'
 

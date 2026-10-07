@@ -23,8 +23,7 @@ if [[ ${GRANTEE-} ]]; then
     aws kms list-grants \
         --region ${AWS_REGION} \
         --key-id ${KEY_ID} \
-        --query "Grants[?GranteePrincipal=='arn:aws:iam::$(sts_account_id):user/${GRANTEE}']" \
-        | jq '.[]'
+        | jq ".Grants[] | select(.GranteePrincipal == \"arn:aws:iam::$(sts_account_id):user/${GRANTEE}\")"
 else
     echoerr "INFO: Listing all grants for key '${KEY_ID}'"
     aws kms list-grants --key-id ${KEY_ID} \

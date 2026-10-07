@@ -69,8 +69,7 @@ DEPLOY_ID=$(aws deploy create-deployment \
         \"key\": \"${DEPLOY_FILE}\",
         \"bundleType\": \"tgz\"
     }" \
-    --query "deploymentId" \
-    --output text)
+    | jq -r '.deploymentId')
 
 if [[ -z ${DEPLOY_ID-} ]]; then
     echoerr "ERROR: Failed to create a deployment"

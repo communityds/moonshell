@@ -28,8 +28,7 @@ echoerr "INFO: Getting AutoScalingGroup name"
 AUTO_SCALING_GROUP=$(aws autoscaling describe-auto-scaling-instances \
     --region ${AWS_REGION} \
     --instance-ids ${INSTANCE_ID} \
-    --query 'AutoScalingInstances[].AutoScalingGroupName' \
-    --output text)
+    | jq -r '.AutoScalingInstances[].AutoScalingGroupName')
 
 if [[ -z ${AUTO_SCALING_GROUP-} ]]; then
     echoerr "WARNING: No ASG found for this instance: ${INSTANCE_ID}"

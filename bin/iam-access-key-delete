@@ -27,8 +27,7 @@ if [[ -z ${ACCESS_KEY-} ]]; then
     # Table output makes it easier for the user to confirm the key to delete
     aws iam list-access-keys \
         --user-name ${IAM_USER} \
-        --query "AccessKeyMetadata[]" \
-        --output table
+        | jq '.AccessKeyMetadata[]'
 
     if [[ ${ACCESS_KEYS[@]-} ]]; then
         echoerr "WARNING: Key deletion is permanent and irrecoverable"

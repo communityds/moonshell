@@ -134,8 +134,8 @@ fi
 echoerr "INFO: Finding login profiles"
 LOGIN=(aws iam get-login-profile \
     --user-name ${IAM_USER} \
-    --query "LoginProfile.UserName" \
-    --output text)
+    | jq -r '.LoginProfile.UserName')
+
 if [[ ${LOGIN-} ]]; then
     echoerr "WARNING: Deleting login profile for '${LOGIN}'"
     aws iam delete-login-profile --user-name ${IAM_USER}

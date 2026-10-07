@@ -19,7 +19,6 @@ CURRENT_DEPLOYMENT_CONFIG=$(aws deploy get-deployment-group \
     --region ${AWS_REGION} \
     --application-name ${STACK_NAME} \
     --deployment-group-name ${STACK_NAME} \
-    --query 'deploymentGroupInfo.deploymentConfigName' \
-    --output text)
+    | jq -r '.deploymentGroupInfo.deploymentConfigName')
 
 echo ${CURRENT_DEPLOYMENT_CONFIG}

@@ -75,8 +75,7 @@ if [[ -z ${TARGET_STACK_NAME-} ]]; then
         echo "  ${i}: ${PEERING_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
             --region ${AWS_REGION} \
             --vpc-peering-connection-ids ${PEERING_CONNECTIONS[$i]} \
-            --query "VpcPeeringConnections[].Tags[?Key=='destination_stack'].Value" \
-            --output text)"
+            | jq -r '.VpcPeeringConnections[].Tags[] | select(.Key == "destination_stack") | .Value')"
     done
     if [[ ${#PEERING_CONNECTIONS[@]} -lt 2 ]]; then
         echo -n "Choice [0]: "
@@ -93,9 +92,7 @@ if [[ -z ${TARGET_STACK_NAME-} ]]; then
             TARGET_VPC_ID=$(aws ec2 describe-vpc-peering-connections \
                 --region ${AWS_REGION} \
                 --vpc-peering-connection-id ${VPC_PEERING_ID} \
-                --query "VpcPeeringConnections[].AccepterVpcInfo.VpcId" \
-                --output text
-            )
+                | jq -r '.VpcPeeringConnections[].AccepterVpcInfo.VpcId')
         fi
     else
         echoerr "ERROR: Choice '${choice}' is not numeric"
@@ -109,8 +106,7 @@ else
             Name=requester-vpc-info.vpc-id,Values=${SELF_VPC_ID} \
             Name=accepter-vpc-info.vpc-id,Values=${TARGET_VPC_ID} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
-        --query "VpcPeeringConnections[].VpcPeeringConnectionId" \
-        --output text)
+        | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId')
 fi
 
 # Find target StackName, Network and Route table
@@ -142,8 +138,8 @@ echoerr "INFO: Deleting connection: ${VPC_PEERING_ID}"
 retr=$(aws ec2 delete-vpc-peering-connection \
     --region ${AWS_REGION} \
     --vpc-peering-connection-id ${VPC_PEERING_ID} \
-    --query "Return" \
-    --output text)
+    | jq -r '.Return')
+
 if [[ ! ${retr} == "True" ]]; then
     echoerr "ERROR: Failed to delete ${VPC_PEERING_ID}. status: '${retr}'"
     exit 255

@@ -20,13 +20,12 @@ CURRENT_DEPLOYMENT_CONFIG=$(aws deploy get-deployment-group \
     --region ${AWS_REGION} \
     --application-name ${STACK_NAME} \
     --deployment-group-name ${STACK_NAME} \
-    --query 'deploymentGroupInfo.deploymentConfigName' \
-    --output text)
+    | jq -r '.deploymentGroupInfo.deploymentConfigName')
 
 DEPLOYMENT_CONFIGS=($(aws deploy list-deployment-configs \
     --region ${AWS_REGION} \
-    --query 'deploymentConfigsList[]' \
-    --output text))
+    | jq  -r '.deploymentConfigsList[]'))
+
 DEPLOYMENT_CONFIGS=(${DEPLOYMENT_CONFIGS[@]/$CURRENT_DEPLOYMENT_CONFIG/})
 
 echoerr "INFO: Current config: ${CURRENT_DEPLOYMENT_CONFIG}"

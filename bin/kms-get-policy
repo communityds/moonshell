@@ -24,7 +24,7 @@ KEY_POLICY=$(aws kms get-key-policy \
     --region ${AWS_REGION} \
     --key-id ${KEY_ID} \
     --policy-name default \
-    --query 'Policy')
+    | jq -r '.Policy')
 
 echoerr "INFO: Parsing policy"
 # The policy document is stored as an string with escaped quotes that is

@@ -48,8 +48,7 @@ VERSION_JSON="[$(aws s3api list-object-versions \
     --region ${AWS_REGION} \
     --bucket ${S3_BUCKET} \
     --prefix "${S3_FILE}" \
-    --query "Versions[]" \
-    | jq -c ".[] | select(.Key == \"${S3_FILE}\") | { \"LastModified\": .LastModified, \"VersionId\": .VersionId }" \
+    | jq -c ".Versions[] | select(.Key == \"${S3_FILE}\") | { \"LastModified\": .LastModified, \"VersionId\": .VersionId }" \
     | paste -sd,)]"
 
 VERSION_COUNT=$(echo ${VERSION_JSON} | jq '. | length')

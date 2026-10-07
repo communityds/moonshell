@@ -40,6 +40,5 @@ fi
 aws ec2 describe-tags \
     --region ${AWS_REGION} \
     --filters Name=resource-id,Values=${VPC_ID} \
-    --query "Tags[?Key=='${TAG_KEY}'].Value" \
-    --output text
+    | jq -r ".Tags[] | select(.Key == \"${TAG_KEY}\") | .Value"
 

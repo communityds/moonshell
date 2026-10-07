@@ -124,9 +124,8 @@ aws ec2 create-route \
     --route-table-id ${SELF_VPC_ROUTE_TABLE} \
     --destination-cidr-block ${TARGET_VPC_NETWORK} \
     --vpc-peering-connection-id ${VPC_PEERING_ID} \
-    --query "Return" \
-    --output text \
     >/dev/null \
+    | jq -r '.Return' \
     || true
 
 if [[ ${TARGET_ACCOUNT_ID-} ]]; then
@@ -143,24 +142,21 @@ else
         --route-table-id ${TARGET_VPC_ROUTE_TABLE}\
         --destination-cidr-block ${SELF_VPC_NETWORK}\
         --vpc-peering-connection-id ${VPC_PEERING_ID} \
-        --query "Return" \
-        --output text \
         >/dev/null \
+        | jq -r '.Return' \
         || true
 fi
 
 echoerr "INFO: Describing ${SELF_STACK_NAME} routes"
 aws ec2 describe-route-tables \
     --region ${AWS_REGION} \
-    --query "RouteTables[?RouteTableId=='${SELF_VPC_ROUTE_TABLE}'].Routes" \
-    --output table
+    | jq -r ".RouteTables[] | select(.RouteTableId == \"${SELF_VPC_ROUTE_TABLE}\") | .Routes"
 
 if [[ -z ${TARGET_ACCOUNT_ID-} ]]; then
     echoerr "INFO: Describing ${TARGET_STACK_NAME} routes"
     aws ec2 describe-route-tables \
         --region ${AWS_REGION} \
-        --query "RouteTables[?RouteTableId=='${TARGET_VPC_ROUTE_TABLE}'].Routes" \
-        --output table
+        | jq -r ".RouteTables[] | select(.RouteTableId == \"${TARGET_VPC_ROUTE_TABLE}\") | .Routes"
 fi
 
 echoerr "INFO: Associating route53"

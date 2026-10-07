@@ -21,7 +21,6 @@ echoerr "INFO: Listing available log files"
 aws rds describe-db-log-files \
     --region ${AWS_REGION} \
     --db-instance-identifier ${INSTANCE} \
-    --query "DescribeDBLogFiles[] | sort_by([], &LastWritten)" \
-    --output table \
-    --no-paginate
+    --no-paginate \
+    | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | .[].LogFileName'
 

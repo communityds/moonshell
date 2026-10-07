@@ -47,8 +47,7 @@ GRANT_ID=$(aws kms create-grant \
     --grantee-principal arn:aws:iam::$(sts_account_id):user/${GRANTEE} \
     --name ${GRANTEE} \
     --operations ${GRANTS} \
-    --query "GrantId" \
-    --output text)
+    | jq -r '.GrantId')
 
 if [[ ${GRANT_ID-} ]]; then
     echoerr "INFO: Created grant with id: ${GRANT_ID}"
