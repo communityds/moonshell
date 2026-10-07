@@ -127,22 +127,10 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
                 echoerr "INFO: Using instance profile: ${INSTANCE_ROLE_ARN##*/}"
                 unset INSTANCE_ROLE_ARN
             else
-                # TODO remove the test for AWS_ACCOUNT_NAME once AWS_AUTH is ubiquitous
-                if [[ -z ${AWS_ACCOUNT_NAME-} ]]; then
-                    echoerr "ERROR: AWS authentication is required and no AWS_ACCESS_KEY_ID was found"
-                    exit 1
-                fi
-            fi
-        else
-            # TODO remove the test for AWS_ACCOUNT_NAME once AWS_AUTH is ubiquitous
-            if [[ -z ${AWS_ACCOUNT_NAME-} ]]; then
-                if [[ -z ${AWS_SECRET_ACCESS_KEY-} ]]; then
-                    echoerr "ERROR: Unset AWS_SECRET_ACCESS_KEY"
-                    exit 1
-                fi
+                echoerr "ERROR: AWS authentication is required and no mechanisms were found"
+                exit 1
             fi
         fi
-
     fi
 
     # AWS_REGION is required by the majority of AWS cli commands, so we should
