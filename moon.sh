@@ -119,7 +119,7 @@ if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # does not require credentials and authentication.
     if [[ -z ${AWS_AUTH-} ]] || [[ ! ${AWS_AUTH} == false ]]; then
         # The script/process requires credentials
-        if [[ -z ${AWS_ACCESS_KEY_ID-} ]]; then
+        if [[ -z ${AWS_ACCESS_KEY_ID-} ]] && [[ -z ${AWS_DEFAULT_PROFILE-} ]]; then
             if curl -sI --connect-timeout 1 http://169.254.169.254 | grep -q 'HTTP/1.1 200 OK'; then
                 # Is an AWS server
                 INSTANCE_ROLE_ARN="$(curl -s http://169.254.169.254/latest/meta-data/iam/info \
