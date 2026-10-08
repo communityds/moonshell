@@ -11,13 +11,15 @@ route53_change_resource_records () {
     local action="$2"
     local resource_record="$3"
 
-    [[ ! ${action} =~ ^(UPSERT|DELETE)$ ]] \
-        && echoerr "ERROR: Unsupported action '${action}'" \
-        && return 1
+    if [[ ! ${action} =~ ^(UPSERT|DELETE)$ ]]; then
+        echoerr "ERROR: Unsupported action '${action}'"
+        return 1
+    fi
 
-    [[ $# -gt 3 ]] \
-        && echoerr "ERROR: Too many arguments, did you send and array and not a string?" \
-        && return 1
+    if [[ $# -gt 3 ]]; then
+        echoerr "ERROR: Too many arguments, did you send and array and not a string?"
+        return 1
+    fi
 
     echoerr "INFO: Executing ${action} on ${hosted_zone_id}"
     local change_id=$(aws route53 change-resource-record-sets \
@@ -30,9 +32,10 @@ route53_change_resource_records () {
         }]}" \
         | jq -r '.ChangeInfo.Id')
 
-    [[ -z ${change_id-} ]] \
-        && echoerr "ERROR: Failed to submit change" \
-        && return 1
+    if [[ -z ${change_id-} ]]; then
+        echoerr "ERROR: Failed to submit change"
+        return 1
+    fi
 
     echoerr "INFO: Waiting for ${change_id} to complete..."
     aws route53 wait resource-record-sets-changed \
@@ -66,11 +69,14 @@ route53_delete_record_set () {
         echoerr "Usage: ${FUNCNAME[0]} HOSTED_ZONE_ID RESOURCE_RECORD"
         return 1
     fi
+
     local hosted_zone_id="$1"
-    [[ $# -gt 2 ]] \
-        && echoerr "ERROR: You parsed in an array, not a string for \$2" \
-        && return 1 \
-        || local resource_record="$2"
+    if [[ $# -gt 2 ]]; then
+        echoerr "ERROR: You parsed in an array, not a string for \$2"
+        return 1
+    else
+        local resource_record="$2"
+    fi
 
     echoerr "INFO: Deleting resource from ${hosted_zone_id}"
     route53_change_resource_records ${hosted_zone_id} DELETE ${resource_record}
@@ -96,9 +102,10 @@ route53_external_hosted_zone_id () {
     local stack_name="$1"
 
     local hosted_zone_name=$(route53_external_hosted_zone_name ${stack_name})
-    [[ -z ${hosted_zone_name-} ]] \
-        && echoerr "ERROR: Could not find hosted_zone_name" \
-        && return 1
+    if [[ -z ${hosted_zone_name-} ]]; then
+        echoerr "ERROR: Could not find hosted_zone_name"
+        return 1
+    fi
 
     local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
         | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id" \
@@ -138,7 +145,9 @@ route53_get_resource_record () {
     local resource="$2"
 
     # The resource must be properly fully qualified
-    [[ ! ${resource} =~ \.$ ]] && resource="${resource}."
+    if [[ ! ${resource} =~ \.$ ]]; then
+        resource="${resource}."
+    fi
 
     local resource_record=$(aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
@@ -161,17 +170,20 @@ route53_id_from_zone_name () {
     local hosted_zone_name="$1"
 
     # hosted_zone_name must be absolute.
-    [[ ! ${hosted_zone_name} =~ \.$ ]] \
-        && hosted_zone_name="${hosted_zone_name}."
+    if [[ ! ${hosted_zone_name} =~ \.$ ]]; then
+        hosted_zone_name="${hosted_zone_name}."
+    fi
 
     local hosted_zone_id=$(aws route53 list-hosted-zones-by-name \
         --region ${AWS_REGION} \
         | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id")
 
-    [[ -z ${hosted_zone_id-} ]] \
-        && echoerr "ERROR: No Id found for: ${hosted_zone_name}" \
-        && return 1 \
-        || echo ${hosted_zone_id}
+    if [[ -z ${hosted_zone_id-} ]]; then
+        echoerr "ERROR: No Id found for: ${hosted_zone_name}"
+        return 1
+    else
+        echo ${hosted_zone_id}
+    fi
 }
 
 route53_internal_hosted_zone_id () {
@@ -196,9 +208,10 @@ route53_list_name () {
         --region ${AWS_REGION} \
         | jq -r ".HostedZones[] | select(.Name == \"${hosted_zone_name}\") | .Id")
 
-    [[ -z ${hosted_zone_id-} ]] \
-        && echoerr "ERROR: Unable to find 'Id' for zone: ${hosted_zone_name}" \
-        && return 1
+    if [[ -z ${hosted_zone_id-} ]]; then
+        echoerr "ERROR: Unable to find 'Id' for zone: ${hosted_zone_name}"
+        return 1
+    fi
 
     local record_type
     for record_type in A CNAME; do
@@ -245,7 +258,9 @@ route53_list_internal () {
     local -a records
 
     local hosted_zone_id=$(route53_internal_hosted_zone_id ${stack_name})
-    [[ -z ${hosted_zone_id-} ]] && return 1
+    if [[ -z ${hosted_zone_id-} ]]; then
+        return 1
+    fi
 
     for record_type in A CNAME; do
         echoerr "INFO: Listing ${record_type} records"
@@ -268,10 +283,12 @@ route53_list_type_records () {
     # Enumerate all ${type} records for a ${hosted_zone_id} and return an array
     # of FQDNs. Currently we only support enumerating either A or CNAME records.
     local hosted_zone_id="$1"
-    [[ ! ${2} =~ ^(A|CNAME)$ ]] \
-        && echoerr "ERROR: Unsupported type: ${2}" \
-        && return 1 \
-        || local type=$2
+    if [[ ! ${2} =~ ^(A|CNAME)$ ]]; then
+        echoerr "ERROR: Unsupported type: ${2}"
+        return 1
+    else
+        local type=$2
+    fi
 
     aws route53 list-resource-record-sets \
         --region ${AWS_REGION} \
@@ -288,7 +305,9 @@ route53_vpc_associate () {
     local vpc="$2"
 
     local hosted_zone_name=$(route53_zone_name_from_id ${hosted_zone_id})
-    [[ -z ${hosted_zone_name-} ]] && return 1
+    if [[ -z ${hosted_zone_name-} ]]; then
+        return 1
+    fi
 
     echoerr "INFO: Associating ${vpc} to ${hosted_zone_id} (${hosted_zone_name})"
     local change_id=$(aws route53 associate-vpc-with-hosted-zone \
@@ -297,9 +316,10 @@ route53_vpc_associate () {
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
         | jq -r '.ChangeInfo.Id')
 
-    [[ -z ${change_id-} ]] \
-        && echoerr "ERROR: Failed to submit change" \
-        && return 1
+    if [[ -z ${change_id-} ]]; then
+        echoerr "ERROR: Failed to submit change"
+        return 1
+    fi
 
     echoerr "INFO: Waiting for change to complete: ${change_id}"
     aws route53 wait resource-record-sets-changed --id ${change_id}
@@ -314,7 +334,9 @@ route53_vpc_dissociate () {
     local vpc="$2"
 
     local hosted_zone_name=$(route53_zone_name_from_id ${hosted_zone_id})
-    [[ -z ${hosted_zone_name-} ]] && return 1
+    if [[ -z ${hosted_zone_name-} ]]; then
+        return 1
+    fi
 
     echoerr "INFO: Dissociating ${vpc} from ${hosted_zone_id} (${hosted_zone_name})"
     local change_id=$(aws route53 disassociate-vpc-from-hosted-zone \
@@ -323,9 +345,10 @@ route53_vpc_dissociate () {
         --vpc "VPCRegion=${AWS_REGION},VPCId=${vpc}" \
         | jq -r '.ChangeInfo.Id')
 
-    [[ -z ${change_id-} ]] \
-        && echoerr "ERROR: Failed to submit change" \
-        && return 1
+    if [[ -z ${change_id-} ]]; then
+        echoerr "ERROR: Failed to submit change"
+        return 1
+    fi
 
     echoerr "INFO: Waiting for change to complete: ${change_id}"
     aws route53 wait resource-record-sets-changed --id ${change_id}
@@ -342,9 +365,11 @@ route53_zone_name_from_id () {
         --region ${AWS_REGION} \
         | jq -r ".HostedZones[] | select(.Id == \"/hostedzone/${hosted_zone_id}\") | .Name" )
 
-    [[ -z ${hosted_zone_name-} ]] \
-        && echoerr "ERROR: No Name found for: ${hosted_zone_id}" \
-        && return 1 \
-        || echo ${hosted_zone_name}
+    if [[ -z ${hosted_zone_name-} ]]; then
+        echoerr "ERROR: No Name found for: ${hosted_zone_id}"
+        return 1
+    else
+        echo ${hosted_zone_name}
+    fi
 }
 

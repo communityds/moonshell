@@ -45,8 +45,10 @@ fi
 echoerr "WARNING: Deleting access key '${ACCESS_KEY}' for user '${IAM_USER}'"
 iam_access_key_delete ${IAM_USER} ${ACCESS_KEY}
 
-[[ $? -gt 0 ]] \
-    && echoerr "ERROR: Failed to delete key" \
-    && exit 1 \
-    || echoerr "INFO: Key successfully deleted"
+if [[ $? -gt 0 ]]; then
+    echoerr "ERROR: Failed to delete key"
+    exit 1
+else
+    echoerr "INFO: Key successfully deleted"
+fi
 

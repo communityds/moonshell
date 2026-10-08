@@ -20,12 +20,14 @@ fi
 stack_name
 export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
 
-[[ -z ${S3_BUCKET-} ]] \
-    && echoerr "ERROR: Could not find S3_BUCKET for environment '${ENVIRONMENT}' using '${AWS_ACCOUNT_NAME}' credentials" \
-    && exit 1
+if [[ -z ${S3_BUCKET-} ]]; then
+    echoerr "ERROR: Could not find S3_BUCKET for environment '${ENVIRONMENT}' using '${AWS_ACCOUNT_NAME}' credentials"
+    exit 1
+fi
 
-[[ -z ${EDITOR-} ]] \
-    && export EDITOR=vim
+if [[ -z ${EDITOR-} ]]; then
+    export EDITOR=vim
+fi
 
 SRC_FILE=$(mktemp)
 DST_FILE=$(mktemp)

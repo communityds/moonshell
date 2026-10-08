@@ -13,10 +13,14 @@ rds_dump_db () {
     local options="${4-}"
 
     local instance=$(rds_instance_select ${stack_name})
-    [[ -z ${instance-} ]] && return 1
+    if [[ -z ${instance-} ]]; then
+        return 1
+    fi
 
     local engine=$(rds_engine_type ${stack_name} ${instance})
-    [[ -z ${engine-} ]] && return 1
+    if [[ -z ${engine-} ]]; then
+        return 1
+    fi
 
     rds_${engine}_dump_db ${stack_name} ${database} "${out_file}" "${options-}"
     return $?
@@ -35,7 +39,9 @@ rds_engine_type () {
         --db-instance-identifier ${resource_name} \
         | jq -r '.DBInstances[].Engine')
 
-    [[ -z ${engine-} ]] && return 1
+    if [[ -z ${engine-} ]]; then
+        return 1
+    fi
 
     # We only support MySQL and PostgreSQL
     case ${engine} in
@@ -112,9 +118,11 @@ rds_log_download () {
     local replica="${4-}"
 
     local instance=$(rds_instance_select ${stack_name} ${replica-})
-    [[ ${instance-} ]] \
-        && echoerr "INFO: Found DB instance: ${instance}" \
-        || return 1
+    if [[ ${instance-} ]]; then
+        echoerr "INFO: Found DB instance: ${instance}"
+    else
+        return 1
+    fi
 
     echoerr "INFO: Discovering log files"
     log_file_names=($(aws rds describe-db-log-files \
@@ -175,14 +183,17 @@ rds_slowlog () {
     local dump_file="$2"
     local index="${3-}"
 
-    [[ ${index-} ]] \
-        && local suffix=".${index}" \
-        || local suffix=""
+    local suffix
+    if [[ ${index-} ]]; then
+        suffix=".${index}"
+    fi
 
     local instance=$(rds_instance_select ${stack_name})
-    [[ ${instance-} ]] \
-        && echoerr "INFO: Found DB instance: ${instance}" \
-        || return 1
+    if [[ ${instance-} ]]; then
+        echoerr "INFO: Found DB instance: ${instance}"
+    else
+        return 1
+    fi
 
     # There are other slowquery.log files available, but there is no apparent
     # way to enumerate the logs available, so we default to the first, and most
@@ -207,9 +218,11 @@ rds_snapshot_create () {
     local snapshot_id="$2"
 
     local instance=$(rds_instance_select ${stack_name})
-    [[ ${instance-} ]] \
-        && echoerr "INFO: Found DB instance '${instance}'" \
-        || return 1
+    if [[ ${instance-} ]]; then
+        echoerr "INFO: Found DB instance '${instance}'"
+    else
+        return 1
+    fi
 
     echoerr "INFO: Creating DB snapshot"
     aws rds create-db-snapshot \
@@ -248,18 +261,21 @@ rds_snapshot_list () {
     local stack_name="$1"
 
     local instance=$(rds_instance_select ${stack_name})
-    [[ ${instance-} ]] \
-        && echoerr "INFO: Found DB instance '${instance}'" \
-        || return 1
+    if [[ ${instance-} ]]; then
+        echoerr "INFO: Found DB instance '${instance}'"
+    else
+        return 1
+    fi
 
     echoerr "INFO: Finding snapshots for DB instance"
     local snapshots=($(aws rds describe-db-snapshots \
         --region ${AWS_REGION} \
         | jq -r ".DBSnapshots[] | selectd(.DBInstanceIdentifier == \"${instance}\") | .DBSnapshotIdentifier"))
 
-    [[ -z ${snapshots[@]-} ]] \
-        && echoerr "INFO: No snapshots found for DB instance: ${instance}" \
-        && return 1
+    if [[ -z ${snapshots[@]-} ]]; then
+        echoerr "INFO: No snapshots found for DB instance: ${instance}"
+        return 1
+    fi
 
     for snapshot in ${snapshots[@]}; do
         echo "${snapshot}"

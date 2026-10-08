@@ -81,9 +81,10 @@ else
     exit 1
 fi
 
-[[ -z ${VERSION_ID-} ]] \
-    && echoerr "ERROR: Could not define VERSION_ID" \
-    && exit 1
+if [[ -z ${VERSION_ID-} ]]; then
+    echoerr "ERROR: Could not define VERSION_ID"
+    exit 1
+fi
 
 LAST_MODIFIED=$(echo $VERSION_JSON | jq -r ".[] | select(.VersionId == \"${VERSION_ID}\") | .LastModified")
 

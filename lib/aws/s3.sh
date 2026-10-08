@@ -14,11 +14,14 @@ s3_cp () {
     local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
-    [[ ${kms_key_id-} ]] \
-        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    if [[ ${kms_key_id-} ]]; then
+        options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    fi
 
     echoerr "INFO: Copying '${src}' to '${dst}'"
     aws s3 cp \
@@ -83,13 +86,16 @@ s3_download () {
     fi
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local s3_url="s3://${s3_bucket_name}"
 
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
-    [[ ${kms_key_id-} ]] \
-        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    if [[ ${kms_key_id-} ]]; then
+        options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    fi
 
     echoerr "INFO: Downloading resources from ${s3_url}/"
     aws s3 ${verb} --region ${AWS_REGION} ${options-} "${s3_url}/${source-}" "${destination}"
@@ -104,8 +110,9 @@ s3_file_versions () {
     local stack_name="$1"
     local file_path="$2"
 
-    [[ ${file_path} =~ ^\/ ]] \
-        && file_path=${file_path/\//}
+    if [[ ${file_path} =~ ^\/ ]]; then
+        file_path=${file_path/\//}
+    fi
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
 
@@ -149,11 +156,13 @@ s3_get_file_version () {
     local version_timestamp="$3"
     local destination="$4"
 
-    [[ ${file_path} =~ ^\/ ]] \
-        && file_path=${file_path/\//}
+    if [[ ${file_path} =~ ^\/ ]]; then
+        file_path=${file_path/\//}
+    fi
 
-    [[ -d ${destination} ]] \
-        && destination="${destination}/$(basename ${file_path})"
+    if [[ -d ${destination} ]]; then
+        destination="${destination}/$(basename ${file_path})"
+    fi
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
 
@@ -207,7 +216,9 @@ s3_ls () {
     local location="$(s3_path_sanitise ${2-} 2>/dev/null)"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local s3_url="s3://${s3_bucket_name}/${location-}"
     echoerr "INFO: Listing objects in: ${s3_url}"
@@ -227,11 +238,14 @@ s3_mv () {
     local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
-    [[ ${kms_key_id-} ]] \
-        && options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    if [[ ${kms_key_id-} ]]; then
+        options="${options-} --sse=aws:kms --sse-kms-key-id ${kms_key_id}"
+    fi
 
     echoerr "INFO: Moving '${src-}' to '${dst-}'"
     aws s3 mv \
@@ -338,7 +352,9 @@ s3_tag_delete () {
     local version_id="${3-}"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     echoerr "WARNING: This will permanently delete all tags for object: ${s3_file}"
     if prompt_no "Are you sure you wish to continue?"; then
@@ -363,7 +379,9 @@ s3_tag_get () {
     local s3_file="$2"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     aws s3api get-object-tagging \
         --region ${AWS_REGION} \
@@ -384,7 +402,9 @@ s3_tag_set () {
     local version_id="${5-}"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local current_tag_json tag_json
 
@@ -423,18 +443,22 @@ s3_upload () {
     local options="$*"
 
     local s3_bucket_name=$(s3_stack_bucket_name ${stack_name})
-    [[ -z ${s3_bucket_name-} ]] && return 1
+    if [[ -z ${s3_bucket_name-} ]]; then
+        return 1
+    fi
 
     local kms_key_id="$(kms_stack_key_id ${stack_name})"
 
     if [[ ${source} =~ /$ ]]; then
-        [[ ${kms_key_id-} ]] \
-            && options="${options-} --sse aws:kms --sse-kms-key-id ${kms_key_id}"
+        if [[ ${kms_key_id-} ]]; then
+            options="${options-} --sse aws:kms --sse-kms-key-id ${kms_key_id}"
+        fi
 
         s3_upload_path ${s3_bucket_name} "${source}" "${destination}" ${options-}
     else
-        [[ ${kms_key_id-} ]] \
-            && options="${options-} --server-side-encryption aws:kms --ssekms-key-id ${kms_key_id}"
+        if [[ ${kms_key_id-} ]]; then
+            options="${options-} --server-side-encryption aws:kms --ssekms-key-id ${kms_key_id}"
+        fi
 
         s3_upload_file ${s3_bucket_name} "${source}" "${destination}" ${options-}
     fi
@@ -485,7 +509,9 @@ s3_upload_path () {
     shift 3
     local options="$*"
 
-    [[ ! ${source} =~ /$ ]] && local source="${source}/"
+    if [[ ! ${source} =~ /$ ]]; then
+        local source="${source}/"
+    fi
 
     local s3_url="s3://${s3_bucket_name}/${destination-}"
 
@@ -560,7 +586,9 @@ s3_upload_multipart () {
         local comma=','
         printf '{"Parts": [\n' >> ${fileparts}
         for index in $(seq ${num_parts}); do
-            [[ ${index} -eq ${num_parts} ]] && comma=""
+            if [[ ${index} -eq ${num_parts} ]]; then
+                comma=""
+            fi
             # the ETags come back pre-quoted, for some reason...
             printf '{"ETag": %s, "PartNumber": %d}%s\n' ${etags[${index}]} ${index} "${comma}" >> ${fileparts}
         done

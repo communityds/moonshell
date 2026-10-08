@@ -38,9 +38,10 @@ stack_name
 # VARIABLES
 #
 CORE_STACK_PREFIX="core-infra"
-[[ ${APP_NAME} =~ ^${CORE_STACK_PREFIX} ]] \
-    && echoerr "ERROR: This script can not be run on ${CORE_STACK_PREFIX}" \
-    && exit 1
+if [[ ${APP_NAME} =~ ^${CORE_STACK_PREFIX} ]]; then
+    echoerr "ERROR: This script can not be run on ${CORE_STACK_PREFIX}"
+    exit 1
+fi
 
 # This list excludes "active", "pending-acceptance" and "provisioning"
 # $(aws ec2 describe-vpc-peering-connections help)
@@ -111,8 +112,9 @@ fi
 
 # Find target StackName, Network and Route table
 echoerr "INFO: Setting ${TARGET_VPC_ID} variables"
-[[ -z ${TARGET_STACK_NAME-} ]] \
-    && TARGET_STACK_NAME=$(stack_name_from_vpc_id ${TARGET_VPC_ID})
+if [[ -z ${TARGET_STACK_NAME-} ]]; then
+    TARGET_STACK_NAME=$(stack_name_from_vpc_id ${TARGET_VPC_ID})
+fi
 TARGET_VPC_NETWORK=$(stack_value_parameter ${TARGET_STACK_NAME} VPCNetwork)
 TARGET_VPC_ROUTE_TABLE=$(stack_value_output ${TARGET_STACK_NAME} RouteTableId)
 

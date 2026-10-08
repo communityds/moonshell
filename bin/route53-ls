@@ -18,9 +18,10 @@ HOSTED_ZONES=($(aws route53 list-hosted-zones-by-name \
 
 HOSTED_ZONE_NAME=$(choose ${HOSTED_ZONES[@]})
 
-[[ ! ${HOSTED_ZONE_NAME-} =~ \.$ ]] \
-    && echoerr "ERROR: Hosted zone name '${HOSTED_ZONE_NAME}' is not absolute." \
-    && exit 1
+if [[ ! ${HOSTED_ZONE_NAME-} =~ \.$ ]]; then
+    echoerr "ERROR: Hosted zone name '${HOSTED_ZONE_NAME}' is not absolute."
+    exit 1
+fi
 
 echoerr "INFO: Hosted Zone: ${HOSTED_ZONE_NAME}"
 

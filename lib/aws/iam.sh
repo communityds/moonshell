@@ -10,9 +10,10 @@ _iam_test_group () {
     fi
     local iam_group="$1"
 
-    [[ -z ${iam_user} ]] \
-        && echoerr "ERROR: IAM group must be provided" \
-        && return 1
+    if [[ -z ${iam_user} ]]; then
+        echoerr "ERROR: IAM group must be provided"
+        return 1
+    fi
 
     if contains ${iam_group} $(iam_groups); then
         return 0
@@ -28,9 +29,10 @@ _iam_test_user () {
     fi
     local iam_user="$1"
 
-    [[ -z ${iam_user} ]] \
-        && echoerr "ERROR: IAM username must be provided" \
-        && return 1
+    if [[ -z ${iam_user} ]]; then
+        echoerr "ERROR: IAM username must be provided"
+        return 1
+    fi
 
     if contains ${iam_user} $(iam_users); then
         return 0

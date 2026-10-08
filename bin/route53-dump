@@ -12,9 +12,10 @@ source $(dirname $0)/../moon.sh
 # hosted zones
 ZONE_NAMES=($(route53_list_hosted_zones))
 
-[[ -z ${ZONE_NAMES[@]-} ]] \
-    && echoerr "ERROR: There are no Route53 hosted zones for account: ${AWS_ACCOUNT_NAME}" \
-    && exit 1
+if [[ -z ${ZONE_NAMES[@]-} ]]; then
+    echoerr "ERROR: There are no Route53 hosted zones for account: ${AWS_ACCOUNT_NAME}"
+    exit 1
+fi
 
 dump_zone () {
     local domain=$1
@@ -48,16 +49,19 @@ else
         echoerr "INFO: Dumping zone '${ZONE_NAME}'"
         ZONE_NAMES=(${ZONE_NAME})
     else
-        [[ ! ${ZONE_NAME} =~ \.$ ]] \
-            && echoerr "ERROR: Route53 zone names must be fully qualified; have a trailing period" \
-            || echoerr "ERROR: Unrecognized zone name '${ZONE_NAME}'"
+        if [[ ! ${ZONE_NAME} =~ \.$ ]]; then
+            echoerr "ERROR: Route53 zone names must be fully qualified; have a trailing period"
+        else
+            echoerr "ERROR: Unrecognized zone name '${ZONE_NAME}'"
+        fi
         exit 1
     fi
 
     DUMP_DIR=$(realpath ${2-\/tmp})
-    [[ ! -d ${DUMP_DIR} ]] \
-        && echoerr "ERROR: '${DUMP_DIR}' is not a directory" \
-        && exit 1
+    if [[ ! -d ${DUMP_DIR} ]]; then
+        echoerr "ERROR: '${DUMP_DIR}' is not a directory"
+        exit 1
+    fi
     echoerr "INFO: Dump dir resolved to ${DUMP_DIR}"
 fi
 

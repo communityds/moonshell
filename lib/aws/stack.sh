@@ -320,9 +320,10 @@ stack_resource_type_name () {
 }
 
 stack_status () {
-    [[ $# -lt 1 ]] \
-        && echoerr "Usage: ${FUNCNAME[0]} STACK_NAME" \
-        && return 1
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_NAME"
+        return 1
+    fi
 
     local stack_name=${1-}
 
@@ -340,9 +341,10 @@ stack_status () {
 }
 
 stack_status_from_id () {
-    [[ $# -lt 1 ]] \
-        && echoerr "Usage: ${FUNCNAME[0]} STACK_ID" \
-        && return 1
+    if [[ $# -lt 1 ]]; then
+        echoerr "Usage: ${FUNCNAME[0]} STACK_ID"
+        return 1
+    fi
 
     local stack_id=$1
 

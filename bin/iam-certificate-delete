@@ -29,8 +29,10 @@ aws iam delete-server-certificate \
     --region ${AWS_REGION} \
     --server-certificate-name ${IAM_CERT_NAME}
 
-[[ $? -gt 0 ]] \
-    && echoerr "ERROR: Failed to delete certificate" \
-    && exit 1 \
-    || echoerr "INFO: Successfully deleted '${IAM_CERT_NAME}'"
+if [[ $? -gt 0 ]]; then
+    echoerr "ERROR: Failed to delete certificate"
+    exit 1
+else
+    echoerr "INFO: Successfully deleted '${IAM_CERT_NAME}'"
+fi
 

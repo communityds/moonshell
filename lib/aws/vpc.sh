@@ -45,9 +45,10 @@ vpc_peer_associate () {
         $([[ ${target_account-} ]] && echo "--peer-owner-id ${target_account}") \
         | jq -r '.VpcPeeringConnection.VpcPeeringConnectionId')
 
-    [[ -z ${peering_id-} ]] \
-        && echoerr "ERROR: failed to create a peering connection" \
-        && return 1
+    if [[ -z ${peering_id-} ]]; then
+        echoerr "ERROR: failed to create a peering connection"
+        return 1
+    fi
 
     local retr=1
     if [[ ${target_account-} ]]; then

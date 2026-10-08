@@ -15,18 +15,22 @@ kms_id_from_key () {
     if [[ ${key} =~ ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$ ]]; then
         key_id=${key}
     else
-        [[ ! ${key} =~ ^alias ]] \
-            && key="alias/${key}" \
-            || true
+        if [[ ! ${key} =~ ^alias ]]; then
+            key="alias/${key}"
+        else
+            true
+        fi
 
         key_id=$(aws kms list-aliases \
             --region ${AWS_REGION} \
             | jq -r ".Aliases[] | select(.AliasName == \"${key}\") | .TargetKeyId")
 
-        [[ -z ${key_id-} ]] \
-            && echoerr "ERROR: Could not find ID for key alias: ${key}" \
-            && return 1 \
-            || true
+        if [[ -z ${key_id-} ]]; then
+            echoerr "ERROR: Could not find ID for key alias: ${key}"
+            return 1
+        else
+            true
+        fi
     fi
 
     echo ${key_id}
@@ -54,9 +58,10 @@ kms_list_key_ids () {
 kms_list_keys_detail () {
     local key managed
     local -a keys=($(kms_list_key_ids))
-    [[ -z ${keys[@]-} ]] \
-        && echoerr "ERROR: No KMS keys found" \
-        && return 1
+    if [[ -z ${keys[@]-} ]]; then
+        echoerr "ERROR: No KMS keys found"
+        return 1
+    fi
 
     for key in ${keys[@]}; do
         managed=$(aws kms describe-key \
@@ -104,9 +109,11 @@ kms_stack_key_id () {
             | jq -r '.Stacks[].Parameters[] | select(.ParameterValue | startswith("arn:aws:kms")) | .ParameterValue')"
     fi
 
-    [[ ${kms_key_id-} ]] \
-        && printf "${kms_key_id}" \
-        && return 0 \
-        || return 1
+    if [[ ${kms_key_id-} ]]; then
+        printf "${kms_key_id}"
+        return 0
+    else
+        return 1
+    fi
 }
 

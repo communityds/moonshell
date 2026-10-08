@@ -11,9 +11,10 @@ echoerr "INFO: Listing all server certificates"
 IAM_SERVER_CERTIFICATES=($(aws iam list-server-certificates \
     | jq -r '.ServerCertificateMetadataList[].ServerCertificateName'))
 
-[[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]] \
-    && echoerr "ERROR: Could not find any server certificates" \
-    && exit 1
+if [[ -z ${IAM_SERVER_CERTIFICATES[@]-} ]]; then
+    echoerr "ERROR: Could not find any server certificates"
+    exit 1
+fi
 
 for cert in ${IAM_SERVER_CERTIFICATES[@]}; do
     echo ${cert}

@@ -23,9 +23,7 @@ if [[ $# -lt 1 ]]; then
     exit 0
 else
     ENVIRONMENT=$1
-    [[ ${2-} ]] \
-        && SNAPSHOT_NAME=$2 \
-        || SNAPSHOT_NAME=${DEFAULT_SNAPSHOT_NAME}
+    SNAPSHOT_NAME=${2-$DEFAULT_SNAPSHOT_NAME}
 fi
 
 stack_name

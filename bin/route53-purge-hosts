@@ -22,9 +22,11 @@ if [[ $# -lt 1 ]]; then
     echoerr "  $ $(basename $0) example.org"
     exit
 else
-    [[ $1 =~ \. ]] \
-        && DOMAIN_SUFFIX=$1 \
-        || ENVIRONMENT=$1
+    if [[ $1 =~ \. ]]; then
+        DOMAIN_SUFFIX=$1
+    else
+        ENVIRONMENT=$1
+    fi
 fi
 
 TYPES=("A" "CNAME")
@@ -47,9 +49,10 @@ for type in ${TYPES[@]}; do
         echoerr
         read -s -n1 -p "Do you wish to continue? (y/N) "
         echoerr
-        [[ ! ${REPLY} =~ ^[yY]$ ]] \
-            && echoerr "INFO: Process cancelled on user input" \
-            && exit
+        if [[ ! ${REPLY} =~ ^[yY]$ ]]; then
+            echoerr "INFO: Process cancelled on user input"
+            exit
+        fi
 
         route53_delete_records ${HOSTED_ZONE_ID} ${resources[@]}
     fi

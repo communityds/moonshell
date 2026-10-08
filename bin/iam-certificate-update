@@ -23,9 +23,10 @@ else
 fi
 
 for cert in ${CERT_FILE} ${KEY_FILE} ${CA_FILE-}; do
-    [[ ! -f ${cert} ]] \
-        && echoerr "ERROR: Not a file '${cert}'" \
-        && exit 1
+    if [[ ! -f ${cert} ]]; then
+        echoerr "ERROR: Not a file '${cert}'"
+        exit 1
+    fi
 done
 
 echoerr "INFO: Testing '${IAM_CERT_NAME}'"

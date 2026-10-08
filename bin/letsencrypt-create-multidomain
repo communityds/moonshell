@@ -26,10 +26,13 @@ fi
 KEY_BITS="4096"
 
 clean_exit () {
-    [[ $# == 0 ]] \
-        && local retr=0 \
-        || local retr=$1
-    local file
+    local file retr
+
+    if [[ $# == 0 ]]; then
+        retr=0
+    else
+        retr=$1
+    fi
 
     echoerr "INFO: Cleaning up temporary files"
     for file in ${CERT_FILE} ${KEY_FILE} ${CA_FILE}; do

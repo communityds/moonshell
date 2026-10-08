@@ -31,12 +31,13 @@ PACKER_LOG=1
 PACKER_DEBUG=
 VERBOSE=
 
-[[ ! -d packer ]] \
-    && echoerr "ERROR: Dir 'packer' does not exist." \
-    && echoerr "Are you in the correct repo?" \
-    && exit 1
+if [[ ! -d packer ]]; then
+    echoerr "ERROR: Dir 'packer' does not exist."
+    echoerr "Are you in the correct repo?"
+    exit 1
+fi
 
-[[ ! -d ${PACKER_DIR} ]] && mkdir ${PACKER_DIR}
+mkdir -p ${PACKER_DIR}
 
 # pipe delimited string of AMIs to build - CLASSES="foo|bar|baz"
 # foo.json, bar.json and baz.json must exist in the packer directory.
@@ -48,9 +49,12 @@ BUILD_ROOT="${PWD}"
 # Functions
 #
 usage () {
-    [[ ${1-} ]] \
-        && local retr=$1 \
-        || local retr=0
+    local retr
+    if [[ ${1-} ]]; then
+        retr=$1
+    else
+        retr=0
+    fi
     classes_with_pipes=$(echo ${CLASSES}| sed 's/ /\|/g')
     echoerr "Usage: $(basename $0) [-d] [-v] [all|${classes_with_pipes}] [PACKER_ARGS]"
     echoerr
@@ -71,9 +75,10 @@ log () {
 verify_class_file () {
     local class classes=($@)
     for class in ${classes[@]}; do
-        [[ ! -f "${BUILD_ROOT}/packer/${class}.json" ]] \
-            && log "ERROR: Class file '${class}.json' does not exist in ${PWD}/packer/" \
-            && exit 1
+        if [[ ! -f "${BUILD_ROOT}/packer/${class}.json" ]]; then
+            log "ERROR: Class file '${class}.json' does not exist in ${PWD}/packer/"
+            exit 1
+        fi
     done
     return 0
 }
@@ -91,15 +96,17 @@ install_packer () {
             else
                 log "INFO: Updating Packer"
 
-                [[ ! -f "${PACKER_FILE}" ]] \
-                    && log "INFO: Downloading from '${PACKER_URL}'" \
-                    && wget -q -c ${PACKER_URL} \
-                    && log "INFO: Extracting packer" \
-                    && unzip -x ${PACKER_FILE}
+                if [[ ! -f "${PACKER_FILE}" ]]; then
+                    log "INFO: Downloading from '${PACKER_URL}'"
+                    wget -q -c ${PACKER_URL}
+                    log "INFO: Extracting packer"
+                    unzip -x ${PACKER_FILE}
+                fi
 
-                [[ ! $(./packer --version 2>/dev/null || true) == ${PACKER_VER} ]] \
-                    && log "ERROR: Packer failed to update to version '${PACKER_VER}'" \
-                    && exit 1
+                if [[ ! $(./packer --version 2>/dev/null || true) == ${PACKER_VER} ]]; then
+                    log "ERROR: Packer failed to update to version '${PACKER_VER}'"
+                    exit 1
+                fi
             fi
         ) 200>${lock_file}
     popd >/dev/null

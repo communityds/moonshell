@@ -23,11 +23,12 @@ if [[ $# -lt 1 ]]; then
     exit
 else
     DOMAIN=$1
-    [[ ! ${DOMAIN} =~ \.$ ]] \
-        && DOMAIN="${DOMAIN}."
     shift
 fi
 
+if [[ ! ${DOMAIN} =~ \.$ ]]; then
+    DOMAIN="${DOMAIN}."
+fi
 
 while getopts ':n:t:T:v:' OPT; do
     case "${OPT}" in
@@ -62,9 +63,10 @@ fi
 if [[ -z ${HOST_NAME-} ]]; then
     read -p "Record to add: " HOST_NAME
 
-    [[ ! ${HOST_NAME} =~ ^[a-z0-9-]+$ ]] \
-        && echoerr "ERROR: Name: '${HOST_NAME}' contains illegal characters" \
-        && exit 1
+    if [[ ! ${HOST_NAME} =~ ^[a-z0-9-]+$ ]]; then
+        echoerr "ERROR: Name: '${HOST_NAME}' contains illegal characters"
+        exit 1
+    fi
 fi
 
 if [[ -z ${VALUE-} ]]; then
