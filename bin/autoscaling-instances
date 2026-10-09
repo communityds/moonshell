@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# List the instances in an ASG
+#
+
+source $(dirname $0)/../moon.sh
+
+if [[ $# -lt 2 ]]; then
+    echoerr "Usage: $(basename $0) ENVIRONMENT AUTOSCALING_GROUP"
+    exit
+else
+    ENVIRONMENT=$1
+    AUTOSCALING_GROUP=$2
+fi
+
+stack_name
+
+aws autoscaling describe-auto-scaling-groups \
+    --region ${AWS_REGION} \
+    --auto-scaling-group-names ${AUTOSCALING_GROUP} \
+    | jq -r '.AutoScalingGroups[].Instances[].InstanceId'
+
