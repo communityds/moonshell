@@ -36,7 +36,7 @@ for ((i = 0; i < ${#REQUESTER_CONNECTIONS[@]}; i += 1)); do
     echoerr "  ${i}: ${REQUESTER_CONNECTIONS[$i]} $(aws ec2 describe-vpc-peering-connections \
         --region ${AWS_REGION} \
         --vpc-peering-connection-ids ${REQUESTER_CONNECTIONS[$i]} \
-        | jq -r '.VpcPeeringConnections[].Tags[] | select(.Key == "destination_stack"]) | .Value')"
+        | jq -r '.VpcPeeringConnections[].Tags[] | select(.Key == "destination_stack") | .Value')"
 done
 
 echoerr
