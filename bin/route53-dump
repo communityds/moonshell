@@ -13,7 +13,7 @@ source $(dirname $0)/../moon.sh
 ZONE_NAMES=($(route53_list_hosted_zones))
 
 if [[ -z ${ZONE_NAMES[@]-} ]]; then
-    echoerr "ERROR: There are no Route53 hosted zones for account: ${AWS_ACCOUNT_NAME}"
+    echoerr "ERROR: Could not find any hosted zones in this account"
     exit 1
 fi
 
