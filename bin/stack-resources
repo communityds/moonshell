@@ -32,10 +32,10 @@ CHILD_STACK_NAMES=($(echo ${CHILD_STACKS} \
 
 for stack_name in ${STACK_NAME} ${CHILD_STACK_NAMES[@]-}; do
     echoerr "INFO: Describing stack resources for: ${stack_name}"
-    aws cloudformation describe-stack-resources \
+    aws cloudformation list-stack-resources \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        | jq -r '.StackResources[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
+        | jq -r '.StackResourceSummaries[] | [.LogicalResourceId, .ResourceType, .PhysicalResourceId] | @tsv' \
         | column --table
 
     if pipe_failure ${PIPESTATUS[@]}; then
