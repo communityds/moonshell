@@ -30,9 +30,9 @@ for stack in ${STACKS[@]}; do
         --stack-name ${stack} \
         | jq -r '.Stacks[]')
 
-    echoerr "INFO: StackName:       $(echo ${stack_json} | jq -r '.[].StackName')"
-    echoerr "INFO: StackStatus:     $(echo ${stack_json} | jq -r '.[].StackStatus')"
-    echoerr "INFO: LastUpdatedTime: $(echo ${stack_json} | jq -r '.[].LastUpdatedTime')"
+    echoerr "INFO: StackName:       $(echo ${stack_json} | jq -r '.StackName')"
+    echoerr "INFO: StackStatus:     $(echo ${stack_json} | jq -r '.StackStatus')"
+    echoerr "INFO: LastUpdatedTime: $(echo ${stack_json} | jq -r '.LastUpdatedTime')"
 
     if [[ ${#STACKS[@]} -gt 1 ]] && [[ ! ${stack} == ${STACKS[-1]} ]]; then
         echoerr "INFO:"

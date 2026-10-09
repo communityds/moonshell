@@ -63,7 +63,7 @@ for autoscaling_group in ${AUTOSCALING_GROUPS[@]-}; do
 
     instances_json=$(aws ec2 describe-instances \
         --instance-ids ${instance_ids[@]-} \
-        | jq -r '.Reservations[].Instances[]')
+        | jq -r '.Reservations[].Instances')
 
     for instance_id in ${instance_ids[@]-}; do
         instance_json=$(echo ${instances_json} | jq ".[] | select(.InstanceId == \"${instance_id}\")")
