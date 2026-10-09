@@ -270,7 +270,7 @@ rds_snapshot_list () {
     echoerr "INFO: Finding snapshots for DB instance"
     local snapshots=($(aws rds describe-db-snapshots \
         --region ${AWS_REGION} \
-        | jq -r ".DBSnapshots[] | selectd(.DBInstanceIdentifier == \"${instance}\") | .DBSnapshotIdentifier"))
+        | jq -r ".DBSnapshots[] | select(.DBInstanceIdentifier == \"${instance}\") | .DBSnapshotIdentifier"))
 
     if [[ -z ${snapshots[@]-} ]]; then
         echoerr "INFO: No snapshots found for DB instance: ${instance}"
