@@ -260,11 +260,10 @@ stack_resource_id () {
     local stack_name="$1"
     local resource="$2"
 
-    local resource_id=$(aws cloudformation describe-stack-resource \
+    local resource_id=$(aws cloudformation list-stack-resources \
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
-        --logical-resource-id ${resource} \
-        | jq -r '.StackResourceDetail.PhysicalResourceId')
+        | jq -r ".StackResourceSummaries[] | select(.LogicalResourceId == \"${resource}\") | .PhysicalResourceId")
 
     if [[ ${resource_id-} ]]; then
         echo ${resource_id}
