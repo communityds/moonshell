@@ -51,7 +51,7 @@ stack_list_all () {
     aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
-        | jq -r '.StackSummaries[] | select(.ParentId == null) | .StackName' \
+        | jq -r '.StackSummaries[].StackName' \
         | sort
 }
 
@@ -59,7 +59,7 @@ stack_list_all_parents () {
     aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
-        | jq -r '.StackSummaries[] | select(.TemplateDescription != null) | .StackName' \
+        | jq -r '.StackSummaries[] | select(.ParentId == null) | .StackName' \
         | sort
 }
 
