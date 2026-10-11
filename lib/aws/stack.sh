@@ -33,23 +33,25 @@ stack_id () {
     fi
     local stack_name="$1"
 
-    aws cloudformation describe-stacks \
+    aws cloudformation list-stacks \
         --region ${AWS_REGION} \
-        --stack-name ${stack_name} \
-        | jq -r '.Stacks[].StackId'
+        --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
+        | jq -r ".StackSummaries[] | select(.StackName == \"${stack_name}\") | .StackId"
 }
 
 stack_list_app () {
     # List all stacks of the same type as the app you are administering
-    aws cloudformation describe-stacks \
+    aws cloudformation list-stacks \
         --region ${AWS_REGION} \
-        | jq -r ".Stacks[] | select(.StackName | contains(\"${APP_NAME}\")) | .StackName"
+        | jq -r ".StackSummaries[] | select(.StackName | contains(\"${APP_NAME}\")) | .StackName" \
+        | sort
 }
 
 stack_list_all () {
-    aws cloudformation describe-stacks \
+    aws cloudformation list-stacks \
         --region ${AWS_REGION} \
-        | jq -r '.Stacks[].StackName' \
+        --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
+        | jq -r '.StackSummaries[] | select(.ParentId == null) | .StackName' \
         | sort
 }
 
