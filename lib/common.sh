@@ -223,6 +223,20 @@ pipe_failure () {
     return 1
 }
 
+pipe_status () {
+    local -a pipestatus=(${@-})
+    local return_status=0
+    local status
+
+    for status in ${pipestatus[@]}; do
+        if [[ ${status} -gt ${return_status} ]]; then
+            return_status=${status}
+        fi
+    done
+
+    return ${return_status}
+}
+
 safe_source () {
     if [[ $# -lt 1 ]]; then
         echoerr "Usage: ${FUNCNAME[0]} BASH_LIBRARY"
