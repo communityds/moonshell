@@ -6,6 +6,8 @@ sts_account_id () {
     aws sts get-caller-identity \
         --region ${AWS_REGION} \
         | jq -r '.Account'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 sts_assume_role () {

@@ -13,7 +13,8 @@ instance_public_ip () {
         --region ${AWS_REGION} \
         --instance-ids ${instance_id} \
         | jq -r '.Reservations[].Instances[] | { "IP": .PublicIpAddress, "ID": .InstanceId }'
-    return $?
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 instance_private_ip () {
@@ -27,7 +28,8 @@ instance_private_ip () {
         --region ${AWS_REGION} \
         --instance-ids ${instance_id} \
         | jq -r '.Reservations[].Instances[] | { "IP": .PrivateIpAddress, "ID": .InstanceId }'
-    return $?
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 instances_running_ami () {
@@ -41,5 +43,6 @@ instances_running_ami () {
         --region ${AWS_REGION} \
         --filter Name=image-id,Values=${ami_id} \
         | jq -r '.Reservations[].Instances[].InstanceId'
-    return $?
+
+    pipe_status ${PIPESTATUS[@]}
 }

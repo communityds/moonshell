@@ -80,7 +80,6 @@ route53_delete_record_set () {
 
     echoerr "INFO: Deleting resource from ${hosted_zone_id}"
     route53_change_resource_records ${hosted_zone_id} DELETE ${resource_record}
-    return $?
 }
 
 route53_external_hosted_zone_name () {
@@ -91,7 +90,6 @@ route53_external_hosted_zone_name () {
     local stack_name="$1"
 
     stack_value_output ${stack_name} "ExternalRoute53HostedZoneName"
-    return $?
 }
 
 route53_external_hosted_zone_id () {
@@ -194,7 +192,6 @@ route53_internal_hosted_zone_id () {
     local stack_name="$1"
 
     stack_value_output ${stack_name} InternalRoute53HostedZoneId
-    return $?
 }
 
 route53_list_name () {
@@ -236,6 +233,8 @@ route53_list_host_records () {
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         | jq -r ".ResourceRecordSets[] | select(.ResourceRecords[].Value | contains(\"${stack_name}\")) | .Name"
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 route53_list_hosted_zones () {
@@ -243,7 +242,8 @@ route53_list_hosted_zones () {
     aws route53 list-hosted-zones \
         --region ${AWS_REGION} \
         | jq -r '.HostedZones[].Name'
-    return $?
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 route53_list_internal () {
@@ -294,6 +294,8 @@ route53_list_type_records () {
         --region ${AWS_REGION} \
         --hosted-zone-id ${hosted_zone_id} \
         | jq -r ".ResourceRecordSets[] | select(.Type == \"${type}\") | .Name"
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 route53_vpc_associate () {

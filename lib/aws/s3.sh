@@ -29,7 +29,6 @@ s3_cp () {
         "s3://${s3_bucket_name}/${src}" \
         "s3://${s3_bucket_name}/${dst}" \
         ${options-}
-    return $?
 }
 
 s3_delete_keys () {
@@ -99,7 +98,6 @@ s3_download () {
 
     echoerr "INFO: Downloading resources from ${s3_url}/"
     aws s3 ${verb} --region ${AWS_REGION} ${options-} "${s3_url}/${source-}" "${destination}"
-    return $?
 }
 
 s3_file_versions () {
@@ -144,6 +142,8 @@ s3_get_delete_markers () {
             echo "--prefix \"${s3_prefix-}\""
         fi) \
         | jq -r '.DeleteMarkers[] | { "VersionId": .VersionId, "Key": .Key }' 2>/dev/null
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 s3_get_file_version () {
@@ -179,8 +179,6 @@ s3_get_file_version () {
         --key ${file_path} \
         --version-id ${version_id} \
         ${destination}
-
-    return $?
 }
 
 s3_get_versions () {
@@ -205,6 +203,8 @@ s3_get_versions () {
         --bucket ${s3_bucket_name} \
         --prefix "${prefix}" \
         | jq -r ".Versions[] | select(.IsLatest == ${is_latest}) | { "VersionId": .VersionId, "Key": .Key }" 2>/dev/null
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 s3_ls () {
@@ -223,7 +223,6 @@ s3_ls () {
     local s3_url="s3://${s3_bucket_name}/${location-}"
     echoerr "INFO: Listing objects in: ${s3_url}"
     aws s3 ls --region ${AWS_REGION} ${s3_url}
-    return $?
 }
 
 s3_mv () {
@@ -253,7 +252,6 @@ s3_mv () {
         "s3://${s3_bucket_name}/${src-}" \
         "s3://${s3_bucket_name}/${dst-}" \
         ${options-}
-    return $?
 }
 
 s3_path_sanitise () {
@@ -313,7 +311,6 @@ s3_rm () {
     local s3_bucket=$(s3_stack_bucket_name ${stack_name})
 
     aws s3 rm "s3://${s3_bucket}/${file_path-}" ${options-}
-    return $?
 }
 
 s3_stack_bucket_name () {

@@ -23,7 +23,6 @@ rds_dump_db () {
     fi
 
     rds_${engine}_dump_db ${stack_name} ${database} "${out_file}" "${options-}"
-    return $?
 }
 
 rds_engine_type () {
@@ -147,8 +146,6 @@ rds_log_download () {
             --output text \
             >> ${dump_file}
     done
-
-    return $?
 }
 
 rds_log_files () {
@@ -171,7 +168,7 @@ rds_log_files () {
         --db-instance-identifier ${instance} \
         | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | .[].LogFileName'
 
-    return $?
+    pipe_status ${PIPESTATUS[@]}
 }
 
 rds_slowlog () {
@@ -205,8 +202,6 @@ rds_slowlog () {
         --log-file-name slowquery/mysql-slowquery.log${suffix-} \
         --output text \
         > ${dump_file}
-
-    return $?
 }
 
 rds_snapshot_create () {
@@ -234,8 +229,6 @@ rds_snapshot_create () {
     aws rds wait db-snapshot-completed \
         --region ${AWS_REGION} \
         --db-snapshot-identifier ${snapshot_id}
-
-    return $?
 }
 
 rds_snapshot_delete () {
@@ -249,8 +242,6 @@ rds_snapshot_delete () {
     aws rds delete-db-snapshot \
         --region ${AWS_REGION} \
         --db-snapshot-identifier ${snapshot_id}
-
-    return $?
 }
 
 rds_snapshot_list () {
@@ -281,8 +272,6 @@ rds_snapshot_list () {
     for snapshot in ${snapshots[@]}; do
         echo "${snapshot}"
     done
-
-    return $?
 }
 
 rds_stack_resources () {

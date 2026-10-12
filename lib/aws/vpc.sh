@@ -10,7 +10,6 @@ vpc_id_from_stack_name () {
     local stack_name="$1"
 
     stack_resource_type_id ${stack_name} "AWS::EC2::VPC"
-    return $?
 }
 
 vpc_internal_hosted_zone_id () {
@@ -22,7 +21,6 @@ vpc_internal_hosted_zone_id () {
 
     local stack_name=$(stack_name_from_vpc_id ${vpc_id})
     stack_value_output ${stack_name} InternalRoute53HostedZoneId
-    return $?
 }
 
 vpc_peer_associate () {
@@ -134,6 +132,8 @@ vpc_peers_from_requester () {
             Name=requester-vpc-info.vpc-id,Values=${req_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
         | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 vpc_peers_to_accepter () {
@@ -149,5 +149,7 @@ vpc_peers_to_accepter () {
             Name=accepter-vpc-info.vpc-id,Values=${acc_vpc_id} \
             Name=status-code,Values=active,pending-acceptance,provisioning \
         | jq -r '.VpcPeeringConnections[].VpcPeeringConnectionId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 

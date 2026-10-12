@@ -40,6 +40,8 @@ kms_list_key_aliases () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
         | jq -r ".Aliases[].AliasName"
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 kms_list_key_aliases_custom () {
@@ -47,12 +49,16 @@ kms_list_key_aliases_custom () {
     aws kms list-aliases \
         --region ${AWS_REGION} \
         | jq -r '.Aliases[] | select(.AliasName | startswith("alias/aws") | not ) | .AliasName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 kms_list_key_ids () {
     aws kms list-keys \
         --region ${AWS_REGION} \
         | jq -r '.Keys[].KeyId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 kms_list_keys_detail () {

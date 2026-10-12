@@ -45,6 +45,8 @@ stack_list_app () {
         --region ${AWS_REGION} \
         | jq -r ".StackSummaries[] | select(.StackName | contains(\"${APP_NAME}\")) | .StackName" \
         | sort
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_list_all () {
@@ -53,6 +55,8 @@ stack_list_all () {
         --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
         | jq -r '.StackSummaries[].StackName' \
         | sort
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_list_all_parents () {
@@ -61,6 +65,8 @@ stack_list_all_parents () {
         --stack-status-filter UPDATE_COMPLETE CREATE_COMPLETE ROLLBACK_COMPLETE \
         | jq -r '.StackSummaries[] | select(.ParentId == null) | .StackName' \
         | sort
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_list_nested () {
@@ -115,7 +121,7 @@ stack_list_output () {
         | jq -r '.Stacks[].Outputs[].OutputKey' \
         | sort
 
-    pipe_failure ${PIPESTATUS[@]}
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_list_parameter () {
@@ -131,7 +137,7 @@ stack_list_parameter () {
         | jq -r '.Stacks[].Parameters[].ParameterKey' \
         | sort
 
-    pipe_failure ${PIPESTATUS[@]}
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_name () {
@@ -166,6 +172,8 @@ stack_outputs () {
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
         | jq '.Stacks[].Outputs | sort_by(.OutputKey)'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_parameter_file () {
@@ -241,8 +249,6 @@ stack_parameter_set () {
         && aws cloudformation wait stack-update-complete \
             --region ${AWS_REGION} \
             --stack-name ${stack_name}
-
-    return $?
 }
 
 stack_parameters () {
@@ -252,6 +258,8 @@ stack_parameters () {
         --region ${AWS_REGION} \
         --stack-name ${stack_name} \
         | jq '.Stacks[].Parameters | sort_by(.ParameterKey)'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_resource_id () {
@@ -352,6 +360,8 @@ stack_status_from_id () {
     aws cloudformation list-stacks \
         --region ${AWS_REGION} \
         | jq -r ".StackSummaries[] | select(.StackId == \"${stack_id}\") | .StackStatus"
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 stack_status_ok () {
@@ -457,7 +467,6 @@ stack_value_input () {
     local resource="$2"
 
     stack_value "${stack_name}" "${resource}" Input
-    return $?
 }
 
 stack_value_parameter () {
@@ -469,7 +478,6 @@ stack_value_parameter () {
     local resource="$2"
 
     stack_value "${stack_name}" "${resource}" Parameter
-    return $?
 }
 
 stack_value_output () {
@@ -481,6 +489,5 @@ stack_value_output () {
     local resource="$2"
 
     stack_value "${stack_name}" "${resource}" Output
-    return $?
 }
 

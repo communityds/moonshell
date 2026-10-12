@@ -89,6 +89,8 @@ iam_access_key_list () {
     aws iam list-access-keys \
         --user-name ${iam_user} \
         | jq -r '.AccessKeyMetadata[].AccessKeyId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_group_users () {
@@ -101,11 +103,15 @@ iam_group_users () {
     aws iam get-group \
         --group-name ${group_name} \
         | jq -r '.Users[].UserName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_groups () {
     aws iam list-groups \
         | jq -r '.Groups[].GroupName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_policy_get () {
@@ -138,12 +144,16 @@ iam_policy_list_aws () {
     aws iam list-policies \
         --scope AWS \
         | jq -r '.Policies | sort | .[].PolicyName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_policy_list_customer () {
     aws iam list-policies \
         --scope Local \
         | jq -r '.Policies | sort | .[].PolicyName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_policy_list_name () {
@@ -158,6 +168,8 @@ iam_policy_list_name () {
         --path-prefix "/${stack_name}/" \
         --scope Local \
         | jq ".Policies[] | select(.PolicyName == \"${policy_name}\")"
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_policy_list_path () {
@@ -171,6 +183,8 @@ iam_policy_list_path () {
         --path-prefix "/${STACK_NAME}/" \
         --scope Local \
         | jq -r '.Policies | sort | .[].PolicyName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_arn () {
@@ -183,6 +197,8 @@ iam_user_arn () {
     aws iam get-user \
         --user-name ${iam_user} \
         | jq -r 'User.Arn'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_create () {
@@ -258,6 +274,8 @@ iam_user_group_list () {
     aws iam list-groups-for-user \
         --user-name ${iam_user} \
         | jq -r '.Groups[].GroupName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_mfa_devices () {
@@ -270,6 +288,8 @@ iam_user_mfa_devices () {
     aws iam list-mfa-devices \
         --user-name ${iam_user} \
         | jq -r '.MFADevices[].SerialNumber'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_policies () {
@@ -282,6 +302,8 @@ iam_user_policies () {
     aws iam list-attached-user-policies \
         --user-name ${iam_user} \
         | jq -r '.AttachedPolicies[].PolicyArn'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_ssc () {
@@ -294,6 +316,8 @@ iam_user_ssc () {
     aws iam list-service-specific-credentials \
         --user-name ${iam_user} \
         | jq -r '.ServiceSpecificCredentials[].ServiceSpecificCredentialId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_user_ssh_keys () {
@@ -306,10 +330,14 @@ iam_user_ssh_keys () {
     aws iam list-ssh-public-keys \
         --user-name ${iam_user} \
         | jq -r '.SSHPublicKeys[].SSHPublicKeyId'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
 iam_users () {
     aws iam list-users \
         | jq -r '.Users[].UserName'
+
+    pipe_status ${PIPESTATUS[@]}
 }
 
