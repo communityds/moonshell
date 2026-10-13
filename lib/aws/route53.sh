@@ -267,7 +267,7 @@ route53_list_internal () {
         records=($(route53_list_type_records ${hosted_zone_id} ${record_type}))
         if [[ ${records[@]-} ]]; then
             for record in ${records[@]}; do
-                echoerr "  ${record}"
+                echo "${record}"
             done
         else
             echoerr "INFO: No records found for type: ${record_type}"
