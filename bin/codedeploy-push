@@ -60,15 +60,16 @@ echoerr "INFO: Cleaning up: ${TEMP_DIR}"
 rm -Rf ${TEMP_DIR}
 
 echoerr "INFO: Creating deployment"
+LOCATION="{
+    \"bucket\": \"${S3_BUCKET}\",
+    \"key\": \"${DEPLOY_FILE}\",
+    \"bundleType\": \"tgz\"
+}"
 DEPLOY_ID=$(aws deploy create-deployment \
     --region ${AWS_REGION} \
     --application-name ${STACK_NAME} \
     --deployment-group-name ${STACK_NAME} \
-    --s3-location "{
-        \"bucket\": \"${S3_BUCKET}\",
-        \"key\": \"${DEPLOY_FILE}\",
-        \"bundleType\": \"tgz\"
-    }" \
+    --s3-location "$(jq -c '.' <<<${LOCATION})" \
     | jq -r '.deploymentId')
 
 if [[ -z ${DEPLOY_ID-} ]]; then
