@@ -109,7 +109,7 @@ overlay_path_prepend ${MOON_BIN}
 if [[ ! $(basename "x$0") =~ "bash"$ ]]; then
     # Now that we are not running in a shell treat all undefined variables and
     # non-zero exit codes as serious and exit.
-    set -eu
+    set -euo pipefail
 
     # Several AWS env vars already exist, but for consistency of namespacing
     # we are creating some extras. For a list of currently supported variables:
