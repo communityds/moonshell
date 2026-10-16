@@ -25,5 +25,5 @@ fi
 
 STACK_NAME="${APP_NAME}-${ENVIRONMENT}"
 
-stack_parameter_set ${STACK_NAME} ${PARAM_KEY} ${PARAM_VALUE}
+stack_parameter_set ${STACK_NAME} ${PARAM_KEY} "${PARAM_VALUE}"
 
