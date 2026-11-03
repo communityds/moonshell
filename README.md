@@ -7,7 +7,7 @@ The focus of this project is to make AWS CF stacks simple and easy for an admini
 
 Influential axioms:
 
-1. Clean code is good code
+1. Consistent code is good code
 
 1. Make peoples lives better and easier
 
@@ -109,7 +109,7 @@ The content and size of the main template must comply with all [AWS quotas](http
 The naming of your nested-template is up to you, provided the parent stack template is whatever `STACK_TEMPLATE_FILE` is set to.
 When the `moonshell/templates/` directory is uploaded to your designated S3 bucket it automatically runs with the `--delete` flag.
 
-It is recommended to not have versioning enabled on your `STACK_TEMPLATE_BUCKET` and instead rely on versioning of your template in git.
+It is not recommended to have versioning enabled on your `STACK_TEMPLATE_BUCKET` and instead rely on versioning of your template in git.
 
 ## Usage
 
@@ -155,16 +155,22 @@ Perform basic functions for Moonshell.
 
 ### Overlaying
 
-Moonshell contains common functions and features required across all products, but each product has differences; requires different tools, different variables etc.
+Moonshell contains common functions and features required across all products, but each product has differences; requires different tools and different variables etc.
 The solution is to overlay customisations.
 
-Per the structure below, Moonshell uses the FHS standard dirs of `bin`, `lib`, `var`, `etc`, etc.
-If, in your repo of `${HOME}/dev/repo`, you have a `bin` and `lib` directory, you can simply:
+Per [structure](#structure) below, Moonshell uses the FHS standard dirs of `bin`, `lib`, `var`, `etc`, etc.
+If, in your repo of `${HOME}/dev/repo`, you have a `bin` and `lib` directory, you can overlay it in one of two ways:
 
-`overlay_dir_install PATH_TO_REPO`
+* Temporary overlay for the current session only
 
-This will automatically create an entry in `etc/profile.d/private/overlay.sh`, so every time you spawn a shell your repo dir is automatically layed atop of Moonshell.
-`bin/` will be prepended to `${PATH}` and every .sh file in `lib/` will be sourced.
+        overlay_dir ${HOME}/dev/repo
+
+* Permanent overlay for using your library in all future sessions
+    This will automatically create an entry in `etc/profile.d/private/overlay.sh`, so every time you spawn a shell your repo dir is automatically layed atop of Moonshell.
+
+        overlay_dir_install ${HOME}/dev/repo
+
+Overlaying prepends `bin/` to `${PATH}` and every .sh file in `lib/` is be sourced.
 Identically named scripts in `${MOON_BIN}` and functions in `${MOON_LIB}` will replace the default in Moonshell.
 
 ## Structure
@@ -187,18 +193,23 @@ Moonshell tries to adhere to Linux FHS best practice:
 
 ## Why
 
-A lot of the functionality herein should ideally be ported to Moonshot, but, at the time of writing these tools Moonshot has been abandoned by its original author and using Ruby to develop solutions to our needs is an expense we can't afford.
-We are working through the process of developing out several systems that all interract with each other on some level; the scope and functionality is being found out as development happens.
+Systems need to be usable by people.
+Systems need to be coherent with each other.
+Systems need to be simple and intuitive to use.
 
-Bash was the quickest and easiest way to create re-usable code that runs on all systems regardless of all external dependencies, with exception of `aws-cli`, and that can be easily extended.
-Only some rules need to be adhered to for stack creation, naming of resources and outputs.
+Wrapping the AWS CLI with the assumptions above about stack and environment naming made the interaction with AWS services from the CLI simple and effortless.
+There are many dynamic resource names which make `aws` usage tricky and clunky.
+
+Bash was the quickest and easiest way to create re-usable code that runs on all systems regardless of all external dependencies, with exception of `aws-cli` and `jq`.
+No third party libraries are required and everything is in escense self contained.
+Only a few rules need to be adhered to for stack creation and the naming of resources and outputs.
 
 The last, and arguably most important, reason is that I am a systems administrator.
-I use the CLI for pretty much all important operations in my day to day work.
+I use the CLI for pretty much all important operations in my day to day work because it's easy to chain things together and script work.
 I need the CLI to be quick, easy and extensible.
-Having a sorted admin environment even makes developing out new things easier because you have all the tools to introspect and do basic tasks at your fingertips.
+Having a sorted admin environment makes developing new things easier because you have all the tools to introspect and do basic tasks at your fingertips.
 
-In the future scripts may be written in Python, or Ruby, but until then Bash is where it's at.
+You are free to write scripts in any language you choose, but for everything here, Bash is where it's at.
 
 ### No, Really, Why Bash
 
@@ -224,17 +235,15 @@ When building out stacks thought must be given to the names of resources.
 It is advised to always use generic names for resources to enable future portability of templates and/or other code.
 
 It is highly recommended to create an internal Route53 hosted zone so that you can easily connect to your instances and reference resources by short easy to remember common hostnames; i.e. "ping app" or "mysql -h rds".
-Route53 is used heavily by Moonshell as a means to find information such as an instance to ssh to, or gather information from.
-It is also pivotal in creating VPC peering connections to grant access to resources in one VPC from another.
+Internal zones are also pivotal in creating VPC peering connections to grant access to resources in one VPC from another.
 DNS is a solved problem; use it!
 
 * NOTE: You must delete all but the base records in the hosted zone before stack deletion.
     Failure to do so will result in a failure to delete the stack because AWS doesn't provide a way to forcibly delete entries when a zone is to be deleted, thanks AWS..
     This is a similar problem to versioned S3 buckets; you must delete all versions of all files before you can delete the bucket.
 
-We run a shared centralised `core` VPC that contains a jump host, logging and email services.
+We run a shared centralised `core` VPC that contains a jump host, logging and other common services.
 All peered VPCs use the central logger and are accessed by the central jump host.
-Moonshell expects this vpc be named `core`
 
 ### Stack Outputs
 
@@ -264,10 +273,10 @@ CloudFormation Defaults:
 
 * `aws:cloudformation:stack-name`: CF gives us the stack-name for free and we use it to find the VPCId from the stack's name when other methods aren't available.
 
-### Code Deploy
+### CodeDeploy
 
-Per stack there must only be one Code Deploy application.
-We tar ball the `codedeploy/` directory and upload it to `codedeploy/` in the stack's local s3 bucket.
+In every stack there must only be one CodeDeploy application.
+`codedeploy-push` tar balls the `codedeploy/` directory and uploads it to `codedeploy/` in the stack's s3 bucket.
 All nodes which are to deploy the artefact must have read access to that location, and the host buliding the artefact must be able to write to it.
 
 Inside of the `codedeploy/` directory you must have an `appspec.yml` file per [the appspec reference](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html#appspec-reference-server)
@@ -309,7 +318,6 @@ The setup of KMS is beyond the scope of this document, but it should be defined 
 
 Moonshell, specifically `s3_upload` and `s3_upload_multipart`, check for the presence of a parameter that starts with `arn:aws:kms` and uses this to set the encryption key used.
 If not present, no encryption is used.
-AWS does set, but use by default, their own KMS key, but using this is arguably defunct.
 
 To view all available KMS keys for your account:
 
