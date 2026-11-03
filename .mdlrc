@@ -1,0 +1,6 @@
+rules "~MD013","~MD040"
+all
+rule "MD003", :style => :atx
+rule "MD007", :indent => 4
+rule "MD046", :style => :consistent
+
