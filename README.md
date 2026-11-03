@@ -163,12 +163,16 @@ If, in your repo of `${HOME}/dev/repo`, you have a `bin` and `lib` directory, yo
 
 * Temporary overlay for the current session only
 
-        overlay_dir ${HOME}/dev/repo
+    ```
+    overlay_dir ${HOME}/dev/repo
+    ```
 
 * Permanent overlay for using your library in all future sessions
     This will automatically create an entry in `etc/profile.d/private/overlay.sh`, so every time you spawn a shell your repo dir is automatically layed atop of Moonshell.
 
-        overlay_dir_install ${HOME}/dev/repo
+    ```
+    overlay_dir_install ${HOME}/dev/repo
+    ```
 
 Overlaying prepends `bin/` to `${PATH}` and every .sh file in `lib/` is be sourced.
 Identically named scripts in `${MOON_BIN}` and functions in `${MOON_LIB}` will replace the default in Moonshell.
