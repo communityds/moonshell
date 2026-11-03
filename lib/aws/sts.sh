@@ -23,7 +23,8 @@ sts_assume_role () {
     local role_json=$(aws iam list-roles \
         | jq ".Roles[] \
         | select(.Path == \"/${stack_name}/\") \
-        | select(.RoleName | test(\"${role}\"))")
+        | select(.RoleName | test(\"${role}\"))"\
+        || true)
 
     local -a pipe_status=${PIPESTATUS[@]}
 
@@ -34,6 +35,7 @@ sts_assume_role () {
 
     if [[ -z ${role_json-} ]]; then
         echoerr "ERROR: Could not find role: ${role}"
+        return 1
     fi
 
     local duration_max=$(echo ${role_json} \
