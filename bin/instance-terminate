@@ -36,7 +36,10 @@ for instance_id in ${INSTANCES[@]}; do
         aws autoscaling terminate-instance-in-auto-scaling-group \
             --region ${AWS_REGION} \
             --no-should-decrement-desired-capacity \
-            --instance-id ${instance_id}
+            --instance-id ${instance_id} 2>/dev/null \
+            || aws ec2 terminate-instances \
+                --region ${AWS_REGION} \
+                --instance-id ${instance_id}
     else
         echoerr "ERROR: Instance ID '${instance_id}' is invalid"
     fi
