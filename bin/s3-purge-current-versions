@@ -23,13 +23,22 @@ else
 fi
 
 stack_name
-export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME})
+export S3_BUCKET=$(s3_stack_bucket_name ${STACK_NAME} 2>/dev/null)
+if [[ -z ${S3_BUCKET} ]]; then
+    echoerr "ERROR: Unable to find an S3 bucket for stack: ${STACK_NAME}"
+    exit 1
+fi
 
-echoerr "INFO: Gathering all object versions"
+echoerr "INFO: Gathering all object versions in stack: ${STACK_NAME}"
 OBJECT_JSON=$(aws s3api list-object-versions \
     --region ${AWS_REGION} \
     $([[ ${PREFIX-} ]] && echo "--prefix ${PREFIX}") \
-    --bucket ${S3_BUCKET})
+    --bucket ${S3_BUCKET} 2>/dev/null)
+
+if [[ -z ${OBJECT_JSON-} ]]; then
+    echoerr "ERROR: Unable to find any objects in bucket: ${S3_BUCKET}"
+    exit 1
+fi
 
 echoerr "INFO: Selecting ${OBJECT_TYPE/-/ }"
 case ${OBJECT_TYPE} in
